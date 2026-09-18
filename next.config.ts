@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
   // while keeping prerendering compatible.
   basePath: "",
   output: process.env.GITHUB_PAGES === "true" ? "export" : undefined,
-  trailingSlash: true,
+  trailingSlash: process.env.GITHUB_PAGES === "true",
   env: {
     NEXT_PUBLIC_BASE_PATH:
       process.env.GITHUB_PAGES === "true" ? "/spielesammlung" : "",
