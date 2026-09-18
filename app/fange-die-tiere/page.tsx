@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { sitePath } from "../site-paths";
 
 const GAME_TIME = 40;
 
@@ -141,7 +141,7 @@ export default function CatchTheAnimals() {
   return (
     <main className="game-shell animal-game-shell">
       <section className="game-card animal-game-card" aria-labelledby="animal-title">
-        <Link className="back-link" href="/">← Hanna&apos;s Spiele</Link>
+                <a className="back-link" href={sitePath("/")}>← Hanna&apos;s Spiele</a>
         <header>
           <div><p className="eyebrow">SUCHSPIEL</p><h1 id="animal-title">Fange die Tiere</h1></div>
           <div className="stats" aria-live="polite">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
+import { sitePath } from "../site-paths";
 
 const GAME_TIME = 20;
 type Position = { x: number; y: number };
@@ -233,7 +233,7 @@ export default function Home() {
   return (
     <main className="game-shell">
       <section className="game-card" aria-labelledby="title">
-        <Link className="back-link" href="/">← Hanna&apos;s Spiele</Link>
+                <a className="back-link" href={sitePath("/")}>← Hanna&apos;s Spiele</a>
         <header>
           <div><p className="eyebrow">MINI-SPIEL</p><h1 id="title">Fang den Stern!</h1></div>
           <div className="stats" aria-live="polite">
@@ -268,7 +268,7 @@ export default function Home() {
           {!playing && (
             <div className="star-start-panel" role="dialog" aria-modal="true" aria-labelledby="star-start-title">
               <div className="star-start-content">
-                <Link className="star-start-back" href="/">← Hanna&apos;s Spiele</Link>
+                <a className="star-start-back" href={sitePath("/")}>← Hanna&apos;s Spiele</a>
                 <div className="big-star" aria-hidden="true">★</div>
                 <h2 id="star-start-title">{time === 0 ? `Geschafft: ${score} Punkte!` : "Bist du schnell genug?"}</h2>
                 <div className="star-difficulty-picker" aria-label="Schwierigkeit auswählen">

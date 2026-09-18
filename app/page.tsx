@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { ReleaseNotesDialog } from "./release-notes-dialog";
+import { publicBasePath, sitePath } from "./site-paths";
 
 const games: Array<{
   href: string;
@@ -11,7 +11,7 @@ const games: Array<{
   image?: string;
 }> = [
   {
-    href: "/fang-den-stern",
+    href: sitePath("/fang-den-stern"),
     icon: "★",
     iconClass: "home-star",
     title: "Fang den Stern!",
@@ -19,7 +19,7 @@ const games: Array<{
     meta: "20 Sekunden",
   },
   {
-    href: "/fange-die-tiere",
+    href: sitePath("/fange-die-tiere"),
     icon: "🐯🐵🐨🐦",
     iconClass: "home-animals",
     title: "Fange die Tiere",
@@ -27,10 +27,10 @@ const games: Array<{
     meta: "40 Sekunden",
   },
   {
-    href: "/zwerge",
+    href: sitePath("/zwerge"),
     icon: "",
     iconClass: "home-dwarf",
-    image: "/zwergengold-logo.png",
+    image: `${publicBasePath}/zwergengold-logo.png`,
     title: "Zwergengold",
     description: "Sammle Gold und lenke den Zwerg sicher durch den Tunnel.",
     meta: "Gold sammeln",
@@ -50,7 +50,7 @@ export default function Home() {
 
         <div className="game-grid">
           {games.map((game) => (
-            <Link className="game-tile" href={game.href} key={game.href}>
+            <a className="game-tile" href={game.href} key={game.href}>
               <div className={`game-tile-icon ${game.iconClass}`} aria-hidden="true">
                 {game.image ? <img src={game.image} alt="" width="150" height="150" /> : game.icon}
               </div>
@@ -59,7 +59,7 @@ export default function Home() {
                 <p>{game.description}</p>
                 <span>{game.meta} <b aria-hidden="true">→</b></span>
               </div>
-            </Link>
+            </a>
           ))}
         </div>
 

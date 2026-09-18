@@ -2,6 +2,27 @@
 
 Die gemeinsame Spielesammlung für „Hanna's Spiele“ mit den Spielen „Fang den Stern“, „Fange die Tiere“ und „Zwergengold“.
 
+## GitHub Pages
+
+Die lokale Entwicklung lÃ¤uft mit `npm run dev` am Root-Pfad. Der bestehende
+`npm run build`-Ablauf fÃ¼r OpenAI Sites und Cloudflare bleibt erhalten.
+
+Ein Push auf `main` startet den Workflow unter `.github/workflows/deploy-pages.yml`.
+Er installiert die AbhÃ¤ngigkeiten reproduzierbar, erzeugt mit `npm run build:pages`
+den statischen Export und verÃ¶ffentlicht ihn unter
+[https://hanshaller1.github.io/spielesammlung/](https://hanshaller1.github.io/spielesammlung/).
+
+## Windows 11 local development
+
+1. Install Node.js `22.13.0` or newer, then run `npm ci` in the repository.
+2. Start development with `npm run dev`; the local application is served at the Vite URL shown in the terminal.
+3. Create a local production build with `npm run build:local`.
+4. Start that build with `npm start`.
+
+The local `dev`, `build:local`, and `start` scripts do not require Bash. The
+existing `npm run build` remains the Linux/OpenAI Sites build, and
+`npm run build:pages` is used by the GitHub Pages workflow.
+
 ## Versionierung
 
 Die aktuelle Version steht in `package.json` und wird zusätzlich als Git-Tag gesetzt. Normale Anpassungen erhöhen ausschließlich die Patch-Version. Minor- oder Major-Versionen werden nur auf ausdrücklichen Wunsch gesetzt.

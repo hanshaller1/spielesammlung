@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { sitePath } from "../site-paths";
 import { ACTIVE_LEVEL_SET, createLevelSet, type LevelSet } from "./level-templates";
 
 let ACTIVE_RUNTIME_LEVEL_SET: LevelSet = ACTIVE_LEVEL_SET;
@@ -2253,7 +2253,7 @@ export default function DwarfsGame() {
     <main className="game-shell dwarf-game-shell">
       <section className="game-card dwarf-game-card" aria-labelledby="dwarf-title">
         <div className="dwarf-topbar">
-          <Link className="back-link" href="/">← Hanna&apos;s Spiele</Link>
+          <a className="back-link" href={sitePath("/")}>← Hanna&apos;s Spiele</a>
           <div className="dwarf-top-actions">
             <button className="music-button" type="button" onClick={paused ? resumeGame : pauseGame} disabled={!playing}>
               {paused ? "▶ Weiter" : "Ⅱ Pause"}
@@ -2303,7 +2303,7 @@ export default function DwarfsGame() {
         </div>
         {!playing && <div className="dwarf-start-panel" role="dialog" aria-modal="true" aria-labelledby="dwarf-start-title">
           <div className="dwarf-start-content">
-            <Link className="dwarf-start-back" href="/">← Hanna&apos;s Spiele</Link>
+            <a className="dwarf-start-back" href={sitePath("/")}>← Hanna&apos;s Spiele</a>
             <button className="dwarf-mark dwarf-secret-trigger" type="button" onClick={handleSecretDwarfTap} aria-label="Zwerg">
               <canvas ref={drawDwarfPreview} width="120" height="135" />
             </button>

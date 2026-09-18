@@ -40,10 +40,18 @@ export default defineConfig(async () => {
   process.env.WRANGLER_LOG_PATH ??= ".wrangler/logs";
   process.env.MINIFLARE_REGISTRY_PATH ??= ".wrangler/registry";
 
+  const isGitHubPagesBuild = process.env.GITHUB_PAGES === "true";
+
   // Wrangler snapshots its log path while the Cloudflare plugin is imported.
-  const { cloudflare } = await import("@cloudflare/vite-plugin");
+  // The Pages export is asset-only, so it must not load the Worker runtime or
+  // the Sites packaging plugin. The normal local/OpenAI Sites path is kept
+  // unchanged below.
+  const { cloudflare } = isGitHubPagesBuild
+    ? { cloudflare: undefined }
+    : await import("@cloudflare/vite-plugin");
 
   return {
+    base: isGitHubPagesBuild ? "/spielesammlung/" : "/",
     server: {
       host: "0.0.0.0",
       allowedHosts: ["terminal.local"],
@@ -53,12 +61,16 @@ export default defineConfig(async () => {
     },
     plugins: [
       vinext(),
-      sites(),
-      cloudflare({
-        viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
-        inspectorPort: false,
-        config: localBindingConfig,
-      }),
+      ...(isGitHubPagesBuild
+        ? []
+        : [
+            sites(),
+            cloudflare!({
+              viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
+              inspectorPort: false,
+              config: localBindingConfig,
+            }),
+          ]),
     ],
   };
 });
