@@ -375,6 +375,17 @@ h1 { margin:0; font-size:clamp(1.9rem,6vw,3.4rem); line-height:1; letter-spacing
 .treasure-board { width:min(47svh,88vw,620px); flex:none; }
 .treasure-instruction { display:none; }
 
+html:has(.treasure-game-shell) { scrollbar-gutter:stable; }
+
+@media (min-width:1051px) {
+  .treasure-game-card { width:min(800px,100%); }
+  .treasure-controls { gap:5px; }
+  .treasure-controls button { padding-inline:8px; font-size:.76rem; }
+  .treasure-current-card,.treasure-next-card { grid-template-columns:34px minmax(0,1fr); column-gap:6px; padding-inline:7px; }
+  .treasure-current-symbol,.treasure-next-symbol { font-size:2.1rem; }
+  .treasure-current-card strong,.treasure-next-card strong { font-size:.68rem; }
+}
+
 @media (max-width:1050px) {
   .treasure-header { margin-bottom:7px; }
   .treasure-header .back-link { margin-bottom:6px; }
@@ -433,6 +444,7 @@ h1 { margin:0; font-size:clamp(1.9rem,6vw,3.4rem); line-height:1; letter-spacing
 @media (max-width:600px) {
   .treasure-layout-guide-open { display:flex; flex-direction:column; }
   .treasure-layout-guide-open .treasure-board-column { order:1; }
+  .treasure-layout-guide-open .treasure-board-column { width:100%; }
   .treasure-layout-guide-open .treasure-guide { order:2; width:100%; max-height:none; padding:4px 5px; overflow:visible; }
   .treasure-layout-guide-open .treasure-guide h2 { margin:0; font-size:0; }
   .treasure-layout-guide-open .treasure-guide ol { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:0; }
