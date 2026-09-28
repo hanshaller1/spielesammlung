@@ -9,6 +9,17 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.7",
+    title: "Tablet-Layout und Schatzanzeige",
+    date: "28. September 2026",
+    changes: [
+      "Schatz-Merge nutzt im Tablet-Hochformat ein scrollbarfreies Drei-Spalten-Layout mit Menü links und aktuellen Schätzen rechts.",
+      "Der fallende Schatz wird erst sichtbar, wenn er die rote Linie vollständig passiert hat; die Vorschau im Spielfeld zeigt nur noch die Führung.",
+      "Pinch-Zoom ist für die Spielseite auf Touch-Geräten deaktiviert.",
+    ],
+    commits: [{ id: "72faa23", description: "Schatz-Merge: Tablet-Layout und Elementanzeigen überarbeiten" }],
+  },
+  {
     version: "0.4.6",
     title: "Compound-Collider bleiben am richtigen Ort",
     date: "28. September 2026",
