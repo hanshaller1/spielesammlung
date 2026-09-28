@@ -9,6 +9,16 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.15",
+    title: "Schatz-Merge-Vorschauicons angeglichen",
+    date: "28. September 2026",
+    changes: [
+      "Aktuell und Als Nächstes verwenden dieselben gezeichneten Schatzgrafiken wie Spielfeld und Schatzfolge.",
+      "Der Abstand zwischen Icon und Schatzname wurde vergrößert.",
+    ],
+    commits: [{ id: "6fca09c", description: "Schatz-Merge: Vorschaugrafiken angleichen" }],
+  },
+  {
     version: "0.4.14",
     title: "Schatz-Merge-PC-Layout verkleinert",
     date: "28. September 2026",
