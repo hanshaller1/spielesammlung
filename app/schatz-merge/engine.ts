@@ -18,22 +18,22 @@ export type TreasureDefinition = {
 // size skaliert Grafik und Collider; densityScale stimmt die Materialdichte fein ab.
 export const TREASURES: TreasureDefinition[] = [
   { id: "nugget", name: "Goldnugget", tier: 1, sprite: "nugget", colliderType: "nugget", size: 1, densityScale: 1, friction: 0.2, restitution: 0.035, score: 0 },
-  { id: "coin", name: "Goldmünze", tier: 2, sprite: "coin", colliderType: "circle", size: 1.16, densityScale: 1.02, friction: 0.12, restitution: 0.045, score: 10 },
-  { id: "coin-stack", name: "2er-Münzstapel", tier: 3, sprite: "coin-stack", colliderType: "stack", size: 1.35, densityScale: 1.04, friction: 0.24, restitution: 0.03, score: 20 },
-  { id: "small-gem", name: "Kleiner Edelstein", tier: 4, sprite: "small-gem", colliderType: "gem", size: 1.57, densityScale: 1.06, friction: 0.16, restitution: 0.035, score: 40 },
-  { id: "large-gem", name: "Großer Edelstein", tier: 5, sprite: "large-gem", colliderType: "gem", size: 1.82, densityScale: 1.08, friction: 0.15, restitution: 0.035, score: 80 },
-  { id: "gem-pouch", name: "Gold-/Edelsteinbeutel", tier: 6, sprite: "gem-pouch", colliderType: "sack", size: 2.11, densityScale: 1.1, friction: 0.3, restitution: 0.025, score: 160 },
-  { id: "jewel-box", name: "Schatzkästchen", tier: 7, sprite: "jewel-box", colliderType: "box", size: 2.45, densityScale: 1.12, friction: 0.42, restitution: 0.02, score: 320 },
-  { id: "goblet", name: "Goldener Kelch", tier: 8, sprite: "goblet", colliderType: "goblet", size: 2.84, densityScale: 1.14, friction: 0.2, restitution: 0.025, score: 640 },
-  { id: "crown", name: "Krone", tier: 9, sprite: "crown", colliderType: "wide", size: 3.3, densityScale: 1.16, friction: 0.34, restitution: 0.02, score: 1280 },
-  { id: "treasure-chest", name: "Schatztruhe", tier: 10, sprite: "treasure-chest", colliderType: "box", size: 3.83, densityScale: 1.18, friction: 0.46, restitution: 0.015, score: 2560 },
-  { id: "king-treasure", name: "Königsschatz", tier: 11, sprite: "king-treasure", colliderType: "wide", size: 4.43, densityScale: 1.2, friction: 0.36, restitution: 0.015, score: 5120 },
-  { id: "golden-throne", name: "Goldener Thron", tier: 12, sprite: "golden-throne", colliderType: "wide", size: 5.12, densityScale: 1.22, friction: 0.48, restitution: 0.01, score: 10240 },
+  { id: "coin", name: "Goldmünze", tier: 2, sprite: "coin", colliderType: "circle", size: 1.22, densityScale: 1.02, friction: 0.12, restitution: 0.045, score: 10 },
+  { id: "coin-stack", name: "2er-Münzstapel", tier: 3, sprite: "coin-stack", colliderType: "stack", size: 1.49, densityScale: 1.04, friction: 0.24, restitution: 0.03, score: 20 },
+  { id: "small-gem", name: "Kleiner Edelstein", tier: 4, sprite: "small-gem", colliderType: "gem", size: 1.82, densityScale: 1.06, friction: 0.16, restitution: 0.035, score: 40 },
+  { id: "large-gem", name: "Großer Edelstein", tier: 5, sprite: "large-gem", colliderType: "gem", size: 2.22, densityScale: 1.08, friction: 0.15, restitution: 0.035, score: 80 },
+  { id: "gem-pouch", name: "Gold-/Edelsteinbeutel", tier: 6, sprite: "gem-pouch", colliderType: "sack", size: 2.55, densityScale: 1.1, friction: 0.3, restitution: 0.025, score: 160 },
+  { id: "jewel-box", name: "Schatzkästchen", tier: 7, sprite: "jewel-box", colliderType: "box", size: 2.93, densityScale: 1.12, friction: 0.42, restitution: 0.02, score: 320 },
+  { id: "goblet", name: "Goldener Kelch", tier: 8, sprite: "goblet", colliderType: "goblet", size: 3.37, densityScale: 1.14, friction: 0.2, restitution: 0.025, score: 640 },
+  { id: "crown", name: "Krone", tier: 9, sprite: "crown", colliderType: "wide", size: 3.88, densityScale: 1.16, friction: 0.34, restitution: 0.02, score: 1280 },
+  { id: "treasure-chest", name: "Schatztruhe", tier: 10, sprite: "treasure-chest", colliderType: "box", size: 4.46, densityScale: 1.18, friction: 0.46, restitution: 0.015, score: 2560 },
+  { id: "king-treasure", name: "Königsschatz", tier: 11, sprite: "king-treasure", colliderType: "wide", size: 5.13, densityScale: 1.2, friction: 0.36, restitution: 0.015, score: 5120 },
+  { id: "golden-throne", name: "Goldener Thron", tier: 12, sprite: "golden-throne", colliderType: "wide", size: 5.9, densityScale: 1.22, friction: 0.48, restitution: 0.01, score: 10240 },
 ];
 
 const DROP_WEIGHTS = [44, 32, 18, 6];
 // Der kleinere Grundradius gleicht die größeren und gleich häufigen Drop-Stufen aus.
-const BASE_RADIUS = 0.03;
+const BASE_RADIUS = 0.028;
 const BODY_SCALE = 0.001;
 const FIXED_STEP_MS = 1000 / 60;
 const SHAPES: Record<ColliderType, ReadonlyArray<readonly [number, number]>> = {
