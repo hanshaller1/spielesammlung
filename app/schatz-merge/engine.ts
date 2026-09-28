@@ -32,8 +32,8 @@ export const TREASURES: TreasureDefinition[] = [
 ];
 
 const DROP_WEIGHTS = [44, 32, 18, 6];
-// Der kleinere Grundradius gleicht die größeren und gleich häufigen Drop-Stufen aus.
-const BASE_RADIUS = 0.028;
+// Gemeinsamer Grundradius für die Render- und Collidergrößen aller Schatzstufen.
+const BASE_RADIUS = 0.0448;
 const BODY_SCALE = 0.001;
 const FIXED_STEP_MS = 1000 / 60;
 const SHAPES: Record<ColliderType, ReadonlyArray<readonly [number, number]>> = {
