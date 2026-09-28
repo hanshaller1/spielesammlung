@@ -9,6 +9,17 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.3",
+    title: "Deutlicheres Wachstum der frühen Schatzstufen",
+    date: "28. September 2026",
+    changes: [
+      "Die Größenfaktoren der Stufen 1 bis 5 springen jetzt um jeweils etwa 22 Prozent pro Merge.",
+      "Die späteren Stufen wachsen weiterhin kontrolliert um etwa 15 Prozent je Merge bis zum Thron.",
+      "Der Grundradius wurde leicht reduziert, um die stärkeren frühen Drops im Behälter auszubalancieren.",
+    ],
+    commits: [{ id: "b17bf72", description: "Schatz-Merge: Zuwachs der ersten fünf Stufen verstärken" }],
+  },
+  {
     version: "0.4.2",
     title: "Schatz-Merge: größere Stufen und faire Drops",
     date: "28. September 2026",
