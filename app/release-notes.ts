@@ -9,6 +9,17 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.8",
+    title: "Größeres Schatz-Merge-Spielfeld",
+    date: "28. September 2026",
+    changes: [
+      "Steuerbuttons sowie aktuelle und nächste Schatzstufe stehen kompakt oberhalb des Spielfelds.",
+      "Das Spielfeld nutzt den freigewordenen Platz mit unverändertem Seitenverhältnis; der Erklärungstext wurde entfernt.",
+      "Das aktuelle fallende Objekt ist wieder sichtbar und folgt der bestehenden Maus-, Touch- und Stiftsteuerung.",
+    ],
+    commits: [{ id: "f1aac6a", description: "Schatz-Merge: Spielfeld vergrößern und Steuerleiste bündeln" }],
+  },
+  {
     version: "0.4.7",
     title: "Tablet-Layout und Schatzanzeige",
     date: "28. September 2026",
