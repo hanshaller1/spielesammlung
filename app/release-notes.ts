@@ -9,6 +9,17 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.9",
+    title: "Schatz-Merge-Eingabe und Vorschau korrigiert",
+    date: "28. September 2026",
+    changes: [
+      "Ein abgelegter Schatz bleibt ab seiner ursprünglichen Position sichtbar und fällt durchgehend; der nächste Schatz erscheint erst nach dem vollständigen Überqueren der roten Linie.",
+      "Gleichzeitige Mehrfinger-Eingaben lösen nur einen Drop aus.",
+      "Die Schatzfolge öffnet sich beim Anklicken als vertikales Panel rechts neben dem Spielfeld.",
+    ],
+    commits: [{ id: "447918d", description: "Schatz-Merge: Mehrfinger-Drops und Vorschauablauf korrigieren" }],
+  },
+  {
     version: "0.4.8",
     title: "Größeres Schatz-Merge-Spielfeld",
     date: "28. September 2026",
