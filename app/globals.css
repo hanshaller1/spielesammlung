@@ -364,6 +364,12 @@ h1 { margin:0; font-size:clamp(1.9rem,6vw,3.4rem); line-height:1; letter-spacing
 .treasure-guide ol { grid-template-columns:repeat(6,minmax(0,1fr)); }
 .treasure-guide li { min-height:28px; }
 .treasure-guide li > b { display:none; }
+.treasure-layout-guide-open { display:grid; grid-template-columns:minmax(0,1fr) minmax(205px,280px); grid-template-rows:auto minmax(0,1fr); align-items:start; gap:9px; }
+.treasure-layout-guide-open .treasure-toolbar { grid-column:1 / -1; grid-row:1; }
+.treasure-layout-guide-open .treasure-board-column { grid-column:1; grid-row:2; }
+.treasure-layout-guide-open .treasure-guide { display:block; grid-column:2; grid-row:2; align-self:start; }
+.treasure-layout-guide-open .treasure-guide ol { grid-template-columns:1fr; }
+.treasure-layout-guide-open .treasure-board { width:min(100%,49svh,620px); }
 .treasure-board-column { display:flex; min-width:0; min-height:0; justify-content:center; }
 .treasure-board { width:min(49svh,88vw,620px); flex:none; }
 .treasure-instruction { display:none; }
@@ -392,6 +398,11 @@ h1 { margin:0; font-size:clamp(1.9rem,6vw,3.4rem); line-height:1; letter-spacing
   .treasure-current-card strong,.treasure-next-card strong { font-size:.8rem; }
   .treasure-guide ol { grid-template-columns:repeat(3,minmax(0,1fr)); }
   .treasure-board { width:min(43svh,88vw,620px); }
+  .treasure-layout-guide-open { grid-template-columns:minmax(0,2fr) minmax(112px,1fr); grid-template-rows:auto auto; align-items:start; }
+  .treasure-layout-guide-open .treasure-guide { max-height:min(62svh,560px); overflow:auto; padding:7px; }
+  .treasure-layout-guide-open .treasure-guide ol { grid-template-columns:1fr; }
+  .treasure-layout-guide-open .treasure-guide li { min-height:24px; gap:4px; padding-inline:2px; font-size:.62rem; }
+  .treasure-layout-guide-open .treasure-board { width:100%; max-width:min(49svh,88vw,620px); }
 }
 
 @media (max-width:420px) {
@@ -414,6 +425,7 @@ h1 { margin:0; font-size:clamp(1.9rem,6vw,3.4rem); line-height:1; letter-spacing
   .treasure-current-card strong,.treasure-next-card strong { font-size:.72rem; }
   .treasure-current-card small,.treasure-next-card small { font-size:.63rem; }
   .treasure-board { width:min(43svh,90vw,620px); }
+  .treasure-layout-guide-open .treasure-board { width:100%; }
   .treasure-guide ol { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 

@@ -25,6 +25,9 @@ export default function SchatzMergePage() {
   const modeRef = useRef<Mode>("ready");
   const currentTierRef = useRef(1);
   const nextTierRef = useRef(1);
+  const dropPendingRef = useRef(false);
+  const activePointerRef = useRef<number | null>(null);
+  const ignoredPointersRef = useRef(new Set<number>());
   const previewXRef = useRef(180);
   const scoreRef = useRef(0);
   const highScoreRef = useRef(0);
@@ -91,6 +94,17 @@ export default function SchatzMergePage() {
     else playNotes([370 + event.tier * 38, 555 + event.tier * 41], 0.17, "sine");
   }, [playNotes]);
 
+  const handlePreviewReady = useCallback(() => {
+    if (!dropPendingRef.current) return;
+    dropPendingRef.current = false;
+    const promoted = nextTierRef.current;
+    const following = dropBag.next();
+    currentTierRef.current = promoted;
+    nextTierRef.current = following;
+    setCurrentTier(promoted);
+    setNextTier(following);
+  }, [dropBag]);
+
   const handleGameOver = useCallback(() => {
     modeRef.current = "over";
     setMode("over");
@@ -112,6 +126,7 @@ export default function SchatzMergePage() {
       onGameOver: () => handleGameOver(),
       onDrop: () => playNotes([174, 130], 0.09, "triangle"),
       onImpact: (tier) => playNotes([104 + tier * 17], 0.06, "triangle"),
+      onPreviewReady: () => handlePreviewReady(),
     });
     engineRef.current = game;
 
@@ -134,7 +149,7 @@ export default function SchatzMergePage() {
       const delta = Math.min(34, now - previousFrame || 16.7);
       previousFrame = now;
       if (modeRef.current === "playing") game.update(delta);
-      const preview = modeRef.current === "playing"
+      const preview = modeRef.current === "playing" && !dropPendingRef.current
         ? { tier: currentTierRef.current, x: previewXRef.current }
         : null;
       game.draw(context, preview);
@@ -150,11 +165,14 @@ export default function SchatzMergePage() {
       audioContextRef.current = null;
       if (audio && audio.state !== "closed") void audio.close().catch(() => {});
     };
-  }, [handleGameOver, handleMerge, playNotes]);
+  }, [handleGameOver, handleMerge, handlePreviewReady, playNotes]);
 
   const startRun = () => {
     engineRef.current?.reset();
     dropBag.reset();
+    dropPendingRef.current = false;
+    activePointerRef.current = null;
+    ignoredPointersRef.current.clear();
     scoreRef.current = 0;
     setScore(0);
     const first = dropBag.next();
@@ -169,16 +187,11 @@ export default function SchatzMergePage() {
   };
 
   const dropCurrent = () => {
-    if (modeRef.current !== "playing") return;
+    if (modeRef.current !== "playing" || dropPendingRef.current) return;
     const game = engineRef.current;
     if (!game) return;
+    dropPendingRef.current = true;
     game.drop(currentTierRef.current, previewXRef.current);
-    const promoted = nextTierRef.current;
-    const following = dropBag.next();
-    currentTierRef.current = promoted;
-    nextTierRef.current = following;
-    setCurrentTier(promoted);
-    setNextTier(following);
   };
 
   const movePreview = (clientX: number, canvas: HTMLElement) => {
@@ -189,7 +202,7 @@ export default function SchatzMergePage() {
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (modeRef.current !== "playing") return;
+    if (modeRef.current !== "playing" || dropPendingRef.current) return;
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
       event.preventDefault();
       previewXRef.current += event.key === "ArrowLeft" ? -20 : 20;
@@ -221,7 +234,7 @@ export default function SchatzMergePage() {
           </div>
         </div>
 
-        <div className="treasure-layout">
+        <div className={`treasure-layout ${showGuide ? "treasure-layout-guide-open" : ""}`}>
           <div className="treasure-toolbar">
             <div className="treasure-controls" aria-label="Spielsteuerung">
               {mode === "playing"
@@ -231,7 +244,7 @@ export default function SchatzMergePage() {
                   : <button type="button" onClick={startRun}>{mode === "over" ? "↻ Nochmal" : "▶ Start"}</button>}
               <button type="button" onClick={startRun}>↻ Neu</button>
               <button type="button" aria-pressed={soundEnabled} onClick={() => setSoundEnabled((value) => !value)}>{soundEnabled ? "♫ Ton an" : "♫ Ton aus"}</button>
-              <button className="treasure-guide-toggle" type="button" aria-expanded={showGuide} onClick={() => setShowGuide((value) => !value)}>◆ Schatzfolge</button>
+              <button className="treasure-guide-toggle" type="button" aria-expanded={showGuide} aria-controls="treasure-guide-panel" onClick={() => setShowGuide((value) => !value)}>◆ Schatzfolge</button>
             </div>
             <div className="treasure-item-preview-row" aria-label="Aktueller und nächster Schatz">
               <section className="treasure-current-card" aria-live="polite">
@@ -249,7 +262,7 @@ export default function SchatzMergePage() {
             </div>
           </div>
 
-          <div className={`treasure-guide ${showGuide ? "treasure-guide-open" : ""}`}>
+          <div id="treasure-guide-panel" className={`treasure-guide ${showGuide ? "treasure-guide-open" : ""}`}>
             <h2>Schatzfolge</h2>
             <ol>
               {TREASURES.map((treasure, index) => (
@@ -263,7 +276,40 @@ export default function SchatzMergePage() {
           </div>
 
           <section className="treasure-board-column" aria-label="Schatz-Merge-Spielfeld">
-            <div className="treasure-board" onPointerMove={(event) => movePreview(event.clientX, event.currentTarget)} onPointerDown={(event) => { if (modeRef.current !== "playing") return; movePreview(event.clientX, event.currentTarget); event.currentTarget.setPointerCapture(event.pointerId); }} onPointerUp={(event) => { if (modeRef.current !== "playing") return; movePreview(event.clientX, event.currentTarget); dropCurrent(); }} onKeyDown={handleKeyDown}>
+            <div
+              className="treasure-board"
+              onPointerMove={(event) => {
+                const activePointer = activePointerRef.current;
+                if (ignoredPointersRef.current.has(event.pointerId)) return;
+                if (dropPendingRef.current || (activePointer !== null && activePointer !== event.pointerId)) return;
+                movePreview(event.clientX, event.currentTarget);
+              }}
+              onPointerDown={(event) => {
+                if (modeRef.current !== "playing") return;
+                if (ignoredPointersRef.current.has(event.pointerId)) return;
+                if (dropPendingRef.current || (activePointerRef.current !== null && activePointerRef.current !== event.pointerId)) {
+                  ignoredPointersRef.current.add(event.pointerId);
+                  event.currentTarget.setPointerCapture(event.pointerId);
+                  return;
+                }
+                activePointerRef.current = event.pointerId;
+                movePreview(event.clientX, event.currentTarget);
+                event.currentTarget.setPointerCapture(event.pointerId);
+              }}
+              onPointerUp={(event) => {
+                if (ignoredPointersRef.current.delete(event.pointerId)) return;
+                if (activePointerRef.current !== event.pointerId) return;
+                activePointerRef.current = null;
+                if (modeRef.current !== "playing" || dropPendingRef.current) return;
+                movePreview(event.clientX, event.currentTarget);
+                dropCurrent();
+              }}
+              onPointerCancel={(event) => {
+                ignoredPointersRef.current.delete(event.pointerId);
+                if (activePointerRef.current === event.pointerId) activePointerRef.current = null;
+              }}
+              onKeyDown={handleKeyDown}
+            >
               <canvas ref={canvasRef} className="treasure-canvas" role="button" tabIndex={0} aria-label={`Aktuell: ${currentDefinition.name}. Mit den Pfeiltasten bewegen und mit Leertaste fallen lassen.`} />
               {mode !== "playing" && (
                 <div className="treasure-overlay">

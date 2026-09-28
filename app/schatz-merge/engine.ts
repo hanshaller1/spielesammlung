@@ -72,6 +72,7 @@ type EngineCallbacks = {
   onGameOver: () => void;
   onDrop: () => void;
   onImpact: (tier: number) => void;
+  onPreviewReady?: () => void;
 };
 
 type BodyMeta = {
@@ -79,7 +80,7 @@ type BodyMeta = {
   merged: boolean;
   renderOffsetXFactor: number;
   renderOffsetYFactor: number;
-  hiddenUntilBelowDangerLine: boolean;
+  awaitingPreviewAfterDrop: boolean;
 };
 type Particle = { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; size: number; hue: number };
 type Pop = { x: number; y: number; tier: number; time: number; duration: number };
@@ -142,6 +143,7 @@ export class SchatzMergeEngine {
   private accumulator = 0;
   private lastImpactAt = Number.NEGATIVE_INFINITY;
   private dangerStartedAt: number | null = null;
+  private previewBlockedByPendingDrop = false;
   private gameOver = false;
 
   constructor(callbacks: EngineCallbacks) {
@@ -202,6 +204,7 @@ export class SchatzMergeEngine {
     const body = this.createTreasureBody(safeTier, safeX, y);
     WorldAdd(this.engine.world, body);
     this.bodies.set(body.id, this.createBodyMeta(safeTier, body, safeX, y, false, true));
+    this.previewBlockedByPendingDrop = true;
     this.callbacks.onDrop();
   }
 
@@ -216,6 +219,7 @@ export class SchatzMergeEngine {
     this.accumulator = 0;
     this.lastImpactAt = Number.NEGATIVE_INFINITY;
     this.dangerStartedAt = null;
+    this.previewBlockedByPendingDrop = false;
     this.gameOver = false;
   }
 
@@ -228,6 +232,7 @@ export class SchatzMergeEngine {
       this.updateEffects(FIXED_STEP_MS);
       this.accumulator -= FIXED_STEP_MS;
     }
+    this.updatePreviewGate();
     this.checkForGameOver();
   }
 
@@ -286,10 +291,6 @@ export class SchatzMergeEngine {
     for (const body of Composite.allBodies(this.engine.world)) {
       const meta = this.bodies.get(body.id);
       if (!meta) continue;
-      if (meta.hiddenUntilBelowDangerLine) {
-        if (body.bounds.min.y <= this.dangerLine) continue;
-        meta.hiddenUntilBelowDangerLine = false;
-      }
       this.drawBody(context, body, meta);
     }
 
@@ -306,10 +307,10 @@ export class SchatzMergeEngine {
       context.restore();
     }
 
-    if (preview) {
+    if (preview && !this.previewBlockedByPendingDrop) {
       const x = this.clampX(preview.x, preview.tier);
       const radius = this.radiusForTier(preview.tier);
-      const y = Math.max(radius + 17, height * 0.075);
+      const y = this.spawnY(preview.tier);
       context.save();
       context.globalAlpha = 0.94;
       context.shadowColor = "#ffe5a0";
@@ -424,15 +425,32 @@ export class SchatzMergeEngine {
     anchorX: number,
     anchorY: number,
     merged = false,
-    hiddenUntilBelowDangerLine = false,
+    awaitingPreviewAfterDrop = false,
   ): BodyMeta {
     return {
       tier,
       merged,
       renderOffsetXFactor: (anchorX - body.position.x) / this.radiusForTier(tier),
       renderOffsetYFactor: (anchorY - body.position.y) / this.radiusForTier(tier),
-      hiddenUntilBelowDangerLine,
+      awaitingPreviewAfterDrop,
     };
+  }
+
+  private updatePreviewGate(): void {
+    if (!this.previewBlockedByPendingDrop) return;
+
+    for (const body of Composite.allBodies(this.engine.world)) {
+      const meta = this.bodies.get(body.id);
+      if (meta?.awaitingPreviewAfterDrop && body.bounds.min.y > this.dangerLine) {
+        meta.awaitingPreviewAfterDrop = false;
+      }
+    }
+
+    const stillWaiting = [...this.bodies.values()].some((meta) => meta.awaitingPreviewAfterDrop);
+    if (!stillWaiting) {
+      this.previewBlockedByPendingDrop = false;
+      this.callbacks.onPreviewReady?.();
+    }
   }
 
   private rebuildWalls(): void {
@@ -457,6 +475,7 @@ export class SchatzMergeEngine {
     firstMeta.merged = true;
     secondMeta.merged = true;
     const tier = firstMeta.tier;
+    const awaitingPreviewAfterDrop = firstMeta.awaitingPreviewAfterDrop || secondMeta.awaitingPreviewAfterDrop;
     const terminal = tier === TREASURES.length;
     const nextTier = terminal ? null : tier + 1;
     const x = (first.position.x + second.position.x) / 2;
@@ -473,7 +492,7 @@ export class SchatzMergeEngine {
       Body.setVelocity(merged, velocity);
       Body.setAngularVelocity(merged, angularVelocity);
       Composite.add(this.engine.world, merged);
-      this.bodies.set(merged.id, this.createBodyMeta(nextTier, merged, x, y));
+      this.bodies.set(merged.id, this.createBodyMeta(nextTier, merged, x, y, false, awaitingPreviewAfterDrop));
     }
 
     this.pops.push({ x, y, tier, time: 0, duration: tier >= 8 ? 660 : 420 });
