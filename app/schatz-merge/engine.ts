@@ -110,8 +110,10 @@ function createPolygonBody(
   return Bodies.fromVertices(centerX, centerY, [vertices], options, true) ?? Bodies.circle(centerX, centerY, radius * 0.5, options, 10);
 }
 
-function createCompoundBody(x: number, y: number, parts: Matter.Body[], options: Matter.IChamferableBodyDefinition): Matter.Body {
-  return Body.create({ ...options, position: { x, y }, parts });
+function createCompoundBody(parts: Matter.Body[], options: Matter.IChamferableBodyDefinition): Matter.Body {
+  // Teil-Collider liegen bereits in Weltkoordinaten. Ein Startpunkt an (x, y)
+  // würde den von Matter erzeugten Parent-Hull nochmals um diese Position verschieben.
+  return Body.create({ ...options, position: { x: 0, y: 0 }, parts });
 }
 
 function ellipsePoints(centerX: number, centerY: number, radiusX: number, radiusY: number, count = 16): RelativePoint[] {
@@ -356,7 +358,7 @@ export class SchatzMergeEngine {
         createPolygonBody(x, y, radius, ellipsePoints(0, -0.16, 0.88, 0.35), options),
         createPolygonBody(x, y, radius, ellipsePoints(0, 0.22, 0.88, 0.35), options),
       ];
-      return createCompoundBody(x, y, parts, options);
+      return createCompoundBody(parts, options);
     }
     if (definition.colliderType === "box") {
       const width = tier === 7 ? 1.66 : 2.04;
@@ -374,7 +376,7 @@ export class SchatzMergeEngine {
           [-0.18, 0.49], [0.18, 0.49], [0.52, 0.58], [0.7, 0.82], [0.55, 0.87], [-0.55, 0.87], [-0.7, 0.82], [-0.52, 0.58],
         ], options),
       ];
-      return createCompoundBody(x, y, parts, options);
+      return createCompoundBody(parts, options);
     }
     if (definition.colliderType === "wide" && tier === 9) {
       const parts = [
@@ -383,7 +385,7 @@ export class SchatzMergeEngine {
         createPolygonBody(x, y, radius, [[0.34, -0.35], [0.82, -0.78], [0.9, -0.22], [0.75, 0.58], [0.26, 0.3]], options),
         Bodies.rectangle(x, y + radius * 0.39, radius * 1.5, radius * 0.3, options),
       ];
-      return createCompoundBody(x, y, parts, options);
+      return createCompoundBody(parts, options);
     }
     if (definition.colliderType === "wide" && tier === 11) {
       return createPolygonBody(x, y, radius, ellipsePoints(0, 0.25, 0.985, 0.665), options);
@@ -398,7 +400,7 @@ export class SchatzMergeEngine {
         Bodies.rectangle(x - radius * 0.555, y + radius * 0.635, radius * 0.17, radius * 0.55, options),
         Bodies.rectangle(x + radius * 0.555, y + radius * 0.635, radius * 0.17, radius * 0.55, options),
       ];
-      return createCompoundBody(x, y, parts, options);
+      return createCompoundBody(parts, options);
     }
     if (definition.colliderType === "wide") return Bodies.rectangle(x, y, radius * 1.9, radius * 1.7, options);
     return createPolygonBody(x, y, radius, SHAPES[definition.colliderType], options);

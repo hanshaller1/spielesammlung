@@ -51,6 +51,10 @@ test("gleiche Schätze mergen einmalig und erlauben eine Kettenreaktion", () => 
   step(180);
   assert.equal(events.filter((event) => event.type === "merge" && event.tier === 2).length, 1);
   assert.ok([...game.bodies.values()].some((meta) => meta.tier === 3));
+  const coinStack = activeBodies(game).find((body) => game.bodies.get(body.id)?.tier === 3);
+  assert.ok(coinStack, "a coin merge must create a live stack body");
+  assert.ok(coinStack.bounds.max.y < 622, "the merged stack must stay above the bottom of the board");
+  assert.ok(coinStack.bounds.max.x < game.boardWidth + 2, "the merged stack bounds must stay aligned with its position");
 
   game.drop(3, 195);
   step(180);
@@ -71,6 +75,22 @@ test("gleiche Schätze mergen einmalig und erlauben eine Kettenreaktion", () => 
   assert.equal(throneMerge?.nextTier, null);
   assert.equal(throneMerge?.points, 10240);
   assert.equal([...game.bodies.values()].some((meta) => meta.tier > 12), false);
+});
+
+test("Goldmünze am rechten Rand bleibt auf dem Schatzkästchen liegen", () => {
+  const { game } = createGame();
+  const step = (count) => { for (let index = 0; index < count; index += 1) game.update(16.7); };
+
+  game.drop(7, 365);
+  step(160);
+  game.drop(2, 365);
+  step(240);
+
+  const chest = activeBodies(game).find((body) => game.bodies.get(body.id)?.tier === 7);
+  const coin = activeBodies(game).find((body) => game.bodies.get(body.id)?.tier === 2);
+  assert.ok(chest && coin, "both the chest and the coin should remain in the world");
+  assert.ok(coin.position.y < chest.position.y, "the coin must be supported by the chest rather than pass through it");
+  assert.ok(coin.bounds.max.y < 622, "the coin must not leave through the bottom of the board");
 });
 
 test("300 Drops, Größenwechsel und Resets erzeugen keine NaN-Bodies oder Wanddurchgänge", () => {
