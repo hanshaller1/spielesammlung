@@ -9,6 +9,17 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.1",
+    title: "Schatz-Merge mit zwölf Schatzstufen",
+    date: "28. September 2026",
+    changes: [
+      "Schatz-Merge ergänzt die Spielesammlung als eigenständiges, responsives Merge-Spiel.",
+      "Zwölf Schatzformen verbinden sich durch Matter.js-Physik; Kettenreaktionen und ein besonderes Thron-Finale sind enthalten.",
+      "Maus-, Touch- und Stiftsteuerung, Punkte, lokaler Highscore, Pause, Neustart, Game Over, Partikel und abschaltbare Sounds sind integriert.",
+    ],
+    commits: [{ id: "a07bdff", description: "Schatz-Merge: Zwölfstufiges Merge-Spiel integrieren" }],
+  },
+  {
     version: "0.4.0",
     title: "Zuverlässiger Musikwechsel zwischen Leveltypen",
     date: "5. September 2026",
