@@ -9,6 +9,16 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.13",
+    title: "Schatz-Merge-Boardgrößen stabilisiert",
+    date: "28. September 2026",
+    changes: [
+      "Das Spielfeld behält auf Smartphone und Tablet beim Ein- und Ausblenden der Schatzfolge exakt dieselbe Breite und bleibt zentriert.",
+      "Auf dem PC bleibt das Spielfeld ebenfalls gleich groß; die Desktopgröße passt jetzt mit Kopf und Steuerleiste ohne Scrollbalken in den Viewport.",
+    ],
+    commits: [{ id: "8a306a5", description: "Schatz-Merge: Boardgröße beim Layoutwechsel erhalten" }],
+  },
+  {
     version: "0.4.12",
     title: "Schatz-Merge-Panels und Desktoplayout verbessert",
     date: "28. September 2026",
