@@ -35,8 +35,6 @@ export default function SchatzMergePage() {
   const [highScore, setHighScore] = useState(0);
   const [currentTier, setCurrentTier] = useState(1);
   const [nextTier, setNextTier] = useState(1);
-  const [chain, setChain] = useState(0);
-  const [lastMerge, setLastMerge] = useState("");
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [showGuide, setShowGuide] = useState(false);
   const [dropBag] = useState(() => new DropShuffleBag());
@@ -88,8 +86,6 @@ export default function SchatzMergePage() {
         // Das Spiel bleibt auch ohne verfügbaren Browserspeicher spielbar.
       }
     }
-    setChain((value) => value + 1);
-    setLastMerge(event.terminal ? "Thron-Finale!" : `${TREASURES[event.tier - 1].name} → ${TREASURES[(event.nextTier ?? 1) - 1].name}`);
     if (event.terminal) playNotes([392, 494, 587, 784, 988], 0.48, "triangle");
     else if (event.tier >= 8) playNotes([392 + event.tier * 23, 523 + event.tier * 27, 784 + event.tier * 31], 0.3, "triangle");
     else playNotes([370 + event.tier * 38, 555 + event.tier * 41], 0.17, "sine");
@@ -161,8 +157,6 @@ export default function SchatzMergePage() {
     dropBag.reset();
     scoreRef.current = 0;
     setScore(0);
-    setChain(0);
-    setLastMerge("");
     const first = dropBag.next();
     const second = dropBag.next();
     currentTierRef.current = first;
@@ -185,7 +179,6 @@ export default function SchatzMergePage() {
     nextTierRef.current = following;
     setCurrentTier(promoted);
     setNextTier(following);
-    setChain(0);
   };
 
   const movePreview = (clientX: number, canvas: HTMLElement) => {
@@ -221,40 +214,30 @@ export default function SchatzMergePage() {
               <p className="eyebrow">SCHÄTZE FALLEN LASSEN · GLEICHE MERGEN</p>
               <h1>Schatz-Merge</h1>
             </div>
-            <div className="treasure-header-stat" aria-label={`Punkte ${score}`}><span>Punkte</span><b>{score.toLocaleString("de-DE")}</b></div>
+            <div className="treasure-header-stats">
+              <div className="treasure-header-stat" aria-label={`Punkte ${score}`}><span>Punkte</span><b>{score.toLocaleString("de-DE")}</b></div>
+              <div className="treasure-header-stat" aria-label={`Rekord ${highScore}`}><span>Rekord</span><b>{highScore.toLocaleString("de-DE")}</b></div>
+            </div>
           </div>
         </div>
 
-        <div className="treasure-controls" aria-label="Spielsteuerung">
-          {mode === "playing"
-            ? <button type="button" onClick={() => { modeRef.current = "paused"; setMode("paused"); }}>Ⅱ Pause</button>
-            : mode === "paused"
-              ? <button type="button" onClick={() => { modeRef.current = "playing"; setMode("playing"); }}>▶ Weiter</button>
-              : <button type="button" onClick={startRun}>{mode === "over" ? "↻ Nochmal" : "▶ Spiel starten"}</button>}
-          <button type="button" onClick={startRun}>↻ Neustart</button>
-          <button type="button" aria-pressed={soundEnabled} onClick={() => setSoundEnabled((value) => !value)}>{soundEnabled ? "♫ Ton an" : "♫ Ton aus"}</button>
-          <button className="treasure-guide-toggle" type="button" aria-expanded={showGuide} onClick={() => setShowGuide((value) => !value)}>◆ Schatzfolge</button>
-        </div>
-
         <div className="treasure-layout">
-          <aside className="treasure-side treasure-side-left" aria-label="Spielstand">
-            <section className="treasure-info-card">
-              <span className="treasure-info-icon">🏆</span>
-              <h2>Dein Rekord</h2>
-              <strong>{highScore.toLocaleString("de-DE")}</strong>
-              <small>Punkte</small>
-            </section>
-            <section className="treasure-tip-card">
-              <span>💡</span>
-              <p>Gleiche Schätze verbinden sich. Lass dir Zeit beim Zielen!</p>
-            </section>
-            {chain > 0 && <section className="treasure-chain-card" aria-live="polite"><span>✨ MERGE-KETTE</span><strong>×{chain}</strong><small>{lastMerge}</small></section>}
+          <aside className="treasure-side treasure-side-left" aria-label="Spielmenü">
+            <div className="treasure-controls" aria-label="Spielsteuerung">
+              {mode === "playing"
+                ? <button type="button" onClick={() => { modeRef.current = "paused"; setMode("paused"); }}>Ⅱ Pause</button>
+                : mode === "paused"
+                  ? <button type="button" onClick={() => { modeRef.current = "playing"; setMode("playing"); }}>▶ Weiter</button>
+                  : <button type="button" onClick={startRun}>{mode === "over" ? "↻ Nochmal" : "▶ Start"}</button>}
+              <button type="button" onClick={startRun}>↻ Neu</button>
+              <button type="button" aria-pressed={soundEnabled} onClick={() => setSoundEnabled((value) => !value)}>{soundEnabled ? "♫ Ton an" : "♫ Ton aus"}</button>
+              <button className="treasure-guide-toggle" type="button" aria-expanded={showGuide} onClick={() => setShowGuide((value) => !value)}>◆ Schatzfolge</button>
+            </div>
           </aside>
 
           <section className="treasure-board-column" aria-label="Schatz-Merge-Spielfeld">
             <div className="treasure-board" onPointerMove={(event) => movePreview(event.clientX, event.currentTarget)} onPointerDown={(event) => { if (modeRef.current !== "playing") return; movePreview(event.clientX, event.currentTarget); event.currentTarget.setPointerCapture(event.pointerId); }} onPointerUp={(event) => { if (modeRef.current !== "playing") return; movePreview(event.clientX, event.currentTarget); dropCurrent(); }} onKeyDown={handleKeyDown}>
               <canvas ref={canvasRef} className="treasure-canvas" role="button" tabIndex={0} aria-label={`Aktuell: ${currentDefinition.name}. Mit den Pfeiltasten bewegen und mit Leertaste fallen lassen.`} />
-              <div className="treasure-drop-label" aria-hidden="true"><span>JETZT</span><b>{TREASURE_SYMBOLS[currentTier - 1]} {currentDefinition.name}</b></div>
               {mode !== "playing" && (
                 <div className="treasure-overlay">
                   <div className="treasure-overlay-card">
@@ -284,15 +267,21 @@ export default function SchatzMergePage() {
                 </div>
               )}
             </div>
-            <p className="treasure-instruction">Bewege den Schatz mit Maus, Finger oder Stift. Loslassen lässt ihn fallen.</p>
+            <p className="treasure-instruction">Bewege die Führung mit Maus, Finger oder Stift. Loslassen lässt den aktuellen Schatz fallen.</p>
           </section>
 
-          <aside className="treasure-side treasure-side-right" aria-label="Nächster Schatz und Merge-Übersicht">
+          <aside className="treasure-side treasure-side-right" aria-label="Nächster und aktueller Schatz">
             <section className="treasure-next-card" aria-live="polite">
               <span className="treasure-card-eyebrow">ALS NÄCHSTES</span>
               <span className="treasure-next-symbol" aria-hidden="true">{TREASURE_SYMBOLS[nextTier - 1]}</span>
               <strong>{nextDefinition.name}</strong>
               <small>Stufe {nextTier}</small>
+            </section>
+            <section className="treasure-current-card" aria-live="polite">
+              <span className="treasure-card-eyebrow">AKTUELL</span>
+              <span className="treasure-current-symbol" aria-hidden="true">{TREASURE_SYMBOLS[currentTier - 1]}</span>
+              <strong>{currentDefinition.name}</strong>
+              <small>Stufe {currentTier}</small>
             </section>
             <div className={`treasure-guide ${showGuide ? "treasure-guide-open" : ""}`}>
               <h2>Schatzfolge</h2>
@@ -306,7 +295,6 @@ export default function SchatzMergePage() {
                 ))}
               </ol>
             </div>
-            {chain === 0 && <section className="treasure-chain-card treasure-chain-empty"><span>✨ MERGE-KETTE</span><strong>—</strong><small>Führe zwei gleiche Schätze zusammen.</small></section>}
           </aside>
         </div>
       </div>

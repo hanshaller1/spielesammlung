@@ -74,7 +74,13 @@ type EngineCallbacks = {
   onImpact: (tier: number) => void;
 };
 
-type BodyMeta = { tier: number; merged: boolean; renderOffsetXFactor: number; renderOffsetYFactor: number };
+type BodyMeta = {
+  tier: number;
+  merged: boolean;
+  renderOffsetXFactor: number;
+  renderOffsetYFactor: number;
+  hiddenUntilBelowDangerLine: boolean;
+};
 type Particle = { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; size: number; hue: number };
 type Pop = { x: number; y: number; tier: number; time: number; duration: number };
 
@@ -195,7 +201,7 @@ export class SchatzMergeEngine {
     const y = this.spawnY(safeTier);
     const body = this.createTreasureBody(safeTier, safeX, y);
     WorldAdd(this.engine.world, body);
-    this.bodies.set(body.id, this.createBodyMeta(safeTier, body, safeX, y));
+    this.bodies.set(body.id, this.createBodyMeta(safeTier, body, safeX, y, false, true));
     this.callbacks.onDrop();
   }
 
@@ -279,7 +285,12 @@ export class SchatzMergeEngine {
 
     for (const body of Composite.allBodies(this.engine.world)) {
       const meta = this.bodies.get(body.id);
-      if (meta) this.drawBody(context, body, meta);
+      if (!meta) continue;
+      if (meta.hiddenUntilBelowDangerLine) {
+        if (body.bounds.min.y <= this.dangerLine) continue;
+        meta.hiddenUntilBelowDangerLine = false;
+      }
+      this.drawBody(context, body, meta);
     }
 
     for (const particle of this.particles) {
@@ -297,19 +308,12 @@ export class SchatzMergeEngine {
 
     if (preview) {
       const x = this.clampX(preview.x, preview.tier);
-      const y = Math.max(this.radiusForTier(preview.tier) + 17, this.height * 0.075);
       context.save();
-      context.globalAlpha = 0.94;
-      context.shadowColor = "#ffe5a0";
-      context.shadowBlur = 18;
-      drawTreasure(context, preview.tier, x, y, this.radiusForTier(preview.tier));
-      context.restore();
-      context.save();
-      context.globalAlpha = 0.45;
+      context.globalAlpha = 0.38;
       context.strokeStyle = "#ffe9b2";
       context.setLineDash([3, 6]);
       context.beginPath();
-      context.moveTo(x, y + this.radiusForTier(preview.tier) + 7);
+      context.moveTo(x, this.dangerLine + 7);
       context.lineTo(x, height - 18);
       context.stroke();
       context.restore();
@@ -406,12 +410,20 @@ export class SchatzMergeEngine {
     return createPolygonBody(x, y, radius, SHAPES[definition.colliderType], options);
   }
 
-  private createBodyMeta(tier: number, body: Matter.Body, anchorX: number, anchorY: number, merged = false): BodyMeta {
+  private createBodyMeta(
+    tier: number,
+    body: Matter.Body,
+    anchorX: number,
+    anchorY: number,
+    merged = false,
+    hiddenUntilBelowDangerLine = false,
+  ): BodyMeta {
     return {
       tier,
       merged,
       renderOffsetXFactor: (anchorX - body.position.x) / this.radiusForTier(tier),
       renderOffsetYFactor: (anchorY - body.position.y) / this.radiusForTier(tier),
+      hiddenUntilBelowDangerLine,
     };
   }
 

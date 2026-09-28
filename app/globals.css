@@ -203,7 +203,7 @@ h1 { margin:0; font-size:clamp(1.9rem,6vw,3.4rem); line-height:1; letter-spacing
 .pause-menu-button { display:inline-flex; min-height:42px; align-items:center; padding:0 18px; border:1px solid #b8d9d455; border-radius:999px; color:#d5ebe7; background:transparent; font-family:Arial,sans-serif; font-weight:800; text-decoration:none; cursor:pointer; }
 
 /* Schatz-Merge */
-.treasure-game-shell { min-height:100svh; display:grid; place-items:center; padding:clamp(10px,2.4vw,28px); background:radial-gradient(ellipse at 50% 0%,#3b5282 0,#18284b 38%,#08162d 100%); }
+.treasure-game-shell { min-height:100svh; display:grid; place-items:center; padding:clamp(10px,2.4vw,28px); background:radial-gradient(ellipse at 50% 0%,#3b5282 0,#18284b 38%,#08162d 100%); touch-action:none; }
 .treasure-game-card { width:min(1480px,100%); padding:clamp(12px,2.2vw,28px); border:1px solid #ffe4a13d; border-radius:28px; background:linear-gradient(145deg,#192d50ed,#0a1830f2); box-shadow:0 24px 80px #0008,inset 0 1px #fff2; }
 .treasure-header { margin-bottom:12px; }
 .treasure-header .back-link { margin-bottom:15px; }
@@ -337,6 +337,71 @@ h1 { margin:0; font-size:clamp(1.9rem,6vw,3.4rem); line-height:1; letter-spacing
   .treasure-next-card { min-height:100px; }
   .treasure-instruction { margin-top:5px; }
 }
+
+/* Schatz-Merge: Spielmenü links, Schatzvorschau rechts. */
+.treasure-title-row { gap:10px; }
+.treasure-header-stats { display:flex; align-items:stretch; gap:8px; }
+.treasure-header-stat { min-width:94px; }
+.treasure-layout { align-items:stretch; }
+.treasure-side-left { justify-content:center; }
+.treasure-side-right { justify-content:space-between; }
+.treasure-controls { width:100%; flex-direction:column; gap:9px; margin:0; }
+.treasure-controls button { width:100%; min-height:46px; padding:0 9px; line-height:1.15; }
+.treasure-guide-toggle { display:inline-flex; align-items:center; justify-content:center; }
+.treasure-current-card { display:grid; min-height:174px; justify-items:center; align-content:center; gap:6px; padding:15px; border:1px solid #ffe1a133; border-radius:17px; background:linear-gradient(145deg,#2a3550d9,#15243dd9); box-shadow:inset 0 1px #fff1,0 7px 18px #0003; text-align:center; }
+.treasure-current-card strong { color:#ffedbd; font-size:.95rem; }
+.treasure-current-card small { color:#bdcde3; font-size:.77rem; }
+.treasure-current-symbol { margin:3px 0; font-size:3.2rem; line-height:1; filter:drop-shadow(0 4px 7px #0008); }
+.treasure-guide { display:none; }
+.treasure-guide.treasure-guide-open { display:block; }
+
+@media (max-width:1050px) {
+  .treasure-controls { width:auto; flex-direction:row; flex-wrap:wrap; justify-content:center; }
+  .treasure-controls button { width:auto; min-width:100px; flex:1 1 100px; }
+  .treasure-next-card,.treasure-current-card { min-height:112px; min-width:170px; flex:1; }
+  .treasure-current-card { display:grid; grid-template-columns:auto 1fr; justify-items:start; align-content:center; column-gap:10px; text-align:left; }
+  .treasure-current-symbol { grid-row:span 2; margin:0; }
+  .treasure-current-card .treasure-card-eyebrow { grid-column:1 / -1; }
+  .treasure-side-right { justify-content:center; }
+}
+
+@media (max-width:600px) {
+  .treasure-header-stats { gap:5px; }
+  .treasure-header-stat { min-width:76px; padding:7px; }
+  .treasure-header-stat span { font-size:.63rem; }
+  .treasure-header-stat b { font-size:1rem; }
+  .treasure-controls { gap:6px; }
+  .treasure-controls button { min-width:88px; min-height:44px; padding:0 8px; font-size:.76rem; }
+  .treasure-current-card { min-height:92px; padding:10px; }
+  .treasure-current-card strong { font-size:.82rem; }
+  .treasure-current-card small { font-size:.7rem; }
+  .treasure-current-symbol { font-size:2.4rem; }
+}
+
+@media (min-width:701px) and (max-width:1050px) and (orientation:portrait) {
+  .treasure-game-shell { height:100svh; min-height:0; overflow:hidden; padding:8px; touch-action:none; }
+  .treasure-game-card { position:relative; display:flex; width:100%; height:100%; min-height:0; flex-direction:column; overflow:hidden; padding:12px; border-radius:20px; }
+  .treasure-header { flex:none; margin-bottom:8px; }
+  .treasure-header .back-link { margin-bottom:6px; font-size:.82rem; }
+  .treasure-title-row h1 { font-size:clamp(1.6rem,4vw,2.4rem); }
+  .treasure-title-row .eyebrow { max-width:390px; font-size:.62rem; }
+  .treasure-header-stat { min-width:86px; padding:7px 9px; }
+  .treasure-header-stat b { font-size:1.12rem; }
+  .treasure-layout { min-height:0; flex:1; grid-template-columns:minmax(84px,.8fr) minmax(0,3.3fr) minmax(96px,.9fr); align-items:stretch; gap:10px; }
+  .treasure-side-left,.treasure-side-right { min-height:0; flex-direction:column; flex-wrap:nowrap; gap:9px; }
+  .treasure-controls { width:100%; flex-direction:column; flex-wrap:nowrap; gap:8px; }
+  .treasure-controls button { width:100%; min-width:0; min-height:42px; flex:none; padding:5px 4px; font-size:.72rem; }
+  .treasure-next-card,.treasure-current-card { width:100%; min-width:0; min-height:clamp(112px,16svh,160px); flex:none; grid-template-columns:1fr; justify-items:center; gap:5px; padding:10px 6px; text-align:center; }
+  .treasure-next-symbol,.treasure-current-symbol { grid-row:auto; margin:2px 0; font-size:clamp(2rem,5svh,2.8rem); }
+  .treasure-next-card .treasure-card-eyebrow,.treasure-current-card .treasure-card-eyebrow { grid-column:auto; }
+  .treasure-next-card strong,.treasure-current-card strong { overflow-wrap:anywhere; font-size:.76rem; }
+  .treasure-next-card small,.treasure-current-card small { font-size:.68rem; }
+  .treasure-board-column { display:flex; height:100%; min-height:0; align-items:center; flex-direction:column; justify-content:center; }
+  .treasure-board { width:min(100%,calc(72svh * .68),440px); flex:none; }
+  .treasure-instruction { flex:none; margin-top:5px; font-size:.68rem; }
+  .treasure-guide.treasure-guide-open { position:absolute; z-index:5; top:50%; right:12px; width:min(250px,42vw); max-height:calc(100svh - 32px); overflow:auto; transform:translateY(-50%); }
+}
+
 .pause-menu-button:hover { border-color:#bafff7; background:#ffffff0d; }.pause-menu-button:focus-visible { outline:3px solid #83efe5; outline-offset:3px; }
 .developer-pause-button { border-color:#e4bd6570; color:#ffe5a8; background:#5d421c38; }
 .mine-start-button { color:#261707; background:linear-gradient(#ffe78c,#eeb948); box-shadow:0 7px 0 #82551d,0 0 22px #ffc74c54; }.mine-start-button:hover { box-shadow:0 9px 0 #82551d,0 0 28px #ffc74c78; }
