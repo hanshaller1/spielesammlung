@@ -251,13 +251,11 @@ export default function SchatzMergePage() {
                 <span className="treasure-card-eyebrow">AKTUELL</span>
                 <span className="treasure-current-symbol" aria-hidden="true">{TREASURE_SYMBOLS[currentTier - 1]}</span>
                 <strong>{currentDefinition.name}</strong>
-                <small>Stufe {currentTier}</small>
               </section>
               <section className="treasure-next-card" aria-live="polite">
                 <span className="treasure-card-eyebrow">ALS NÄCHSTES</span>
                 <span className="treasure-next-symbol" aria-hidden="true">{TREASURE_SYMBOLS[nextTier - 1]}</span>
                 <strong>{nextDefinition.name}</strong>
-                <small>Stufe {nextTier}</small>
               </section>
             </div>
           </div>
