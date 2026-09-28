@@ -37,13 +37,13 @@ const BASE_RADIUS = 0.0448;
 const BODY_SCALE = 0.001;
 const FIXED_STEP_MS = 1000 / 60;
 const SHAPES: Record<ColliderType, ReadonlyArray<readonly [number, number]>> = {
-  nugget: [[-0.95, -0.24], [-0.72, -0.78], [-0.12, -0.96], [0.72, -0.68], [0.96, 0.08], [0.46, 0.78], [-0.52, 0.9], [-0.98, 0.34]],
+  nugget: [[-0.92, -0.17], [-0.62, -0.67], [-0.12, -0.9], [0.62, -0.69], [0.9, -0.05], [0.55, 0.73], [-0.48, 0.86], [-0.9, 0.39]],
   circle: [],
   stack: [],
-  gem: [[0, -1], [0.75, -0.48], [0.84, 0.2], [0.5, 0.86], [-0.5, 0.86], [-0.84, 0.2], [-0.75, -0.48]],
-  sack: [[-0.68, -0.52], [-0.24, -0.86], [0.15, -0.78], [0.68, -0.52], [0.94, 0.12], [0.62, 0.75], [0, 0.94], [-0.68, 0.68], [-0.94, 0.12]],
+  gem: [[0, -0.98], [0.72, -0.49], [0.86, 0.22], [0.49, 0.84], [-0.49, 0.84], [-0.86, 0.22], [-0.72, -0.49]],
+  sack: [[-0.59, -0.52], [-0.21, -0.86], [0.13, -0.78], [0.59, -0.52], [0.82, 0.12], [0.54, 0.75], [0, 0.94], [-0.59, 0.68], [-0.82, 0.12]],
   box: [],
-  goblet: [[-0.82, -0.82], [0.82, -0.82], [0.6, -0.16], [0.2, 0.22], [0.17, 0.68], [0.64, 0.72], [0.72, 0.94], [-0.72, 0.94], [-0.64, 0.72], [-0.17, 0.68], [-0.2, 0.22], [-0.6, -0.16]],
+  goblet: [],
   wide: [],
 };
 
@@ -74,11 +74,52 @@ type EngineCallbacks = {
   onImpact: (tier: number) => void;
 };
 
-type BodyMeta = { tier: number; merged: boolean };
+type BodyMeta = { tier: number; merged: boolean; renderOffsetXFactor: number; renderOffsetYFactor: number };
 type Particle = { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; size: number; hue: number };
 type Pop = { x: number; y: number; tier: number; time: number; duration: number };
 
 const { Bodies, Body, Composite, Engine, Events, Vector } = Matter;
+
+type RelativePoint = readonly [number, number];
+
+function createPolygonBody(
+  x: number,
+  y: number,
+  radius: number,
+  points: ReadonlyArray<RelativePoint>,
+  options: Matter.IChamferableBodyDefinition,
+): Matter.Body {
+  const vertices = points.map(([px, py]) => ({ x: x + px * radius, y: y + py * radius }));
+  let twiceArea = 0;
+  let centroidX = 0;
+  let centroidY = 0;
+  for (let index = 0; index < points.length; index += 1) {
+    const [px, py] = points[index];
+    const [nextX, nextY] = points[(index + 1) % points.length];
+    const cross = px * nextY - nextX * py;
+    twiceArea += cross;
+    centroidX += (px + nextX) * cross;
+    centroidY += (py + nextY) * cross;
+  }
+  const centerX = points.length > 0 && Math.abs(twiceArea) > Number.EPSILON
+    ? x + (centroidX / (3 * twiceArea)) * radius
+    : x;
+  const centerY = points.length > 0 && Math.abs(twiceArea) > Number.EPSILON
+    ? y + (centroidY / (3 * twiceArea)) * radius
+    : y;
+  return Bodies.fromVertices(centerX, centerY, [vertices], options, true) ?? Bodies.circle(centerX, centerY, radius * 0.5, options, 10);
+}
+
+function createCompoundBody(x: number, y: number, parts: Matter.Body[], options: Matter.IChamferableBodyDefinition): Matter.Body {
+  return Body.create({ ...options, position: { x, y }, parts });
+}
+
+function ellipsePoints(centerX: number, centerY: number, radiusX: number, radiusY: number, count = 16): RelativePoint[] {
+  return Array.from({ length: count }, (_, index): RelativePoint => {
+    const angle = (index / count) * Math.PI * 2;
+    return [centerX + Math.cos(angle) * radiusX, centerY + Math.sin(angle) * radiusY];
+  });
+}
 
 export class SchatzMergeEngine {
   private readonly engine = Engine.create({ enableSleeping: true });
@@ -148,9 +189,11 @@ export class SchatzMergeEngine {
   drop(tier: number, x: number): void {
     if (this.gameOver) return;
     const safeTier = Math.max(1, Math.min(TREASURES.length, tier));
-    const body = this.createTreasureBody(safeTier, this.clampX(x, safeTier), this.spawnY(safeTier));
+    const safeX = this.clampX(x, safeTier);
+    const y = this.spawnY(safeTier);
+    const body = this.createTreasureBody(safeTier, safeX, y);
     WorldAdd(this.engine.world, body);
-    this.bodies.set(body.id, { tier: safeTier, merged: false });
+    this.bodies.set(body.id, this.createBodyMeta(safeTier, body, safeX, y));
     this.callbacks.onDrop();
   }
 
@@ -234,7 +277,7 @@ export class SchatzMergeEngine {
 
     for (const body of Composite.allBodies(this.engine.world)) {
       const meta = this.bodies.get(body.id);
-      if (meta) this.drawBody(context, body, meta.tier);
+      if (meta) this.drawBody(context, body, meta);
     }
 
     for (const particle of this.particles) {
@@ -279,9 +322,14 @@ export class SchatzMergeEngine {
   private halfWidthForTier(tier: number): number {
     const radius = this.radiusForTier(tier);
     const colliderType = TREASURES[tier - 1].colliderType;
-    if (colliderType === "stack") return radius * 1.125;
-    if (colliderType === "box") return radius * 1.025;
-    if (colliderType === "wide") return radius * 1.15;
+    if (colliderType === "circle") return radius * 0.9;
+    if (colliderType === "stack") return radius * 0.92;
+    if (colliderType === "box") return radius * (tier === 7 ? 0.83 : 1.02);
+    if (colliderType === "wide") {
+      if (tier === 11) return radius * 0.99;
+      if (tier === 12) return radius * 0.97;
+      return radius * 0.95;
+    }
     return radius;
   }
 
@@ -302,13 +350,67 @@ export class SchatzMergeEngine {
       sleepThreshold: 50,
     };
 
-    if (definition.colliderType === "circle") return Bodies.circle(x, y, radius, options, 16);
-    if (definition.colliderType === "stack") return Bodies.rectangle(x, y, radius * 2.25, radius * 1.32, options);
-    if (definition.colliderType === "box") return Bodies.rectangle(x, y, radius * 2.05, radius * 1.6, options);
-    if (definition.colliderType === "wide") return Bodies.rectangle(x, y, radius * 2.3, radius * 1.5, options);
-    const points = SHAPES[definition.colliderType].map(([px, py]) => ({ x: x + px * radius, y: y + py * radius }));
-    const body = Bodies.fromVertices(x, y, [points], options, true);
-    return body ?? Bodies.circle(x, y, radius, options, 10);
+    if (definition.colliderType === "circle") return Bodies.circle(x, y, radius * 0.9, options, 16);
+    if (definition.colliderType === "stack") {
+      const parts = [
+        createPolygonBody(x, y, radius, ellipsePoints(0, -0.16, 0.88, 0.35), options),
+        createPolygonBody(x, y, radius, ellipsePoints(0, 0.22, 0.88, 0.35), options),
+      ];
+      return createCompoundBody(x, y, parts, options);
+    }
+    if (definition.colliderType === "box") {
+      const width = tier === 7 ? 1.66 : 2.04;
+      const height = tier === 7 ? 1.46 : 1.76;
+      return Bodies.rectangle(x, y, radius * width, radius * height, options);
+    }
+    if (definition.colliderType === "goblet") {
+      const parts = [
+        createPolygonBody(x, y, radius, [
+          [-0.72, -0.79], [-0.47, -0.08], [-0.22, 0.2], [0.22, 0.2], [0.47, -0.08], [0.72, -0.79],
+        ], options),
+        createPolygonBody(x, y, radius, ellipsePoints(0, -0.76, 0.72, 0.22), options),
+        Bodies.rectangle(x, y + radius * 0.36, radius * 0.36, radius * 0.38, options),
+        createPolygonBody(x, y, radius, [
+          [-0.18, 0.49], [0.18, 0.49], [0.52, 0.58], [0.7, 0.82], [0.55, 0.87], [-0.55, 0.87], [-0.7, 0.82], [-0.52, 0.58],
+        ], options),
+      ];
+      return createCompoundBody(x, y, parts, options);
+    }
+    if (definition.colliderType === "wide" && tier === 9) {
+      const parts = [
+        createPolygonBody(x, y, radius, [[-0.9, -0.22], [-0.82, -0.78], [-0.34, -0.35], [-0.26, 0.3], [-0.75, 0.58]], options),
+        createPolygonBody(x, y, radius, [[-0.34, -0.35], [0, -0.98], [0.34, -0.35], [0.55, 0.3], [-0.55, 0.3]], options),
+        createPolygonBody(x, y, radius, [[0.34, -0.35], [0.82, -0.78], [0.9, -0.22], [0.75, 0.58], [0.26, 0.3]], options),
+        Bodies.rectangle(x, y + radius * 0.39, radius * 1.5, radius * 0.3, options),
+      ];
+      return createCompoundBody(x, y, parts, options);
+    }
+    if (definition.colliderType === "wide" && tier === 11) {
+      return createPolygonBody(x, y, radius, ellipsePoints(0, 0.25, 0.985, 0.665), options);
+    }
+    if (definition.colliderType === "wide" && tier === 12) {
+      const parts = [
+        Bodies.rectangle(x, y - radius * 0.5, radius * 1.26, radius * 0.84, options),
+        Bodies.rectangle(x, y + radius * 0.09, radius * 1.04, radius * 0.68, options),
+        Bodies.rectangle(x - radius * 0.74, y + radius * 0.18, radius * 0.36, radius * 0.68, options),
+        Bodies.rectangle(x + radius * 0.74, y + radius * 0.18, radius * 0.36, radius * 0.68, options),
+        Bodies.rectangle(x, y + radius * 0.23, radius * 1.5, radius * 0.22, options),
+        Bodies.rectangle(x - radius * 0.555, y + radius * 0.635, radius * 0.17, radius * 0.55, options),
+        Bodies.rectangle(x + radius * 0.555, y + radius * 0.635, radius * 0.17, radius * 0.55, options),
+      ];
+      return createCompoundBody(x, y, parts, options);
+    }
+    if (definition.colliderType === "wide") return Bodies.rectangle(x, y, radius * 1.9, radius * 1.7, options);
+    return createPolygonBody(x, y, radius, SHAPES[definition.colliderType], options);
+  }
+
+  private createBodyMeta(tier: number, body: Matter.Body, anchorX: number, anchorY: number, merged = false): BodyMeta {
+    return {
+      tier,
+      merged,
+      renderOffsetXFactor: (anchorX - body.position.x) / this.radiusForTier(tier),
+      renderOffsetYFactor: (anchorY - body.position.y) / this.radiusForTier(tier),
+    };
   }
 
   private rebuildWalls(): void {
@@ -323,7 +425,9 @@ export class SchatzMergeEngine {
     Composite.add(this.engine.world, this.walls);
   }
 
-  private tryMerge(first: Matter.Body, second: Matter.Body): boolean {
+  private tryMerge(firstPart: Matter.Body, secondPart: Matter.Body): boolean {
+    const first = firstPart.parent ?? firstPart;
+    const second = secondPart.parent ?? secondPart;
     const firstMeta = this.bodies.get(first.id);
     const secondMeta = this.bodies.get(second.id);
     if (!firstMeta || !secondMeta || firstMeta.merged || secondMeta.merged || firstMeta.tier !== secondMeta.tier) return false;
@@ -347,7 +451,7 @@ export class SchatzMergeEngine {
       Body.setVelocity(merged, velocity);
       Body.setAngularVelocity(merged, angularVelocity);
       Composite.add(this.engine.world, merged);
-      this.bodies.set(merged.id, { tier: nextTier, merged: false });
+      this.bodies.set(merged.id, this.createBodyMeta(nextTier, merged, x, y));
     }
 
     this.pops.push({ x, y, tier, time: 0, duration: tier >= 8 ? 660 : 420 });
@@ -356,7 +460,9 @@ export class SchatzMergeEngine {
     return true;
   }
 
-  private tryImpact(first: Matter.Body, second: Matter.Body): void {
+  private tryImpact(firstPart: Matter.Body, secondPart: Matter.Body): void {
+    const first = firstPart.parent ?? firstPart;
+    const second = secondPart.parent ?? secondPart;
     const meta = this.bodies.get(first.id) ?? this.bodies.get(second.id);
     if (!meta || this.elapsed - this.lastImpactAt < 150) return;
     const relativeSpeed = Vector.magnitude(Vector.sub(first.velocity, second.velocity));
@@ -417,7 +523,8 @@ export class SchatzMergeEngine {
     }
   }
 
-  private drawBody(context: CanvasRenderingContext2D, body: Matter.Body, tier: number): void {
+  private drawBody(context: CanvasRenderingContext2D, body: Matter.Body, meta: BodyMeta): void {
+    const { tier } = meta;
     const pop = this.pops.find((effect) => effect.tier === tier && Math.hypot(effect.x - body.position.x, effect.y - body.position.y) < this.radiusForTier(tier) * (tier >= 8 ? 3.4 : 2.4));
     let scale = 1;
     if (pop) {
@@ -427,6 +534,10 @@ export class SchatzMergeEngine {
     context.save();
     context.translate(body.position.x, body.position.y);
     context.rotate(body.angle);
+    context.translate(
+      this.radiusForTier(tier) * meta.renderOffsetXFactor,
+      this.radiusForTier(tier) * meta.renderOffsetYFactor,
+    );
     context.scale(scale, scale);
     context.shadowColor = tier >= 8 ? "#ffc95799" : "#050d1a88";
     context.shadowBlur = tier >= 8 ? 19 : 9;
