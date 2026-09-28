@@ -592,6 +592,11 @@ function WorldAdd(world: Matter.World, body: Matter.Body): void {
   Composite.add(world, body);
 }
 
+export function drawTreasureIcon(context: CanvasRenderingContext2D, tier: number, x: number, y: number, radius: number): void {
+  const safeTier = Math.max(1, Math.min(TREASURES.length, Math.trunc(tier)));
+  drawTreasure(context, safeTier, x, y, radius);
+}
+
 function roundedBox(context: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number): void {
   context.beginPath();
   context.roundRect(x, y, width, height, radius);

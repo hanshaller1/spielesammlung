@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { sitePath } from "../site-paths";
 import { DropShuffleBag } from "./drop-shuffle-bag";
-import { SchatzMergeEngine, TREASURES, type MergeEvent } from "./engine";
+import { drawTreasureIcon, SchatzMergeEngine, TREASURES, type MergeEvent } from "./engine";
 
 type Mode = "ready" | "playing" | "paused" | "over";
 
@@ -17,6 +17,25 @@ function loadHighScore(): number {
   } catch {
     return 0;
   }
+}
+
+function TreasureGuideIcon({ tier }: { tier: number }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const context = canvas?.getContext("2d");
+    if (!canvas || !context) return;
+    const size = 28;
+    const pixelRatio = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = size * pixelRatio;
+    canvas.height = size * pixelRatio;
+    context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    context.clearRect(0, 0, size, size);
+    drawTreasureIcon(context, tier, size / 2, size / 2, 10.5);
+  }, [tier]);
+
+  return <canvas ref={canvasRef} className="treasure-guide-icon" aria-hidden="true" />;
 }
 
 export default function SchatzMergePage() {
@@ -264,8 +283,8 @@ export default function SchatzMergePage() {
             <h2>Schatzfolge</h2>
             <ol>
               {TREASURES.map((treasure, index) => (
-                <li className={currentTier === treasure.tier ? "treasure-guide-current" : ""} key={treasure.id}>
-                  <span>{TREASURE_SYMBOLS[index]}</span>
+                <li aria-label={`${treasure.name}, Stufe ${treasure.tier}`} className={currentTier === treasure.tier ? "treasure-guide-current" : ""} key={treasure.id}>
+                  <span className="treasure-guide-art"><TreasureGuideIcon tier={treasure.tier} /></span>
                   <span>{treasure.name}</span>
                   {index < TREASURES.length - 1 && <b aria-hidden="true">↓</b>}
                 </li>
