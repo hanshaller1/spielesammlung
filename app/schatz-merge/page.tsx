@@ -222,7 +222,7 @@ export default function SchatzMergePage() {
         </div>
 
         <div className="treasure-layout">
-          <aside className="treasure-side treasure-side-left" aria-label="Spielmenü">
+          <div className="treasure-toolbar">
             <div className="treasure-controls" aria-label="Spielsteuerung">
               {mode === "playing"
                 ? <button type="button" onClick={() => { modeRef.current = "paused"; setMode("paused"); }}>Ⅱ Pause</button>
@@ -233,7 +233,34 @@ export default function SchatzMergePage() {
               <button type="button" aria-pressed={soundEnabled} onClick={() => setSoundEnabled((value) => !value)}>{soundEnabled ? "♫ Ton an" : "♫ Ton aus"}</button>
               <button className="treasure-guide-toggle" type="button" aria-expanded={showGuide} onClick={() => setShowGuide((value) => !value)}>◆ Schatzfolge</button>
             </div>
-          </aside>
+            <div className="treasure-item-preview-row" aria-label="Aktueller und nächster Schatz">
+              <section className="treasure-current-card" aria-live="polite">
+                <span className="treasure-card-eyebrow">AKTUELL</span>
+                <span className="treasure-current-symbol" aria-hidden="true">{TREASURE_SYMBOLS[currentTier - 1]}</span>
+                <strong>{currentDefinition.name}</strong>
+                <small>Stufe {currentTier}</small>
+              </section>
+              <section className="treasure-next-card" aria-live="polite">
+                <span className="treasure-card-eyebrow">ALS NÄCHSTES</span>
+                <span className="treasure-next-symbol" aria-hidden="true">{TREASURE_SYMBOLS[nextTier - 1]}</span>
+                <strong>{nextDefinition.name}</strong>
+                <small>Stufe {nextTier}</small>
+              </section>
+            </div>
+          </div>
+
+          <div className={`treasure-guide ${showGuide ? "treasure-guide-open" : ""}`}>
+            <h2>Schatzfolge</h2>
+            <ol>
+              {TREASURES.map((treasure, index) => (
+                <li className={currentTier === treasure.tier ? "treasure-guide-current" : ""} key={treasure.id}>
+                  <span>{TREASURE_SYMBOLS[index]}</span>
+                  <span>{treasure.name}</span>
+                  {index < TREASURES.length - 1 && <b aria-hidden="true">↓</b>}
+                </li>
+              ))}
+            </ol>
+          </div>
 
           <section className="treasure-board-column" aria-label="Schatz-Merge-Spielfeld">
             <div className="treasure-board" onPointerMove={(event) => movePreview(event.clientX, event.currentTarget)} onPointerDown={(event) => { if (modeRef.current !== "playing") return; movePreview(event.clientX, event.currentTarget); event.currentTarget.setPointerCapture(event.pointerId); }} onPointerUp={(event) => { if (modeRef.current !== "playing") return; movePreview(event.clientX, event.currentTarget); dropCurrent(); }} onKeyDown={handleKeyDown}>
@@ -267,35 +294,7 @@ export default function SchatzMergePage() {
                 </div>
               )}
             </div>
-            <p className="treasure-instruction">Bewege die Führung mit Maus, Finger oder Stift. Loslassen lässt den aktuellen Schatz fallen.</p>
           </section>
-
-          <aside className="treasure-side treasure-side-right" aria-label="Nächster und aktueller Schatz">
-            <section className="treasure-next-card" aria-live="polite">
-              <span className="treasure-card-eyebrow">ALS NÄCHSTES</span>
-              <span className="treasure-next-symbol" aria-hidden="true">{TREASURE_SYMBOLS[nextTier - 1]}</span>
-              <strong>{nextDefinition.name}</strong>
-              <small>Stufe {nextTier}</small>
-            </section>
-            <section className="treasure-current-card" aria-live="polite">
-              <span className="treasure-card-eyebrow">AKTUELL</span>
-              <span className="treasure-current-symbol" aria-hidden="true">{TREASURE_SYMBOLS[currentTier - 1]}</span>
-              <strong>{currentDefinition.name}</strong>
-              <small>Stufe {currentTier}</small>
-            </section>
-            <div className={`treasure-guide ${showGuide ? "treasure-guide-open" : ""}`}>
-              <h2>Schatzfolge</h2>
-              <ol>
-                {TREASURES.map((treasure, index) => (
-                  <li className={currentTier === treasure.tier ? "treasure-guide-current" : ""} key={treasure.id}>
-                    <span>{TREASURE_SYMBOLS[index]}</span>
-                    <span>{treasure.name}</span>
-                    {index < TREASURES.length - 1 && <b aria-hidden="true">↓</b>}
-                  </li>
-                ))}
-              </ol>
-            </div>
-          </aside>
         </div>
       </div>
     </main>

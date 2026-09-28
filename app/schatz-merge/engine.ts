@@ -308,12 +308,20 @@ export class SchatzMergeEngine {
 
     if (preview) {
       const x = this.clampX(preview.x, preview.tier);
+      const radius = this.radiusForTier(preview.tier);
+      const y = Math.max(radius + 17, height * 0.075);
+      context.save();
+      context.globalAlpha = 0.94;
+      context.shadowColor = "#ffe5a0";
+      context.shadowBlur = 18;
+      drawTreasure(context, preview.tier, x, y, radius);
+      context.restore();
       context.save();
       context.globalAlpha = 0.38;
       context.strokeStyle = "#ffe9b2";
       context.setLineDash([3, 6]);
       context.beginPath();
-      context.moveTo(x, this.dangerLine + 7);
+      context.moveTo(x, y + radius + 7);
       context.lineTo(x, height - 18);
       context.stroke();
       context.restore();
