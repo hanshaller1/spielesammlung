@@ -9,6 +9,20 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.2",
+    title: "Schatz-Merge: größere Stufen und faire Drops",
+    date: "28. September 2026",
+    changes: [
+      "Die zwölf Schatzstufen wachsen pro Merge deutlich stärker; Grafik, Collider und Physikgröße verwenden dieselbe Progression.",
+      "Ein Shuffle-Bag gibt die ersten sechs Stufen je einmal pro Pool in zufälliger Reihenfolge aus; höhere Stufen entstehen weiterhin nur durch Merges.",
+      "Grundradius und Dichtefaktoren sind auf größere und gleichmäßiger verteilte Drops abgestimmt.",
+    ],
+    commits: [
+      { id: "f7ab9d2", description: "Schatz-Merge: Größenprogression für alle zwölf Stufen verstärken" },
+      { id: "5c07d11", description: "Schatz-Merge: Sechs Drop-Stufen per Shuffle-Bag ausgeben" },
+    ],
+  },
+  {
     version: "0.4.1",
     title: "Schatz-Merge mit zwölf Schatzstufen",
     date: "28. September 2026",
