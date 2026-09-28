@@ -39,7 +39,7 @@ export default function SchatzMergePage() {
   const [currentTier, setCurrentTier] = useState(1);
   const [nextTier, setNextTier] = useState(1);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [showGuide, setShowGuide] = useState(false);
+  const [showGuide, setShowGuide] = useState(true);
   const [dropBag] = useState(() => new DropShuffleBag());
 
   modeRef.current = mode;

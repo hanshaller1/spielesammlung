@@ -427,6 +427,20 @@ h1 { margin:0; font-size:clamp(1.9rem,6vw,3.4rem); line-height:1; letter-spacing
   .treasure-guide ol { grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 
+@media (max-width:600px) {
+  .treasure-layout-guide-open { display:flex; flex-direction:column; }
+  .treasure-layout-guide-open .treasure-board-column { order:1; }
+  .treasure-layout-guide-open .treasure-guide { order:2; width:100%; max-height:none; padding:4px 5px; overflow:visible; }
+  .treasure-layout-guide-open .treasure-guide h2 { margin:0; font-size:0; }
+  .treasure-layout-guide-open .treasure-guide ol { display:grid; grid-template-columns:repeat(12,minmax(0,1fr)); gap:0; }
+  .treasure-layout-guide-open .treasure-guide li { min-width:0; min-height:30px; justify-content:center; padding:0; }
+  .treasure-layout-guide-open .treasure-guide li > span:first-child { width:auto; font-size:clamp(.78rem,4vw,1.25rem); line-height:1; }
+  .treasure-layout-guide-open .treasure-guide li > span:nth-child(2),
+  .treasure-layout-guide-open .treasure-guide li > b { display:none; }
+  .treasure-layout-guide-open .treasure-guide .treasure-guide-current { border-radius:6px; background:#e2aa4530; }
+  .treasure-layout-guide-open .treasure-board { width:min(43svh,90vw,620px); max-width:none; }
+}
+
 @media (max-height:520px) and (orientation:landscape) {
   .treasure-game-shell { padding:5px 10px; }
   .treasure-game-card { padding:7px 10px; }
