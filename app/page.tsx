@@ -52,7 +52,7 @@ export default function Home() {
         <p className="eyebrow">SPIELESAMMLUNG</p>
         <div className="home-title-row">
           <h1 id="home-title">Hanna&apos;s Spiele</h1>
-          <small className="home-version">(v0.4.3)</small>
+          <small className="home-version">(v0.4.4)</small>
         </div>
         <p className="home-intro">Welches Spiel möchtest du spielen?</p>
 

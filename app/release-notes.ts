@@ -9,6 +9,16 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.4",
+    title: "Größere Ausgangsgrößen für alle Schätze",
+    date: "28. September 2026",
+    changes: [
+      "Der gemeinsame Grundradius aller zwölf Schatzstufen wurde exakt um Faktor 1,6 erhöht.",
+      "Rendergröße, Collider und daraus resultierende Physikmasse skalieren gemeinsam; die abgestufte Größenprogression bleibt erhalten.",
+    ],
+    commits: [{ id: "d57a00c", description: "Schatz-Merge: Grundgrößen aller Stufen um Faktor 1,6 erhöhen" }],
+  },
+  {
     version: "0.4.3",
     title: "Deutlicheres Wachstum der frühen Schatzstufen",
     date: "28. September 2026",
