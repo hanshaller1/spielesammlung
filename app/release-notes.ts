@@ -9,6 +9,16 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.14",
+    title: "Schatz-Merge-PC-Layout verkleinert",
+    date: "28. September 2026",
+    changes: [
+      "Auf dem PC ist die äußere Spielkarte auf maximal 800 px begrenzt und damit etwa halb so breit wie zuvor.",
+      "Das Smartphone-Spielbrett bleibt beim Öffnen der Schatzfolge mittig; der Scrollbar-Gutter bleibt über beide Zustände konstant.",
+    ],
+    commits: [{ id: "5b7b249", description: "Schatz-Merge: PC-Spielpanel kompakter darstellen" }],
+  },
+  {
     version: "0.4.13",
     title: "Schatz-Merge-Boardgrößen stabilisiert",
     date: "28. September 2026",
