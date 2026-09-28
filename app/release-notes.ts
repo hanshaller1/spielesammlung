@@ -9,6 +9,16 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.5",
+    title: "Passgenauere Schatz-Kollisionsformen",
+    date: "28. September 2026",
+    changes: [
+      "Die Kollisionsformen orientieren sich enger an den sichtbaren Schatzkonturen; überbreite unsichtbare Kanten wurden reduziert.",
+      "Münzstapel, Kelch, Krone und Thron verwenden passende Teilformen statt großer Füllrechtecke.",
+    ],
+    commits: [{ id: "829201f", description: "Schatz-Merge: Kollisionskonturen an sichtbare Formen angleichen" }],
+  },
+  {
     version: "0.4.4",
     title: "Größere Ausgangsgrößen für alle Schätze",
     date: "28. September 2026",
