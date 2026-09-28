@@ -9,6 +9,16 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.11",
+    title: "Schatzfolge mobil platzsparend anzeigen",
+    date: "28. September 2026",
+    changes: [
+      "Die Schatzfolge ist beim Spielstart geöffnet.",
+      "Auf Smartphones erscheint sie als horizontale Reihe gleich großer Icons unter dem Spielfeld, ohne das Spielfeld zu verkleinern.",
+    ],
+    commits: [{ id: "0cbb1b7", description: "Schatz-Merge: Schatzfolge mobil kompakt anzeigen" }],
+  },
+  {
     version: "0.4.10",
     title: "Schatz-Merge-Vorschaukarten vereinheitlicht",
     date: "28. September 2026",
