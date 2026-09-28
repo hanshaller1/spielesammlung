@@ -9,6 +9,16 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.6",
+    title: "Compound-Collider bleiben am richtigen Ort",
+    date: "28. September 2026",
+    changes: [
+      "Zusammengesetzte Schatz-Collider werden ohne doppelte Weltkoordinaten erzeugt; Merge- und Boden-Kontakte werden wieder erkannt.",
+      "Regressionen für den Münzstapel-Merge und eine Goldmünze am rechten Rand auf einem Schatzkästchen ergänzt.",
+    ],
+    commits: [{ id: "f36da6c", description: "Schatz-Merge: Compound-Collider an Weltkoordinaten ausrichten" }],
+  },
+  {
     version: "0.4.5",
     title: "Passgenauere Schatz-Kollisionsformen",
     date: "28. September 2026",
