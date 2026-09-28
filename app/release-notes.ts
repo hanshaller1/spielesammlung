@@ -9,6 +9,20 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.12",
+    title: "Schatz-Merge-Panels und Desktoplayout verbessert",
+    date: "28. September 2026",
+    changes: [
+      "Aktuell- und Als-Nächstes-Panels bleiben beim Ein- und Ausblenden der Schatzfolge gleich breit und hoch; kleinere Schrift hält die Schatznamen lesbar.",
+      "Die Vorschauleiste nutzt die gesamte Kartenbreite, während Spielfeld und Schatzfolge darunter kompakt zentriert bleiben.",
+      "Die Schatzfolge verwendet dieselben gezeichneten Schatzgrafiken wie das Spielfeld.",
+    ],
+    commits: [
+      { id: "aad924b", description: "Schatz-Merge: Desktoplayout und Schatzgrafiken optimieren" },
+      { id: "1a6d524", description: "Schatz-Merge: Vorschaupanels konstant breit halten" },
+    ],
+  },
+  {
     version: "0.4.11",
     title: "Schatzfolge mobil platzsparend anzeigen",
     date: "28. September 2026",
