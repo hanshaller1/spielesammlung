@@ -35,6 +35,14 @@ const games: Array<{
     description: "Sammle Gold und lenke den Zwerg sicher durch den Tunnel.",
     meta: "Gold sammeln",
   },
+  {
+    href: sitePath("/schatz-merge"),
+    icon: "👑🪙💎",
+    iconClass: "home-treasure",
+    title: "Schatz-Merge",
+    description: "Lass Schätze fallen und verbinde gleiche Gegenstände.",
+    meta: "12 Schatzstufen",
+  },
 ];
 
 export default function Home() {
