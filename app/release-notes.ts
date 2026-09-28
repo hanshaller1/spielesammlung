@@ -9,6 +9,72 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.6",
+    title: "Compound-Collider bleiben am richtigen Ort",
+    date: "28. September 2026",
+    changes: [
+      "Zusammengesetzte Schatz-Collider werden ohne doppelte Weltkoordinaten erzeugt; Merge- und Boden-Kontakte werden wieder erkannt.",
+      "Regressionen für den Münzstapel-Merge und eine Goldmünze am rechten Rand auf einem Schatzkästchen ergänzt.",
+    ],
+    commits: [{ id: "f36da6c", description: "Schatz-Merge: Compound-Collider an Weltkoordinaten ausrichten" }],
+  },
+  {
+    version: "0.4.5",
+    title: "Passgenauere Schatz-Kollisionsformen",
+    date: "28. September 2026",
+    changes: [
+      "Die Kollisionsformen orientieren sich enger an den sichtbaren Schatzkonturen; überbreite unsichtbare Kanten wurden reduziert.",
+      "Münzstapel, Kelch, Krone und Thron verwenden passende Teilformen statt großer Füllrechtecke.",
+    ],
+    commits: [{ id: "829201f", description: "Schatz-Merge: Kollisionskonturen an sichtbare Formen angleichen" }],
+  },
+  {
+    version: "0.4.4",
+    title: "Größere Ausgangsgrößen für alle Schätze",
+    date: "28. September 2026",
+    changes: [
+      "Der gemeinsame Grundradius aller zwölf Schatzstufen wurde exakt um Faktor 1,6 erhöht.",
+      "Rendergröße, Collider und daraus resultierende Physikmasse skalieren gemeinsam; die abgestufte Größenprogression bleibt erhalten.",
+    ],
+    commits: [{ id: "d57a00c", description: "Schatz-Merge: Grundgrößen aller Stufen um Faktor 1,6 erhöhen" }],
+  },
+  {
+    version: "0.4.3",
+    title: "Deutlicheres Wachstum der frühen Schatzstufen",
+    date: "28. September 2026",
+    changes: [
+      "Die Größenfaktoren der Stufen 1 bis 5 springen jetzt um jeweils etwa 22 Prozent pro Merge.",
+      "Die späteren Stufen wachsen weiterhin kontrolliert um etwa 15 Prozent je Merge bis zum Thron.",
+      "Der Grundradius wurde leicht reduziert, um die stärkeren frühen Drops im Behälter auszubalancieren.",
+    ],
+    commits: [{ id: "b17bf72", description: "Schatz-Merge: Zuwachs der ersten fünf Stufen verstärken" }],
+  },
+  {
+    version: "0.4.2",
+    title: "Schatz-Merge: größere Stufen und faire Drops",
+    date: "28. September 2026",
+    changes: [
+      "Die zwölf Schatzstufen wachsen pro Merge deutlich stärker; Grafik, Collider und Physikgröße verwenden dieselbe Progression.",
+      "Ein Shuffle-Bag gibt die ersten sechs Stufen je einmal pro Pool in zufälliger Reihenfolge aus; höhere Stufen entstehen weiterhin nur durch Merges.",
+      "Grundradius und Dichtefaktoren sind auf größere und gleichmäßiger verteilte Drops abgestimmt.",
+    ],
+    commits: [
+      { id: "f7ab9d2", description: "Schatz-Merge: Größenprogression für alle zwölf Stufen verstärken" },
+      { id: "5c07d11", description: "Schatz-Merge: Sechs Drop-Stufen per Shuffle-Bag ausgeben" },
+    ],
+  },
+  {
+    version: "0.4.1",
+    title: "Schatz-Merge mit zwölf Schatzstufen",
+    date: "28. September 2026",
+    changes: [
+      "Schatz-Merge ergänzt die Spielesammlung als eigenständiges, responsives Merge-Spiel.",
+      "Zwölf Schatzformen verbinden sich durch Matter.js-Physik; Kettenreaktionen und ein besonderes Thron-Finale sind enthalten.",
+      "Maus-, Touch- und Stiftsteuerung, Punkte, lokaler Highscore, Pause, Neustart, Game Over, Partikel und abschaltbare Sounds sind integriert.",
+    ],
+    commits: [{ id: "a07bdff", description: "Schatz-Merge: Zwölfstufiges Merge-Spiel integrieren" }],
+  },
+  {
     version: "0.4.0",
     title: "Zuverlässiger Musikwechsel zwischen Leveltypen",
     date: "5. September 2026",

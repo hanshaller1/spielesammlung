@@ -35,6 +35,14 @@ const games: Array<{
     description: "Sammle Gold und lenke den Zwerg sicher durch den Tunnel.",
     meta: "Gold sammeln",
   },
+  {
+    href: sitePath("/schatz-merge"),
+    icon: "👑🪙💎",
+    iconClass: "home-treasure",
+    title: "Schatz-Merge",
+    description: "Lass Schätze fallen und verbinde gleiche Gegenstände.",
+    meta: "12 Schatzstufen",
+  },
 ];
 
 export default function Home() {
@@ -44,7 +52,7 @@ export default function Home() {
         <p className="eyebrow">SPIELESAMMLUNG</p>
         <div className="home-title-row">
           <h1 id="home-title">Hanna&apos;s Spiele</h1>
-          <small className="home-version">(v0.4.0)</small>
+          <small className="home-version">(v0.4.6)</small>
         </div>
         <p className="home-intro">Welches Spiel möchtest du spielen?</p>
 
