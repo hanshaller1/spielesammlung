@@ -8,8 +8,6 @@ import { drawTreasureIcon, SchatzMergeEngine, TREASURES, type MergeEvent } from 
 type Mode = "ready" | "playing" | "paused" | "over";
 
 const HIGH_SCORE_KEY = "hannas-spiele-schatz-merge-highscore";
-const TREASURE_SYMBOLS = ["🟡", "🪙", "🪙", "💎", "🔴", "💰", "🧰", "🏆", "👑", "🧰", "💎", "🪑"];
-
 function loadHighScore(): number {
   try {
     const value = Number(window.localStorage.getItem(HIGH_SCORE_KEY));
@@ -19,23 +17,22 @@ function loadHighScore(): number {
   }
 }
 
-function TreasureGuideIcon({ tier }: { tier: number }) {
+function TreasureArtIcon({ tier, size, className }: { tier: number; size: number; className: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const context = canvas?.getContext("2d");
     if (!canvas || !context) return;
-    const size = 28;
     const pixelRatio = Math.min(2, window.devicePixelRatio || 1);
     canvas.width = size * pixelRatio;
     canvas.height = size * pixelRatio;
     context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
     context.clearRect(0, 0, size, size);
-    drawTreasureIcon(context, tier, size / 2, size / 2, 10.5);
-  }, [tier]);
+    drawTreasureIcon(context, tier, size / 2, size / 2, size * 0.375);
+  }, [tier, size]);
 
-  return <canvas ref={canvasRef} className="treasure-guide-icon" aria-hidden="true" />;
+  return <canvas ref={canvasRef} className={className} aria-hidden="true" />;
 }
 
 export default function SchatzMergePage() {
@@ -268,12 +265,12 @@ export default function SchatzMergePage() {
             <div className="treasure-item-preview-row" aria-label="Aktueller und nächster Schatz">
               <section className="treasure-current-card" aria-live="polite">
                 <span className="treasure-card-eyebrow">AKTUELL</span>
-                <span className="treasure-current-symbol" aria-hidden="true">{TREASURE_SYMBOLS[currentTier - 1]}</span>
+                <span className="treasure-current-symbol" aria-hidden="true"><TreasureArtIcon tier={currentTier} size={40} className="treasure-preview-icon" /></span>
                 <strong>{currentDefinition.name}</strong>
               </section>
               <section className="treasure-next-card" aria-live="polite">
                 <span className="treasure-card-eyebrow">ALS NÄCHSTES</span>
-                <span className="treasure-next-symbol" aria-hidden="true">{TREASURE_SYMBOLS[nextTier - 1]}</span>
+                <span className="treasure-next-symbol" aria-hidden="true"><TreasureArtIcon tier={nextTier} size={40} className="treasure-preview-icon" /></span>
                 <strong>{nextDefinition.name}</strong>
               </section>
             </div>
@@ -284,7 +281,7 @@ export default function SchatzMergePage() {
             <ol>
               {TREASURES.map((treasure, index) => (
                 <li aria-label={`${treasure.name}, Stufe ${treasure.tier}`} className={currentTier === treasure.tier ? "treasure-guide-current" : ""} key={treasure.id}>
-                  <span className="treasure-guide-art"><TreasureGuideIcon tier={treasure.tier} /></span>
+                  <span className="treasure-guide-art"><TreasureArtIcon tier={treasure.tier} size={28} className="treasure-guide-icon" /></span>
                   <span>{treasure.name}</span>
                   {index < TREASURES.length - 1 && <b aria-hidden="true">↓</b>}
                 </li>
