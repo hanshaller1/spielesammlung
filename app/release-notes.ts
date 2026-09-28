@@ -9,6 +9,16 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.10",
+    title: "Schatz-Merge-Vorschaukarten vereinheitlicht",
+    date: "28. September 2026",
+    changes: [
+      "Die Panels Aktuell und Als Nächstes haben gleiche, feste Abmessungen pro Bildschirmgröße.",
+      "Die Stufenangabe wurde aus beiden Panels entfernt.",
+    ],
+    commits: [{ id: "9655d43", description: "Schatz-Merge: Vorschaukarten vereinheitlichen" }],
+  },
+  {
     version: "0.4.9",
     title: "Schatz-Merge-Eingabe und Vorschau korrigiert",
     date: "28. September 2026",
