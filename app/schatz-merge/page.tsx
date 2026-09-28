@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { sitePath } from "../site-paths";
-import { randomDropTier, SchatzMergeEngine, TREASURES, type MergeEvent } from "./engine";
+import { DropShuffleBag } from "./drop-shuffle-bag";
+import { SchatzMergeEngine, TREASURES, type MergeEvent } from "./engine";
 
 type Mode = "ready" | "playing" | "paused" | "over";
 
@@ -38,6 +39,7 @@ export default function SchatzMergePage() {
   const [lastMerge, setLastMerge] = useState("");
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [showGuide, setShowGuide] = useState(false);
+  const [dropBag] = useState(() => new DropShuffleBag());
 
   modeRef.current = mode;
   currentTierRef.current = currentTier;
@@ -156,12 +158,13 @@ export default function SchatzMergePage() {
 
   const startRun = () => {
     engineRef.current?.reset();
+    dropBag.reset();
     scoreRef.current = 0;
     setScore(0);
     setChain(0);
     setLastMerge("");
-    const first = randomDropTier();
-    const second = randomDropTier();
+    const first = dropBag.next();
+    const second = dropBag.next();
     currentTierRef.current = first;
     nextTierRef.current = second;
     setCurrentTier(first);
@@ -177,7 +180,7 @@ export default function SchatzMergePage() {
     if (!game) return;
     game.drop(currentTierRef.current, previewXRef.current);
     const promoted = nextTierRef.current;
-    const following = randomDropTier();
+    const following = dropBag.next();
     currentTierRef.current = promoted;
     nextTierRef.current = following;
     setCurrentTier(promoted);
