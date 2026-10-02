@@ -9,6 +9,18 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.16",
+    title: "Schatz-Merge flüssiger und physikalisch stabiler",
+    date: "2. Oktober 2026",
+    changes: [
+      "Spielfeld, Vorschau und Schatzfolge verwenden die bereitgestellten PNGs; fremde Randfragmente werden ausschließlich bei der Anzeige ausgeschnitten.",
+      "Gecachte Grafiken und Hintergrund, adaptive Canvas-Auflösung und begrenzte Partikel reduzieren die Renderlast auf schwächeren Tablets.",
+      "Gezieltes Aufwecken nach Support-Merges, passende Collider und begrenzte Kontaktkorrekturen stabilisieren Stapel, Wände und Boden.",
+      "Entwicklerdiagnose, Render- und Physikbenchmarks sowie 14 Tests dokumentieren die Verbesserungen; ausführliche Messwerte stehen im Performance-Bericht.",
+    ],
+    commits: [{ id: "92b46e2", description: "perf(schatz-merge): optimize rendering and physics stability" }],
+  },
+  {
     version: "0.4.15",
     title: "Schatz-Merge-Vorschauicons angeglichen",
     date: "28. September 2026",

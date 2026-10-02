@@ -174,7 +174,7 @@ Das bestehende Portrait-Tablet-Layout vergrößert das Spielfeld beim Verbergen 
 - `scripts/schatz-merge-browser-check.mjs`: Layout, Touch, Assets, Audio und Spielrouten.
 - `scripts/schatz-merge-page-profile.mjs`: Messung der echten Spielseite mit automatischer Qualität.
 - Diese Dokumentation und `docs/benchmarks/schatz-merge-0.4.16.json`.
-- `package.json`, `package-lock.json`, `app/release-notes.ts`: vorgeschriebener Patch-Release.
+- `package.json`, `package-lock.json`, `app/release-notes.ts`, Versionsanzeige in `app/page.tsx`: vorgeschriebener Patch-Release.
 
 ## O. Größter Effekt und Reproduktion
 
