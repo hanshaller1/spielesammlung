@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { sitePath } from "../site-paths";
 import { ACTIVE_LEVEL_SET, createLevelSet, type LevelSet } from "./level-templates";
+import { DwarfViewport, DwarfViewportPanel } from "./viewport";
+import "./viewport.css";
 
 let ACTIVE_RUNTIME_LEVEL_SET: LevelSet = ACTIVE_LEVEL_SET;
 let NORMAL_LEVEL = ACTIVE_RUNTIME_LEVEL_SET.normal;
@@ -2250,7 +2252,7 @@ export default function DwarfsGame() {
   };
 
   return (
-    <main className="game-shell dwarf-game-shell">
+    <DwarfViewport>
       <section className="game-card dwarf-game-card" aria-labelledby="dwarf-title">
         <div className="dwarf-topbar">
           <a className="back-link" href={sitePath("/")}>← Hanna&apos;s Spiele</a>
@@ -2280,21 +2282,27 @@ export default function DwarfsGame() {
             </span>
           </div>
         </header>
+        <div className="dwarf-board-slot">
         <div className="dwarf-board">
           <canvas ref={canvasRef} width={WIDTH} height={HEIGHT} aria-label="Zwerg in einer scrollenden Mine" />
           {paused && <div className="dwarf-pause-panel" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+            <DwarfViewportPanel>
             <div className="pause-mark" aria-hidden="true">Ⅱ</div>
             <h2 id="pause-title">Pause</h2>
             <button className="start-button mine-start-button" onClick={resumeGame}>Weiterspielen</button>
             {developerSettings.enabled && <button className="pause-menu-button developer-pause-button" type="button" onClick={() => setDeveloperDialogOpen(true)}>⚙ Entwickleroptionen</button>}
             <button className="pause-menu-button" type="button" onClick={returnToDwarfMenu}>← Zum Zwergenspielmenü</button>
+            </DwarfViewportPanel>
           </div>}
           {finaleFinished && bossPhase === "completed" && <div className="dwarf-pause-panel" role="dialog" aria-modal="true" aria-labelledby="finale-title">
+            <DwarfViewportPanel>
             <h2 id="finale-title">Krone erobert!</h2>
             <p>Du hast das Abenteuer geschafft!</p>
             <button className="start-button mine-start-button" onClick={start}>Nochmal spielen</button>
             <button className="pause-menu-button" type="button" onClick={returnToDwarfMenu}>← Zum Zwergenspielmenü</button>
+            </DwarfViewportPanel>
           </div>}
+        </div>
         </div>
         <div className="dwarf-controls" aria-label="Bewegungssteuerung">
           <button onPointerDown={() => move(-1)} disabled={!playing || paused || bonusPhase === "climbing" || bossPhase === "entering" || bossPhase === "victory"} aria-label="Nach links bewegen"><b>←</b><span>Links</span></button>
@@ -2302,6 +2310,7 @@ export default function DwarfsGame() {
           <button onPointerDown={() => move(1)} disabled={!playing || paused || bonusPhase === "climbing" || bossPhase === "entering" || bossPhase === "victory"} aria-label="Nach rechts bewegen"><b>→</b><span>Rechts</span></button>
         </div>
         {!playing && <div className="dwarf-start-panel" role="dialog" aria-modal="true" aria-labelledby="dwarf-start-title">
+          <DwarfViewportPanel>
           <div className="dwarf-start-content">
             <a className="dwarf-start-back" href={sitePath("/")}>← Hanna&apos;s Spiele</a>
             <button className="dwarf-mark dwarf-secret-trigger" type="button" onClick={handleSecretDwarfTap} aria-label="Zwerg">
@@ -2356,8 +2365,10 @@ export default function DwarfsGame() {
               <button className="reset-button" type="button" onClick={resetHighscore}>Highscore zurücksetzen</button>
             </div>
           </div>
+          </DwarfViewportPanel>
         </div>}
         {developerDialogOpen && <div className="developer-dialog-backdrop" onPointerDown={() => setDeveloperDialogOpen(false)}>
+            <DwarfViewportPanel>
             <div className="developer-dialog" role="dialog" aria-modal="true" aria-labelledby="developer-title" onPointerDown={(event) => event.stopPropagation()}>
               <div className="developer-dialog-header">
                 <div><span>VERSTECKTE MINENKONSOLE</span><h2 id="developer-title">Entwickleroptionen</h2></div>
@@ -2434,8 +2445,9 @@ export default function DwarfsGame() {
                 <button className="developer-close" type="button" onClick={() => setDeveloperDialogOpen(false)}>Fertig</button>
               </div>
             </div>
+            </DwarfViewportPanel>
           </div>}
       </section>
-    </main>
+    </DwarfViewport>
   );
 }
