@@ -1,4 +1,8 @@
 import Matter from "matter-js";
+import { SPRITE_PROFILES } from "./sprite-profiles";
+import { QUALITY, type QualityLevel } from "./quality";
+import type { TreasureSprites } from "./assets";
+import type { FrameMetrics } from "./performance";
 
 export type ColliderType = "nugget" | "circle" | "stack" | "gem" | "sack" | "box" | "goblet" | "wide";
 
@@ -15,7 +19,8 @@ export type TreasureDefinition = {
   score: number;
 };
 
-// size skaliert Grafik und Collider; densityScale stimmt die Materialdichte fein ab.
+// Legacy size progression remains documented; PNG geometry now drives both art
+// and colliders at a shared scale. densityScale preserves the material tuning.
 export const TREASURES: TreasureDefinition[] = [
   { id: "nugget", name: "Goldnugget", tier: 1, sprite: "nugget", colliderType: "nugget", size: 1, densityScale: 1, friction: 0.2, restitution: 0.035, score: 0 },
   { id: "coin", name: "Goldmünze", tier: 2, sprite: "coin", colliderType: "circle", size: 1.22, densityScale: 1.02, friction: 0.12, restitution: 0.045, score: 10 },
@@ -32,21 +37,13 @@ export const TREASURES: TreasureDefinition[] = [
 ];
 
 const DROP_WEIGHTS = [44, 32, 18, 6];
-// Gemeinsamer Grundradius für die Render- und Collidergrößen aller Schatzstufen.
-const BASE_RADIUS = 0.0448;
+// Matter's gravity scale; sprite geometry is scaled independently below.
 const BODY_SCALE = 0.001;
 const FIXED_STEP_MS = 1000 / 60;
-const SHAPES: Record<ColliderType, ReadonlyArray<readonly [number, number]>> = {
-  nugget: [[-0.92, -0.17], [-0.62, -0.67], [-0.12, -0.9], [0.62, -0.69], [0.9, -0.05], [0.55, 0.73], [-0.48, 0.86], [-0.9, 0.39]],
-  circle: [],
-  stack: [],
-  gem: [[0, -0.98], [0.72, -0.49], [0.86, 0.22], [0.49, 0.84], [-0.49, 0.84], [-0.86, 0.22], [-0.72, -0.49]],
-  sack: [[-0.59, -0.52], [-0.21, -0.86], [0.13, -0.78], [0.59, -0.52], [0.82, 0.12], [0.54, 0.75], [0, 0.94], [-0.59, 0.68], [-0.82, 0.12]],
-  box: [],
-  goblet: [],
-  wide: [],
-};
-
+// The tallest legal drop must fit above the line, with the existing top margin.
+// This single common scale preserves all intrinsic PNG size relationships.
+const MAX_DROP_IMAGE_HEIGHT = Math.max(...SPRITE_PROFILES.slice(0, 6).map(p => p.game[3]));
+const REFERENCE_SPRITE_SCALE = (620 * .2 - 16) / MAX_DROP_IMAGE_HEIGHT;
 /** Kompatibilitätshilfe für einzelne Stichproben; Spielrunden verwenden DropShuffleBag. */
 export function randomDropTier(random = Math.random): number {
   const roll = random() * DROP_WEIGHTS.reduce((sum, weight) => sum + weight, 0);
@@ -83,9 +80,8 @@ type BodyMeta = {
   awaitingPreviewAfterDrop: boolean;
 };
 type Particle = { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; size: number; hue: number };
-type Pop = { x: number; y: number; tier: number; time: number; duration: number };
 
-const { Bodies, Body, Composite, Engine, Events, Vector } = Matter;
+const { Bodies, Body, Composite, Engine, Events, Vector, Query, Sleeping } = Matter;
 
 type RelativePoint = readonly [number, number];
 
@@ -123,20 +119,12 @@ function createCompoundBody(parts: Matter.Body[], options: Matter.IChamferableBo
   return Body.create({ ...options, position: { x: 0, y: 0 }, parts });
 }
 
-function ellipsePoints(centerX: number, centerY: number, radiusX: number, radiusY: number, count = 16): RelativePoint[] {
-  return Array.from({ length: count }, (_, index): RelativePoint => {
-    const angle = (index / count) * Math.PI * 2;
-    return [centerX + Math.cos(angle) * radiusX, centerY + Math.sin(angle) * radiusY];
-  });
-}
-
 export class SchatzMergeEngine {
   private readonly engine = Engine.create({ enableSleeping: true });
   private readonly callbacks: EngineCallbacks;
   private readonly bodies = new Map<number, BodyMeta>();
   private readonly walls: Matter.Body[] = [];
   private readonly particles: Particle[] = [];
-  private readonly pops: Pop[] = [];
   private width = 1;
   private height = 1;
   private elapsed = 0;
@@ -145,18 +133,53 @@ export class SchatzMergeEngine {
   private dangerStartedAt: number | null = null;
   private previewBlockedByPendingDrop = false;
   private gameOver = false;
+  private stressScene: string | null = null;
+  private readonly pendingMerges: Array<[Matter.Body, Matter.Body]> = [];
+  private sprites: TreasureSprites = [];
+  private quality: QualityLevel = "HIGH";
+  private background: OffscreenCanvas | HTMLCanvasElement | null = null;
+  private backgroundDpr = 0;
+  diagnosticsEnabled = false;
+  debugColliders = false;
+  resizeCount = 0;
+  metrics: FrameMetrics = { physics: 0, background: 0, treasures: 0, particles: 0, preview: 0, steps: 0 };
+
+  setSprites(sprites: TreasureSprites): void { this.sprites = sprites; }
+  setQuality(level: QualityLevel): void {
+    this.quality = level;
+    this.particles.length = Math.min(this.particles.length, QUALITY[level].particles);
+  }
+  debugSnapshot() {
+    const bodies = Composite.allBodies(this.engine.world).filter(body => this.bodies.has(body.id));
+    return { bodies: bodies.length, parts: bodies.reduce((n, b) => n + (b.parts.length > 1 ? b.parts.length - 1 : 1), 0), sleeping: bodies.filter(b => b.isSleeping).length, particles: this.particles.length, quality: this.quality, resizes: this.resizeCount, pendingDrop: this.previewBlockedByPendingDrop };
+  }
+
+  loadDebugScene(count: number, kind = "mixed"): void {
+    if (!this.diagnosticsEnabled) return;
+    this.reset(); this.stressScene = kind;
+    for (let i = 0; i < Math.min(30, Math.max(0, count)); i++) {
+      const tier = kind === "compound" ? [8, 9, 12][i % 3] : kind === "small" || kind === "chains" ? 1 : 1 + i % 6;
+      const x = this.width * (.1 + (i % 5) * .19), y = this.height - 40 - Math.floor(i / 5) * this.height * .11;
+      const body = this.createTreasureBody(tier, x, y);
+      Composite.add(this.engine.world, body);
+      this.bodies.set(body.id, this.createBodyMeta(tier, body, x, y));
+    }
+  }
 
   constructor(callbacks: EngineCallbacks) {
     this.callbacks = callbacks;
     this.engine.gravity.x = 0;
     this.engine.gravity.y = 1;
     this.engine.gravity.scale = BODY_SCALE;
-    this.engine.positionIterations = 8;
-    this.engine.velocityIterations = 6;
+    this.engine.positionIterations = 10;
+    this.engine.velocityIterations = 7;
     this.engine.constraintIterations = 4;
     Events.on(this.engine, "collisionStart", (event) => {
       for (const pair of event.pairs) {
-        if (!this.tryMerge(pair.bodyA, pair.bodyB)) this.tryImpact(pair.bodyA, pair.bodyB);
+        const first = pair.bodyA.parent, second = pair.bodyB.parent;
+        const a = this.bodies.get(first.id), b = this.bodies.get(second.id);
+        if (a && b && a.tier === b.tier) this.pendingMerges.push([first, second]);
+        else this.tryImpact(first, second);
       }
     });
   }
@@ -172,9 +195,12 @@ export class SchatzMergeEngine {
   resize(width: number, height: number): void {
     const safeWidth = Math.max(1, width);
     const safeHeight = Math.max(1, height);
+    if (Math.abs(safeWidth - this.width) < 0.5 && Math.abs(safeHeight - this.height) < 0.5) return;
+    this.resizeCount++;
+    this.background = null;
     const scaleX = safeWidth / this.width;
     const scaleY = safeHeight / this.height;
-    const needsScale = this.width > 1 && this.height > 1 && (Math.abs(scaleX - 1) > 0.01 || Math.abs(scaleY - 1) > 0.01);
+    const needsScale = this.width > 1 && this.height > 1;
 
     if (needsScale) {
       const scale = Math.min(scaleX, scaleY);
@@ -183,6 +209,7 @@ export class SchatzMergeEngine {
         Body.scale(body, scale, scale);
         Body.setPosition(body, { x: body.position.x * scaleX, y: body.position.y * scaleY });
         Body.setVelocity(body, { x: body.velocity.x * scaleX, y: body.velocity.y * scaleY });
+        Sleeping.set(body, false);
       }
     }
 
@@ -197,7 +224,7 @@ export class SchatzMergeEngine {
   }
 
   drop(tier: number, x: number): void {
-    if (this.gameOver) return;
+    if (this.gameOver || this.previewBlockedByPendingDrop) return;
     const safeTier = Math.max(1, Math.min(TREASURES.length, tier));
     const safeX = this.clampX(x, safeTier);
     const y = this.spawnY(safeTier);
@@ -213,22 +240,33 @@ export class SchatzMergeEngine {
       if (!body.isStatic) Composite.remove(this.engine.world, body);
     }
     this.bodies.clear();
+    this.pendingMerges.length = 0;
     this.particles.length = 0;
-    this.pops.length = 0;
     this.elapsed = 0;
     this.accumulator = 0;
     this.lastImpactAt = Number.NEGATIVE_INFINITY;
     this.dangerStartedAt = null;
     this.previewBlockedByPendingDrop = false;
     this.gameOver = false;
+    this.stressScene = null;
   }
 
   update(deltaMs: number): void {
+    this.metrics.physics = 0;
+    this.metrics.steps = 0;
     if (this.gameOver) return;
-    this.accumulator += Math.max(1, Math.min(34, deltaMs));
-    while (this.accumulator >= FIXED_STEP_MS) {
+    // At most three fixed steps; missed wall time is discarded, never accumulated forever.
+    this.accumulator = Math.min(FIXED_STEP_MS * 3, this.accumulator + Math.max(0, Math.min(50, deltaMs)));
+    while (this.accumulator + 1e-6 >= FIXED_STEP_MS && this.metrics.steps < 3) {
       this.elapsed += FIXED_STEP_MS;
+      const start = this.diagnosticsEnabled ? performance.now() : 0;
       Engine.update(this.engine, FIXED_STEP_MS);
+      // World mutations happen after the solver finishes using its body/pair snapshot.
+      for (const [first, second] of this.pendingMerges) this.tryMerge(first, second);
+      this.pendingMerges.length = 0;
+      this.stabilizeContacts();
+      if (this.diagnosticsEnabled) this.metrics.physics += performance.now() - start;
+      this.metrics.steps++;
       this.updateEffects(FIXED_STEP_MS);
       this.accumulator -= FIXED_STEP_MS;
     }
@@ -237,186 +275,133 @@ export class SchatzMergeEngine {
   }
 
   draw(context: CanvasRenderingContext2D, preview: { tier: number; x: number } | null): void {
-    const { width, height } = this;
-    context.clearRect(0, 0, width, height);
-
-    const background = context.createLinearGradient(0, 0, width, height);
-    background.addColorStop(0, "#1c4368");
-    background.addColorStop(0.44, "#122d4d");
-    background.addColorStop(1, "#09172c");
-    context.fillStyle = background;
-    context.fillRect(0, 0, width, height);
-
-    context.save();
-    for (let index = 0; index < 26; index += 1) {
-      const x = ((index * 79 + 29) % 997) / 997 * width;
-      const y = ((index * 137 + 31) % 991) / 991 * height;
-      context.globalAlpha = index % 4 === 0 ? 0.32 : 0.16;
-      context.fillStyle = index % 3 === 0 ? "#ffe29a" : "#d7eeff";
-      context.beginPath();
-      context.arc(x, y, index % 5 === 0 ? 1.6 : 1, 0, Math.PI * 2);
-      context.fill();
-    }
-    context.restore();
-
-    const side = context.createLinearGradient(0, 0, width, 0);
-    side.addColorStop(0, "#9a6127");
-    side.addColorStop(0.5, "#d99c44");
-    side.addColorStop(1, "#603716");
-    context.fillStyle = side;
-    context.fillRect(0, 0, 12, height);
-    context.fillRect(width - 12, 0, 12, height);
-    context.fillStyle = "#a5682c";
-    context.fillRect(0, height - 15, width, 15);
-    context.fillStyle = "#ffd280";
-    context.fillRect(11, height - 16, width - 22, 3);
-
-    context.save();
-    context.setLineDash([7, 7]);
-    context.strokeStyle = "#ff8178";
-    context.lineWidth = 2;
-    context.globalAlpha = 0.72;
-    context.beginPath();
-    context.moveTo(13, this.dangerLine);
-    context.lineTo(width - 13, this.dangerLine);
-    context.stroke();
-    context.restore();
-
+    let stamp = this.diagnosticsEnabled ? performance.now() : 0;
+    const mark = (key: "background" | "treasures" | "particles" | "preview") => {
+      if (this.diagnosticsEnabled) { const now = performance.now(); this.metrics[key] = now - stamp; stamp = now; }
+    };
+    this.drawBackground(context);
     const dangerProgress = this.dangerStartedAt === null ? 0 : Math.min(1, (this.elapsed - this.dangerStartedAt) / 1500);
     if (dangerProgress > 0) {
       context.fillStyle = `rgba(255, 87, 76, ${0.06 + dangerProgress * 0.1})`;
-      context.fillRect(12, 0, width - 24, this.dangerLine);
+      context.fillRect(12, 0, this.width - 24, this.dangerLine);
     }
-
+    mark("background");
     for (const body of Composite.allBodies(this.engine.world)) {
       const meta = this.bodies.get(body.id);
-      if (!meta) continue;
-      this.drawBody(context, body, meta);
+      if (meta) this.drawBody(context, body, meta);
     }
-
+    mark("treasures");
     for (const particle of this.particles) {
       const alpha = Math.max(0, particle.life / particle.maxLife);
-      context.save();
       context.globalAlpha = alpha;
       context.fillStyle = `hsl(${particle.hue} 95% 70%)`;
-      context.shadowColor = context.fillStyle;
-      context.shadowBlur = 12;
       context.beginPath();
       context.arc(particle.x, particle.y, particle.size * (0.65 + alpha * 0.55), 0, Math.PI * 2);
       context.fill();
-      context.restore();
     }
-
+    context.globalAlpha = 1;
+    mark("particles");
     if (preview && !this.previewBlockedByPendingDrop) {
-      const x = this.clampX(preview.x, preview.tier);
-      const radius = this.radiusForTier(preview.tier);
-      const y = this.spawnY(preview.tier);
-      context.save();
-      context.globalAlpha = 0.94;
-      context.shadowColor = "#ffe5a0";
-      context.shadowBlur = 18;
-      drawTreasure(context, preview.tier, x, y, radius);
-      context.restore();
+      const x = this.clampX(preview.x, preview.tier), y = this.spawnY(preview.tier);
+      this.drawSprite(context, preview.tier, x, y);
       context.save();
       context.globalAlpha = 0.38;
       context.strokeStyle = "#ffe9b2";
       context.setLineDash([3, 6]);
       context.beginPath();
-      context.moveTo(x, y + radius + 7);
-      context.lineTo(x, height - 18);
+      context.moveTo(x, y + this.radiusForTier(preview.tier) + 7);
+      context.lineTo(x, this.height - 18);
       context.stroke();
       context.restore();
     }
+    mark("preview");
+    if (this.debugColliders) this.drawColliderDebug(context);
   }
 
-  private radiusForTier(tier: number): number {
-    const scale = Math.min(this.width / 390, this.height / 620);
-    return Math.max(8, this.width * BASE_RADIUS * TREASURES[tier - 1].size * Math.max(0.64, scale));
-  }
-
-  private halfWidthForTier(tier: number): number {
-    const radius = this.radiusForTier(tier);
-    const colliderType = TREASURES[tier - 1].colliderType;
-    if (colliderType === "circle") return radius * 0.9;
-    if (colliderType === "stack") return radius * 0.92;
-    if (colliderType === "box") return radius * (tier === 7 ? 0.83 : 1.02);
-    if (colliderType === "wide") {
-      if (tier === 11) return radius * 0.99;
-      if (tier === 12) return radius * 0.97;
-      return radius * 0.95;
+  private drawBackground(context: CanvasRenderingContext2D): void {
+    const { width, height } = this;
+    const dpr = context.canvas.width / width;
+    if (!this.background || Math.abs(this.backgroundDpr - dpr) > .01) {
+      const pixelsWide = Math.max(1, Math.round(width * dpr)), pixelsHigh = Math.max(1, Math.round(height * dpr));
+      const canvas = typeof OffscreenCanvas !== "undefined" ? new OffscreenCanvas(pixelsWide, pixelsHigh) : document.createElement("canvas");
+      canvas.width = pixelsWide; canvas.height = pixelsHigh;
+      const ctx = canvas.getContext("2d") as CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const gradient = ctx.createLinearGradient(0, 0, width, height);
+      gradient.addColorStop(0, "#1c4368"); gradient.addColorStop(.44, "#122d4d"); gradient.addColorStop(1, "#09172c");
+      ctx.fillStyle = gradient; ctx.fillRect(0, 0, width, height);
+      for (let i = 0; i < 26; i++) {
+        ctx.globalAlpha = i % 4 === 0 ? .32 : .16;
+        ctx.fillStyle = i % 3 === 0 ? "#ffe29a" : "#d7eeff";
+        ctx.beginPath(); ctx.arc(((i * 79 + 29) % 997) / 997 * width, ((i * 137 + 31) % 991) / 991 * height, i % 5 === 0 ? 1.6 : 1, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      const side = ctx.createLinearGradient(0, 0, width, 0);
+      side.addColorStop(0, "#9a6127"); side.addColorStop(.5, "#d99c44"); side.addColorStop(1, "#603716");
+      ctx.fillStyle = side; ctx.fillRect(0, 0, 12, height); ctx.fillRect(width - 12, 0, 12, height);
+      ctx.fillStyle = "#a5682c"; ctx.fillRect(0, height - 15, width, 15);
+      ctx.fillStyle = "#ffd280"; ctx.fillRect(11, height - 16, width - 22, 3);
+      ctx.setLineDash([7, 7]); ctx.strokeStyle = "#ff8178"; ctx.lineWidth = 2; ctx.globalAlpha = .72;
+      ctx.beginPath(); ctx.moveTo(13, this.dangerLine); ctx.lineTo(width - 13, this.dangerLine); ctx.stroke();
+      this.background = canvas; this.backgroundDpr = dpr;
     }
-    return radius;
+    context.drawImage(this.background, 0, 0, width, height);
   }
 
+  // One common scale preserves the intrinsic progression baked into the game PNGs.
+  // Legacy size multipliers are intentionally not applied a second time.
+  private spriteScale(): number { return REFERENCE_SPRITE_SCALE * Math.min(this.width / 390, this.height / 620); }
+  private radiusForTier(tier: number): number {
+    const [, , width, height] = SPRITE_PROFILES[tier - 1].game;
+    return Math.max(width, height) * this.spriteScale() / 2;
+  }
+  private halfWidthForTier(tier: number): number { return SPRITE_PROFILES[tier - 1].game[2] * this.spriteScale() / 2; }
   private spawnY(tier: number): number {
-    return Math.max(this.radiusForTier(tier) + 14, this.height * 0.08);
+    const halfHeight = SPRITE_PROFILES[tier - 1].game[3] * this.spriteScale() / 2;
+    return Math.max(halfHeight + 14 * Math.min(this.width / 390, this.height / 620), this.height * .08);
   }
 
   private createTreasureBody(tier: number, x: number, y: number): Matter.Body {
-    const definition = TREASURES[tier - 1];
-    const radius = this.radiusForTier(tier);
+    const definition = TREASURES[tier - 1], profile = SPRITE_PROFILES[tier - 1];
+    const [sx, sy, sw, sh] = profile.game;
+    const scale = this.spriteScale();
     const options: Matter.IChamferableBodyDefinition = {
-      label: `schatz-merge-${definition.id}`,
-      density: 0.0011 * definition.densityScale,
-      friction: definition.friction,
-      frictionStatic: definition.friction + 0.22,
-      frictionAir: 0.012,
-      restitution: definition.restitution,
-      sleepThreshold: 50,
+      label: `schatz-merge-${definition.id}`, density: .0011 * definition.densityScale,
+      friction: definition.friction, frictionStatic: definition.friction + .22,
+      frictionAir: .012, restitution: definition.restitution, sleepThreshold: 50,
     };
+    const polygon = (points: ReadonlyArray<RelativePoint>) => createPolygonBody(x, y, 1,
+      points.map(([px, py]) => [(px - sx - sw / 2) * scale, (py - sy - sh / 2) * scale] as RelativePoint), options);
+    // Only the goblet needs a compound: bowl, stem and foot avoid a large invisible hull.
+    if (tier === 8) return createCompoundBody([
+      polygon([[59,0],[285,0],[278,97],[231,137],[137,137],[76,97]]),
+      polygon([[148,134],[216,134],[215,192],[143,192]]),
+      polygon([[145,183],[215,183],[250,208],[254,235],[225,252],[111,252],[91,232],[103,211]]),
+    ], options);
+    return polygon(profile.hull);
+  }
 
-    if (definition.colliderType === "circle") return Bodies.circle(x, y, radius * 0.9, options, 16);
-    if (definition.colliderType === "stack") {
-      const parts = [
-        createPolygonBody(x, y, radius, ellipsePoints(0, -0.16, 0.88, 0.35), options),
-        createPolygonBody(x, y, radius, ellipsePoints(0, 0.22, 0.88, 0.35), options),
-      ];
-      return createCompoundBody(parts, options);
+  private drawSprite(context: CanvasRenderingContext2D, tier: number, x: number, y: number): void {
+    const image = this.sprites[tier - 1];
+    if (!image) return;
+    const [sx, sy, sw, sh] = SPRITE_PROFILES[tier - 1].game, scale = this.spriteScale();
+    context.drawImage(image, sx, sy, sw, sh, x - sw * scale / 2, y - sh * scale / 2, sw * scale, sh * scale);
+  }
+
+  private drawColliderDebug(context: CanvasRenderingContext2D): void {
+    context.save(); context.lineWidth = 1; context.font = "10px monospace";
+    for (const body of Composite.allBodies(this.engine.world)) {
+      const meta = this.bodies.get(body.id); if (!meta) continue;
+      context.strokeStyle = body.isSleeping ? "#ffcc44" : "#66ffbb";
+      for (const part of body.parts.length > 1 ? body.parts.slice(1) : [body]) {
+        context.beginPath(); part.vertices.forEach((v, i) => i === 0 ? context.moveTo(v.x,v.y) : context.lineTo(v.x,v.y)); context.closePath(); context.stroke();
+      }
+      const { min, max } = body.bounds; context.strokeStyle = "#7fcfff";
+      context.strokeRect(min.x,min.y,max.x-min.x,max.y-min.y);
+      context.fillStyle = "white"; context.fillRect(body.position.x-2,body.position.y-2,4,4);
+      context.fillText(`${meta.tier}/${body.id}${body.isSleeping ? " z" : ""}`,body.position.x+4,body.position.y);
     }
-    if (definition.colliderType === "box") {
-      const width = tier === 7 ? 1.66 : 2.04;
-      const height = tier === 7 ? 1.46 : 1.76;
-      return Bodies.rectangle(x, y, radius * width, radius * height, options);
-    }
-    if (definition.colliderType === "goblet") {
-      const parts = [
-        createPolygonBody(x, y, radius, [
-          [-0.72, -0.79], [-0.47, -0.08], [-0.22, 0.2], [0.22, 0.2], [0.47, -0.08], [0.72, -0.79],
-        ], options),
-        createPolygonBody(x, y, radius, ellipsePoints(0, -0.76, 0.72, 0.22), options),
-        Bodies.rectangle(x, y + radius * 0.36, radius * 0.36, radius * 0.38, options),
-        createPolygonBody(x, y, radius, [
-          [-0.18, 0.49], [0.18, 0.49], [0.52, 0.58], [0.7, 0.82], [0.55, 0.87], [-0.55, 0.87], [-0.7, 0.82], [-0.52, 0.58],
-        ], options),
-      ];
-      return createCompoundBody(parts, options);
-    }
-    if (definition.colliderType === "wide" && tier === 9) {
-      const parts = [
-        createPolygonBody(x, y, radius, [[-0.9, -0.22], [-0.82, -0.78], [-0.34, -0.35], [-0.26, 0.3], [-0.75, 0.58]], options),
-        createPolygonBody(x, y, radius, [[-0.34, -0.35], [0, -0.98], [0.34, -0.35], [0.55, 0.3], [-0.55, 0.3]], options),
-        createPolygonBody(x, y, radius, [[0.34, -0.35], [0.82, -0.78], [0.9, -0.22], [0.75, 0.58], [0.26, 0.3]], options),
-        Bodies.rectangle(x, y + radius * 0.39, radius * 1.5, radius * 0.3, options),
-      ];
-      return createCompoundBody(parts, options);
-    }
-    if (definition.colliderType === "wide" && tier === 11) {
-      return createPolygonBody(x, y, radius, ellipsePoints(0, 0.25, 0.985, 0.665), options);
-    }
-    if (definition.colliderType === "wide" && tier === 12) {
-      const parts = [
-        Bodies.rectangle(x, y - radius * 0.5, radius * 1.26, radius * 0.84, options),
-        Bodies.rectangle(x, y + radius * 0.09, radius * 1.04, radius * 0.68, options),
-        Bodies.rectangle(x - radius * 0.74, y + radius * 0.18, radius * 0.36, radius * 0.68, options),
-        Bodies.rectangle(x + radius * 0.74, y + radius * 0.18, radius * 0.36, radius * 0.68, options),
-        Bodies.rectangle(x, y + radius * 0.23, radius * 1.5, radius * 0.22, options),
-        Bodies.rectangle(x - radius * 0.555, y + radius * 0.635, radius * 0.17, radius * 0.55, options),
-        Bodies.rectangle(x + radius * 0.555, y + radius * 0.635, radius * 0.17, radius * 0.55, options),
-      ];
-      return createCompoundBody(parts, options);
-    }
-    if (definition.colliderType === "wide") return Bodies.rectangle(x, y, radius * 1.9, radius * 1.7, options);
-    return createPolygonBody(x, y, radius, SHAPES[definition.colliderType], options);
+    context.restore();
   }
 
   private createBodyMeta(
@@ -441,9 +426,13 @@ export class SchatzMergeEngine {
 
     for (const body of Composite.allBodies(this.engine.world)) {
       const meta = this.bodies.get(body.id);
-      if (meta?.awaitingPreviewAfterDrop && body.bounds.min.y > this.dangerLine) {
-        meta.awaitingPreviewAfterDrop = false;
-      }
+      if (!meta?.awaitingPreviewAfterDrop) continue;
+      const [, , width, height] = SPRITE_PROFILES[meta.tier - 1].game;
+      const radius = this.radiusForTier(meta.tier), scale = this.spriteScale();
+      const cos = Math.cos(body.angle), sin = Math.sin(body.angle);
+      const centerY = body.position.y + radius * (meta.renderOffsetXFactor * sin + meta.renderOffsetYFactor * cos);
+      const visualTop = centerY - Math.abs(sin) * width * scale / 2 - Math.abs(cos) * height * scale / 2;
+      if (Math.min(body.bounds.min.y, visualTop) > this.dangerLine) meta.awaitingPreviewAfterDrop = false;
     }
 
     const stillWaiting = [...this.bodies.values()].some((meta) => meta.awaitingPreviewAfterDrop);
@@ -466,6 +455,7 @@ export class SchatzMergeEngine {
   }
 
   private tryMerge(firstPart: Matter.Body, secondPart: Matter.Body): boolean {
+    if (this.stressScene && this.stressScene !== "chains") return false;
     const first = firstPart.parent ?? firstPart;
     const second = secondPart.parent ?? secondPart;
     const firstMeta = this.bodies.get(first.id);
@@ -480,6 +470,10 @@ export class SchatzMergeEngine {
     const nextTier = terminal ? null : tier + 1;
     const x = (first.position.x + second.position.x) / 2;
     const y = (first.position.y + second.position.y) / 2;
+    const changedBounds = {
+      min: { x: Math.min(first.bounds.min.x, second.bounds.min.x), y: Math.min(first.bounds.min.y, second.bounds.min.y) },
+      max: { x: Math.max(first.bounds.max.x, second.bounds.max.x), y: Math.max(first.bounds.max.y, second.bounds.max.y) },
+    };
     const velocity = Vector.mult(Vector.add(first.velocity, second.velocity), 0.5);
     const angularVelocity = (first.angularVelocity + second.angularVelocity) / 2;
     Composite.remove(this.engine.world, first);
@@ -489,16 +483,107 @@ export class SchatzMergeEngine {
 
     if (nextTier !== null) {
       const merged = this.createTreasureBody(nextTier, x, y);
+      const meta = this.createBodyMeta(nextTier, merged, x, y, false, awaitingPreviewAfterDrop);
+      this.placeMergedBody(merged);
+      changedBounds.min.x = Math.min(changedBounds.min.x, merged.bounds.min.x);
+      changedBounds.max.x = Math.max(changedBounds.max.x, merged.bounds.max.x);
       Body.setVelocity(merged, velocity);
       Body.setAngularVelocity(merged, angularVelocity);
       Composite.add(this.engine.world, merged);
-      this.bodies.set(merged.id, this.createBodyMeta(nextTier, merged, x, y, false, awaitingPreviewAfterDrop));
+      this.bodies.set(merged.id, meta);
     }
 
-    this.pops.push({ x, y, tier, time: 0, duration: tier >= 8 ? 660 : 420 });
+    this.wakeAfterSupportChange(changedBounds);
     this.spawnParticles(x, y, tier, terminal);
     this.callbacks.onMerge({ tier, nextTier, points: TREASURES[tier - 1].score, x, y, terminal });
     return true;
+  }
+
+  private wakeAfterSupportChange(changed: Matter.Bounds): void {
+    const candidates = Composite.allBodies(this.engine.world).filter(b => this.bodies.has(b.id));
+    // Propagate up through the affected support columns, including sleeping bridges.
+    const regions = [changed];
+    const visited = new Set<number>();
+    for (let i = 0; i < regions.length; i++) {
+      const region = regions[i];
+      for (const body of candidates) {
+        if (visited.has(body.id) || body.bounds.min.y > region.max.y + 6 || body.bounds.max.x < region.min.x - 6 || body.bounds.min.x > region.max.x + 6) continue;
+        visited.add(body.id); Sleeping.set(body, false); regions.push(body.bounds);
+      }
+    }
+  }
+
+  private physicalBounds(body: Matter.Body): Matter.Bounds {
+    return {
+      min: { x: Math.min(...body.vertices.map(v => v.x)), y: Math.min(...body.vertices.map(v => v.y)) },
+      max: { x: Math.max(...body.vertices.map(v => v.x)), y: Math.max(...body.vertices.map(v => v.y)) },
+    };
+  }
+
+  private constrainToContainer(body: Matter.Body): void {
+    const bounds = this.physicalBounds(body);
+    const dx = bounds.min.x < 4.7 ? 5 - bounds.min.x : bounds.max.x > this.width - 4.7 ? this.width - 5 - bounds.max.x : 0;
+    const dy = bounds.max.y > this.height - 7.7 ? this.height - 8 - bounds.max.y : 0;
+    if (!dx && !dy) return;
+    // Exact static wall planes close the finite solver's residual penetration.
+    // Translating both current and previous positions adds no kinetic energy.
+    if (body.isSleeping) Sleeping.set(body, false);
+    Body.translate(body, { x: dx, y: dy });
+    Body.setVelocity(body, { x: dx && body.velocity.x * dx < 0 ? 0 : body.velocity.x, y: dy && body.velocity.y > 0 ? 0 : body.velocity.y });
+  }
+
+  private stabilizeContacts(): void {
+    const live = Composite.allBodies(this.engine.world).filter(b => this.bodies.has(b.id));
+    for (const body of live) if (!body.isSleeping) this.constrainToContainer(body);
+    // Re-evaluate only contacts with a large residual. More global solver iterations
+    // did not prevent a large merge pushing a lighter neighbor through a side wall.
+    for (let pass = 0; pass < 3; pass++) {
+      for (const pair of this.engine.pairs.list) {
+        if (!pair.isActive || pair.isSensor) continue;
+        const a = pair.bodyA.parent, b = pair.bodyB.parent;
+        if ((!a.isStatic && !this.bodies.has(a.id)) || (!b.isStatic && !this.bodies.has(b.id))) continue;
+        if ((a.isStatic || a.isSleeping) && (b.isStatic || b.isSleeping)) continue;
+        const collision = Matter.Collision.collides(pair.bodyA, pair.bodyB);
+        if (!collision || collision.depth < 1) continue;
+        const { normal } = collision;
+        const mobility = (body: Matter.Body, sign: number) => {
+          if (body.isStatic) return 0;
+          const bounds = this.physicalBounds(body);
+          if ((normal.x * sign < -.1 && bounds.min.x <= 5.1) || (normal.x * sign > .1 && bounds.max.x >= this.width - 5.1) || (normal.y * sign > .1 && bounds.max.y >= this.height - 8.1)) return 0;
+          return body.inverseMass;
+        };
+        const ma = mobility(a, 1), mb = mobility(b, -1), total = ma + mb;
+        if (!total) continue;
+        for (const [body, share, sign] of [[a, ma / total, 1], [b, mb / total, -1]] as const) {
+          const distance = Math.min(4, (collision.depth - .5) * share);
+          if (distance <= 0) continue;
+          if (body.isSleeping) Sleeping.set(body, false);
+          Body.translate(body, { x: normal.x * distance * sign, y: normal.y * distance * sign });
+          this.constrainToContainer(body);
+        }
+      }
+    }
+  }
+
+  private placeMergedBody(body: Matter.Body): void {
+    const neighbors = Composite.allBodies(this.engine.world);
+    const clampToWorld = () => {
+      const dx = body.bounds.min.x < 6 ? 6 - body.bounds.min.x : body.bounds.max.x > this.width - 6 ? this.width - 6 - body.bounds.max.x : 0;
+      const dy = body.bounds.max.y > this.height - 8 ? this.height - 8 - body.bounds.max.y : 0;
+      if (dx || dy) Body.translate(body, { x: dx, y: dy });
+    };
+    clampToWorld();
+    const origin = { ...body.position };
+    const cost = () => Query.collides(body, neighbors).reduce((sum, c) => sum + c.depth * c.depth, 0);
+    let bestCost = cost(), best = origin;
+    const span = Math.min(48, (body.bounds.max.y - body.bounds.min.y) * .4);
+    for (const [dx, dy] of [[0,-span/3],[0,-span*2/3],[0,-span],[-span/3,-span/3],[span/3,-span/3],[-span/3,-span*2/3],[span/3,-span*2/3],[-span/3,-span],[span/3,-span]]) {
+      Body.setPosition(body, { x: origin.x + dx, y: origin.y + dy }); clampToWorld();
+      const candidateCost = cost();
+      if (candidateCost < bestCost) { bestCost = candidateCost; best = { ...body.position }; }
+      if (bestCost < .01) break;
+    }
+    Body.setPosition(body, best);
   }
 
   private tryImpact(firstPart: Matter.Body, secondPart: Matter.Body): void {
@@ -513,6 +598,7 @@ export class SchatzMergeEngine {
   }
 
   private checkForGameOver(): void {
+    if (this.stressScene) return;
     const hasSettledAboveLine = Composite.allBodies(this.engine.world).some((body) => {
       const meta = this.bodies.get(body.id);
       return Boolean(meta && !meta.merged && body.bounds.min.y < this.dangerLine && body.speed < 1.6);
@@ -539,14 +625,12 @@ export class SchatzMergeEngine {
       particle.vy += 0.09 * delta / 16.7;
       if (particle.life <= 0) this.particles.splice(index, 1);
     }
-    for (let index = this.pops.length - 1; index >= 0; index -= 1) {
-      this.pops[index].time += delta;
-      if (this.pops[index].time >= this.pops[index].duration) this.pops.splice(index, 1);
-    }
+
   }
 
   private spawnParticles(x: number, y: number, tier: number, terminal: boolean): void {
-    const count = terminal ? 64 : 8 + tier * 2;
+    const budget = QUALITY[this.quality];
+    const count = Math.min(terminal ? budget.burst * 2 : budget.burst, budget.particles - this.particles.length);
     const life = terminal ? 1900 : 620 + tier * 30;
     for (let index = 0; index < count; index += 1) {
       const angle = Math.random() * Math.PI * 2;
@@ -565,279 +649,14 @@ export class SchatzMergeEngine {
   }
 
   private drawBody(context: CanvasRenderingContext2D, body: Matter.Body, meta: BodyMeta): void {
-    const { tier } = meta;
-    const pop = this.pops.find((effect) => effect.tier === tier && Math.hypot(effect.x - body.position.x, effect.y - body.position.y) < this.radiusForTier(tier) * (tier >= 8 ? 3.4 : 2.4));
-    let scale = 1;
-    if (pop) {
-      const progress = pop.time / pop.duration;
-      scale = 1 + Math.sin(Math.min(1, progress) * Math.PI) * (tier >= 8 ? 0.3 : 0.2);
-    }
     context.save();
     context.translate(body.position.x, body.position.y);
     context.rotate(body.angle);
-    context.translate(
-      this.radiusForTier(tier) * meta.renderOffsetXFactor,
-      this.radiusForTier(tier) * meta.renderOffsetYFactor,
-    );
-    context.scale(scale, scale);
-    context.shadowColor = tier >= 8 ? "#ffc95799" : "#050d1a88";
-    context.shadowBlur = tier >= 8 ? 19 : 9;
-    context.shadowOffsetY = 4;
-    drawTreasure(context, tier, 0, 0, this.radiusForTier(tier));
+    this.drawSprite(context, meta.tier, this.radiusForTier(meta.tier) * meta.renderOffsetXFactor, this.radiusForTier(meta.tier) * meta.renderOffsetYFactor);
     context.restore();
   }
 }
 
 function WorldAdd(world: Matter.World, body: Matter.Body): void {
   Composite.add(world, body);
-}
-
-export function drawTreasureIcon(context: CanvasRenderingContext2D, tier: number, x: number, y: number, radius: number): void {
-  const safeTier = Math.max(1, Math.min(TREASURES.length, Math.trunc(tier)));
-  drawTreasure(context, safeTier, x, y, radius);
-}
-
-function roundedBox(context: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number): void {
-  context.beginPath();
-  context.roundRect(x, y, width, height, radius);
-}
-
-function drawTreasure(context: CanvasRenderingContext2D, tier: number, x: number, y: number, radius: number): void {
-  const gold = context.createLinearGradient(x - radius, y - radius, x + radius, y + radius);
-  gold.addColorStop(0, "#fff2a4");
-  gold.addColorStop(0.3, "#ffd24d");
-  gold.addColorStop(0.72, "#d78a20");
-  gold.addColorStop(1, "#fff0a2");
-  const darkGold = "#9b5b17";
-  const ruby = "#b52f3c";
-  const blue = "#5cd5f5";
-  const emerald = "#29b884";
-  const outline = "#784219";
-  const path = (points: Array<[number, number]>, fill: string | CanvasGradient | CanvasPattern, stroke = outline) => {
-    context.beginPath();
-    points.forEach(([px, py], index) => (index === 0 ? context.moveTo(x + px * radius, y + py * radius) : context.lineTo(x + px * radius, y + py * radius)));
-    context.closePath();
-    context.fillStyle = fill;
-    context.fill();
-    context.lineWidth = Math.max(1.2, radius * 0.09);
-    context.strokeStyle = stroke;
-    context.stroke();
-  };
-  const sparkle = (sx: number, sy: number, size: number) => {
-    context.save();
-    context.fillStyle = "#fff8cf";
-    context.beginPath();
-    context.ellipse(x + sx * radius, y + sy * radius, size * radius, size * radius * 1.8, -0.6, 0, Math.PI * 2);
-    context.fill();
-    context.restore();
-  };
-
-  if (tier === 1) {
-    path([[-0.92, -0.17], [-0.62, -0.67], [-0.12, -0.9], [0.62, -0.69], [0.9, -0.05], [0.55, 0.73], [-0.48, 0.86], [-0.9, 0.39]], gold);
-    path([[-0.54, -0.33], [-0.08, -0.7], [0.4, -0.51], [0.22, -0.16]], "#fff09b", "#e3a42d");
-    sparkle(0.28, 0.25, 0.07);
-    return;
-  }
-
-  if (tier === 2) {
-    context.beginPath();
-    context.ellipse(x, y, radius * 0.85, radius * 0.85, 0, 0, Math.PI * 2);
-    context.fillStyle = gold;
-    context.fill();
-    context.lineWidth = Math.max(1.5, radius * 0.1);
-    context.strokeStyle = darkGold;
-    context.stroke();
-    context.beginPath();
-    context.ellipse(x, y, radius * 0.64, radius * 0.64, 0, 0, Math.PI * 2);
-    context.strokeStyle = "#fff0a1";
-    context.lineWidth = Math.max(1.2, radius * 0.055);
-    context.stroke();
-    context.fillStyle = "#fff0a1";
-    context.font = `900 ${radius * 0.82}px Georgia`;
-    context.textAlign = "center";
-    context.textBaseline = "middle";
-    context.fillText("✦", x, y + radius * 0.02);
-    sparkle(-0.34, -0.38, 0.055);
-    return;
-  }
-
-  if (tier === 3) {
-    for (let layer = 0; layer < 2; layer += 1) {
-      context.beginPath();
-      context.ellipse(x, y + radius * (0.22 - layer * 0.38), radius * 0.88, radius * 0.35, 0, 0, Math.PI * 2);
-      context.fillStyle = layer === 1 ? "#ffe16c" : "#cc7a20";
-      context.fill();
-      context.strokeStyle = darkGold;
-      context.lineWidth = Math.max(1.2, radius * 0.07);
-      context.stroke();
-      context.beginPath();
-      context.ellipse(x, y + radius * (0.4 - layer * 0.3), radius * 0.66, radius * 0.18, 0, Math.PI, Math.PI * 2);
-      context.strokeStyle = "#fff1a2";
-      context.stroke();
-    }
-    return;
-  }
-
-  if (tier === 4 || tier === 5) {
-    const fill = tier === 4 ? blue : "#fa5168";
-    const points: Array<[number, number]> = [[0, -0.98], [0.72, -0.49], [0.86, 0.22], [0.49, 0.84], [-0.49, 0.84], [-0.86, 0.22], [-0.72, -0.49]];
-    path(points, fill, tier === 4 ? "#176e9b" : "#86212e");
-    path([[0, -0.7], [0.49, -0.35], [0, 0.06]], "#d9fbff", "#b6efff");
-    path([[0, -0.7], [0, 0.06], [-0.5, -0.35]], tier === 4 ? "#92f0f7" : "#ffadb0", tier === 4 ? "#5ebbd7" : "#e06c78");
-    path([[0, 0.06], [0.49, -0.35], [0.55, 0.23], [0, 0.7]], tier === 4 ? "#2693c5" : "#c3294a", tier === 4 ? "#176e9b" : "#86212e");
-    path([[0, 0.06], [0, 0.7], [-0.55, 0.23], [-0.49, -0.35]], tier === 4 ? "#4ac5dc" : "#e33b54", tier === 4 ? "#176e9b" : "#86212e");
-    return;
-  }
-
-  if (tier === 6) {
-    context.beginPath();
-    context.moveTo(x - radius * 0.68, y - radius * 0.38);
-    context.quadraticCurveTo(x - radius, y + radius * 0.36, x - radius * 0.25, y + radius * 0.83);
-    context.quadraticCurveTo(x + radius * 0.7, y + radius * 0.97, x + radius * 0.82, y + radius * 0.1);
-    context.quadraticCurveTo(x + radius * 0.82, y - radius * 0.35, x + radius * 0.42, y - radius * 0.56);
-    context.lineTo(x + radius * 0.18, y - radius * 0.83);
-    context.quadraticCurveTo(x, y - radius * 0.51, x - radius * 0.18, y - radius * 0.81);
-    context.closePath();
-    context.fillStyle = "#a83f2c";
-    context.fill();
-    context.lineWidth = Math.max(1.5, radius * 0.09);
-    context.strokeStyle = outline;
-    context.stroke();
-    context.beginPath();
-    context.moveTo(x - radius * 0.5, y - radius * 0.47);
-    context.quadraticCurveTo(x, y - radius * 0.18, x + radius * 0.48, y - radius * 0.48);
-    context.strokeStyle = gold;
-    context.lineWidth = Math.max(2, radius * 0.16);
-    context.stroke();
-    context.beginPath();
-    context.arc(x + radius * 0.13, y + radius * 0.13, radius * 0.28, 0, Math.PI * 2);
-    context.fillStyle = emerald;
-    context.fill();
-    context.strokeStyle = "#d3fff1";
-    context.lineWidth = Math.max(1.2, radius * 0.06);
-    context.stroke();
-    sparkle(-0.46, -0.14, 0.055);
-    return;
-  }
-
-  if (tier === 7 || tier === 10) {
-    const chestWidth = radius * (tier === 7 ? 1.55 : 1.95);
-    const chestHeight = radius * (tier === 7 ? 1.13 : 1.38);
-    const lidHeight = chestHeight * 0.56;
-    context.beginPath();
-    context.moveTo(x - chestWidth * 0.5, y - chestHeight * 0.1);
-    context.quadraticCurveTo(x - chestWidth * 0.48, y - chestHeight * 0.56, x - chestWidth * 0.27, y - chestHeight * 0.57);
-    context.lineTo(x + chestWidth * 0.27, y - chestHeight * 0.57);
-    context.quadraticCurveTo(x + chestWidth * 0.49, y - chestHeight * 0.51, x + chestWidth * 0.5, y - chestHeight * 0.08);
-    context.lineTo(x + chestWidth * 0.46, y + chestHeight * 0.02);
-    context.lineTo(x - chestWidth * 0.46, y + chestHeight * 0.02);
-    context.closePath();
-    context.fillStyle = "#a45324";
-    context.fill();
-    context.strokeStyle = outline;
-    context.lineWidth = Math.max(1.5, radius * 0.085);
-    context.stroke();
-    roundedBox(context, x - chestWidth * 0.5, y - chestHeight * 0.05, chestWidth, chestHeight * 0.68, radius * 0.12);
-    context.fillStyle = "#b76427";
-    context.fill();
-    context.strokeStyle = outline;
-    context.stroke();
-    context.fillStyle = gold;
-    context.fillRect(x - chestWidth * 0.44, y + chestHeight * 0.12, chestWidth * 0.88, Math.max(2, radius * 0.14));
-    context.fillRect(x - chestWidth * 0.09, y - chestHeight * 0.48, Math.max(3, radius * 0.18), chestHeight * 1.08);
-    context.beginPath();
-    context.arc(x, y + chestHeight * 0.26, radius * 0.15, 0, Math.PI * 2);
-    context.fillStyle = "#fff09d";
-    context.fill();
-    context.strokeStyle = darkGold;
-    context.stroke();
-    return;
-  }
-
-  if (tier === 8) {
-    path([[-0.72, -0.78], [0.72, -0.78], [0.47, -0.08], [0.22, 0.2], [0.18, 0.52], [0.52, 0.58], [0.7, 0.82], [-0.7, 0.82], [-0.52, 0.58], [-0.18, 0.52], [-0.22, 0.2], [-0.47, -0.08]], gold);
-    context.beginPath();
-    context.ellipse(x, y - radius * 0.76, radius * 0.72, radius * 0.22, 0, 0, Math.PI * 2);
-    context.fillStyle = "#fff0a5";
-    context.fill();
-    context.strokeStyle = darkGold;
-    context.lineWidth = Math.max(1.4, radius * 0.07);
-    context.stroke();
-    return;
-  }
-
-  if (tier === 9) {
-    path([[-0.9, -0.22], [-0.82, -0.78], [-0.34, -0.35], [0, -0.98], [0.34, -0.35], [0.82, -0.78], [0.9, -0.22], [0.72, 0.6], [-0.72, 0.6]], gold);
-    context.fillStyle = "#bd2d42";
-    roundedBox(context, x - radius * 0.75, y + radius * 0.24, radius * 1.5, radius * 0.3, radius * 0.08);
-    context.fill();
-    context.strokeStyle = outline;
-    context.lineWidth = Math.max(1, radius * 0.05);
-    context.stroke();
-    for (const gemX of [-0.55, 0, 0.55]) {
-      context.beginPath();
-      context.arc(x + gemX * radius, y + radius * 0.36, radius * 0.1, 0, Math.PI * 2);
-      context.fillStyle = blue;
-      context.fill();
-    }
-    return;
-  }
-
-  if (tier === 11) {
-    context.beginPath();
-    context.ellipse(x, y + radius * 0.25, radius * 0.94, radius * 0.62, 0, 0, Math.PI * 2);
-    context.fillStyle = "#a94424";
-    context.fill();
-    context.lineWidth = Math.max(1.5, radius * 0.09);
-    context.strokeStyle = outline;
-    context.stroke();
-    context.beginPath();
-    context.ellipse(x, y + radius * 0.16, radius * 0.85, radius * 0.5, 0, Math.PI, Math.PI * 2);
-    context.fillStyle = gold;
-    context.fill();
-    context.strokeStyle = darkGold;
-    context.stroke();
-    for (let index = 0; index < 6; index += 1) {
-      const angle = Math.PI + (index / 5) * Math.PI;
-      context.beginPath();
-      context.arc(x + Math.cos(angle) * radius * 0.58, y + radius * 0.17 + Math.sin(angle) * radius * 0.27, radius * 0.105, 0, Math.PI * 2);
-      context.fillStyle = [blue, ruby, emerald][index % 3];
-      context.fill();
-      context.strokeStyle = "#fff2ba";
-      context.lineWidth = Math.max(1, radius * 0.04);
-      context.stroke();
-    }
-    sparkle(-0.4, 0.06, 0.06);
-    return;
-  }
-
-  // Goldener Thron: bewusst breite, stabile Silhouette mit roter Polsterung.
-  roundedBox(context, x - radius * 0.63, y - radius * 0.92, radius * 1.26, radius * 0.84, radius * 0.19);
-  context.fillStyle = "#ad302c";
-  context.fill();
-  context.strokeStyle = darkGold;
-  context.lineWidth = Math.max(1.5, radius * 0.09);
-  context.stroke();
-  context.fillStyle = gold;
-  context.fillRect(x - radius * 0.75, y + radius * 0.12, radius * 1.5, radius * 0.22);
-  roundedBox(context, x - radius * 0.52, y - radius * 0.25, radius * 1.04, radius * 0.68, radius * 0.12);
-  context.fillStyle = "#bd3b35";
-  context.fill();
-  context.strokeStyle = darkGold;
-  context.stroke();
-  roundedBox(context, x - radius * 0.92, y - radius * 0.16, radius * 0.36, radius * 0.68, radius * 0.12);
-  context.fillStyle = gold;
-  context.fill();
-  context.stroke();
-  roundedBox(context, x + radius * 0.56, y - radius * 0.16, radius * 0.36, radius * 0.68, radius * 0.12);
-  context.fillStyle = gold;
-  context.fill();
-  context.stroke();
-  context.fillStyle = darkGold;
-  context.fillRect(x - radius * 0.64, y + radius * 0.36, radius * 0.17, radius * 0.55);
-  context.fillRect(x + radius * 0.47, y + radius * 0.36, radius * 0.17, radius * 0.55);
-  context.fillStyle = "#fff2a3";
-  context.beginPath();
-  context.arc(x, y - radius * 0.57, radius * 0.14, 0, Math.PI * 2);
-  context.fill();
 }

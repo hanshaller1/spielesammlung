@@ -1,9 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { sitePath } from "../site-paths";
+import { Profiler, useCallback, useEffect, useRef, useState } from "react";
+import { publicBasePath, sitePath } from "../site-paths";
 import { DropShuffleBag } from "./drop-shuffle-bag";
-import { drawTreasureIcon, SchatzMergeEngine, TREASURES, type MergeEvent } from "./engine";
+import { SchatzMergeEngine, TREASURES, type MergeEvent } from "./engine";
+
+import { loadTreasureSprites, treasureAssetPath, type SpriteUse } from "./assets";
+import { SPRITE_PROFILES } from "./sprite-profiles";
+import { RenderQuality, type QualityLevel } from "./quality";
+import { FrameProfiler } from "./performance";
 
 type Mode = "ready" | "playing" | "paused" | "over";
 
@@ -17,22 +22,14 @@ function loadHighScore(): number {
   }
 }
 
-function TreasureArtIcon({ tier, size, className }: { tier: number; size: number; className: string }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const context = canvas?.getContext("2d");
-    if (!canvas || !context) return;
-    const pixelRatio = Math.min(2, window.devicePixelRatio || 1);
-    canvas.width = size * pixelRatio;
-    canvas.height = size * pixelRatio;
-    context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-    context.clearRect(0, 0, size, size);
-    drawTreasureIcon(context, tier, size / 2, size / 2, size * 0.375);
-  }, [tier, size]);
-
-  return <canvas ref={canvasRef} className={className} aria-hidden="true" />;
+function TreasureArtIcon({ tier, size, className, use }: { tier: number; size: number; className: string; use: SpriteUse }) {
+  const [x, y, width, height] = SPRITE_PROFILES[tier - 1][use];
+  const scale = size / Math.max(width, height);
+  // Display a source rectangle without modifying or re-encoding the supplied asset.
+  return <span className={className} style={{ position: "relative", display: "block", overflow: "hidden" }} aria-hidden="true">
+    {/* eslint-disable-next-line @next/next/no-img-element -- fixed local sprites shared with the canvas renderer */}
+    <img src={sitePath(treasureAssetPath(tier, use))} alt="" width={size} height={size} draggable={false} style={{ position: "absolute", width: `${362 * scale / size * 100}%`, height: `${362 * scale / size * 100}%`, maxWidth: "none", left: `${((size - width * scale) / 2 - x * scale) / size * 100}%`, top: `${((size - height * scale) / 2 - y * scale) / size * 100}%` }} />
+  </span>;
 }
 
 export default function SchatzMergePage() {
@@ -56,12 +53,11 @@ export default function SchatzMergePage() {
   const [nextTier, setNextTier] = useState(1);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [showGuide, setShowGuide] = useState(true);
+  const profilerRef = useRef<FrameProfiler | null>(null);
+  const activeVoicesRef = useRef(0);
+  const [assetError, setAssetError] = useState("");
   const [dropBag] = useState(() => new DropShuffleBag());
 
-  modeRef.current = mode;
-  currentTierRef.current = currentTier;
-  nextTierRef.current = nextTier;
-  soundEnabledRef.current = soundEnabled;
 
   const playNotes = useCallback((frequencies: number[], duration = 0.12, type: OscillatorType = "sine") => {
     if (!soundEnabledRef.current || typeof window === "undefined") return;
@@ -76,8 +72,14 @@ export default function SchatzMergePage() {
       if (audio.state === "suspended") void audio.resume().catch(() => {});
       const startAt = audio.currentTime;
       for (const [index, frequency] of frequencies.entries()) {
+        if (activeVoicesRef.current >= 24) break;
+        activeVoicesRef.current++;
         const oscillator = audio.createOscillator();
         const gain = audio.createGain();
+        oscillator.onended = () => {
+          oscillator.disconnect(); gain.disconnect();
+          activeVoicesRef.current = Math.max(0, activeVoicesRef.current - 1);
+        };
         oscillator.type = type;
         oscillator.frequency.setValueAtTime(frequency, startAt + index * 0.045);
         gain.gain.setValueAtTime(0.0001, startAt + index * 0.045);
@@ -128,8 +130,14 @@ export default function SchatzMergePage() {
   }, [playNotes]);
 
   useEffect(() => {
-    setHighScore(loadHighScore());
-    highScoreRef.current = loadHighScore();
+    let mounted = true;
+    queueMicrotask(() => {
+      if (!mounted) return;
+      const stored = loadHighScore();
+      highScoreRef.current = stored;
+      setHighScore(stored);
+    });
+    return () => { mounted = false; };
   }, []);
 
   useEffect(() => {
@@ -146,35 +154,91 @@ export default function SchatzMergePage() {
     });
     engineRef.current = game;
 
+    const params = new URLSearchParams(window.location.search);
+    const debug = params.get("smDebug") === "1";
+    const requested = params.get("smQuality");
+    const override = debug && (requested === "HIGH" || requested === "MEDIUM" || requested === "LOW") ? requested as QualityLevel : undefined;
+    const device = navigator as Navigator & { deviceMemory?: number };
+    const quality = new RenderQuality(override, window.matchMedia("(pointer: coarse)").matches || (device.deviceMemory ?? 8) <= 4 || navigator.hardwareConcurrency <= 4);
+    const profiler = debug ? new FrameProfiler() : null;
+    profilerRef.current = profiler;
+    game.diagnosticsEnabled = debug;
+    game.debugColliders = debug && params.get("smColliders") === "1";
+    game.setQuality(quality.level);
+    let disposed = false;
+    let dirty = true;
+    let needsResize = true;
+    let cssWidth = 0, cssHeight = 0;
+    let lastDpr = 0;
+    let debugPanel: HTMLPreElement | null = null;
+    const debugWindow = window as Window & { __schatzMerge?: { game: SchatzMergeEngine; snapshot: () => object; canvas: HTMLCanvasElement; stress: (count: number, kind?: string) => void } };
+    if (debug && profiler) {
+      debugWindow.__schatzMerge = { game, canvas, stress: (count, kind) => { game.loadDebugScene(count, kind); dropPendingRef.current = false; modeRef.current = "playing"; setMode("playing"); }, snapshot: () => ({ ...profiler.snapshot(), ...game.debugSnapshot(), canvas: [canvas.width, canvas.height], dpr: lastDpr, deviceDpr: window.devicePixelRatio, audioVoices: activeVoicesRef.current }) };
+      debugPanel = document.createElement("pre");
+      debugPanel.style.cssText = "position:fixed;bottom:8px;left:8px;z-index:100;max-width:390px;max-height:28vh;overflow:auto;background:#071522e8;color:#aef4cd;font:10px monospace;padding:6px;pointer-events:none";
+      document.body.appendChild(debugPanel);
+    }
+    void loadTreasureSprites(publicBasePath).then(sprites => {
+      if (disposed) return;
+      game.setSprites(sprites); dirty = true;
+    }).catch(error => { if (!disposed) setAssetError(error instanceof Error ? error.message : "Schatzgrafiken konnten nicht geladen werden."); });
     const resize = () => {
       const rect = canvas.getBoundingClientRect();
-      const pixelRatio = Math.min(2, window.devicePixelRatio || 1);
-      canvas.width = Math.max(1, Math.round(rect.width * pixelRatio));
-      canvas.height = Math.max(1, Math.round(rect.height * pixelRatio));
-      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-      game.resize(rect.width, rect.height);
-      previewXRef.current = game.clampX(previewXRef.current, currentTierRef.current);
+      if (rect.width < 1 || rect.height < 1) return;
+      const changed = Math.abs(rect.width - cssWidth) >= .5 || Math.abs(rect.height - cssHeight) >= .5;
+      if (changed) {
+        cssWidth = rect.width; cssHeight = rect.height;
+        game.resize(cssWidth, cssHeight);
+        previewXRef.current = game.clampX(previewXRef.current, currentTierRef.current);
+        if (profiler) profiler.resizes++;
+      }
+      const pixelRatio = Math.min(quality.dpr, window.devicePixelRatio || 1);
+      const width = Math.max(1, Math.round(cssWidth * pixelRatio)), height = Math.max(1, Math.round(cssHeight * pixelRatio));
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width; canvas.height = height;
+        // Use actual rounded backing dimensions to avoid uncovered edge pixels.
+        context.setTransform(width / cssWidth, 0, 0, height / cssHeight, 0, 0);
+        if (profiler) profiler.backingResizes++;
+        dirty = true;
+      }
+      lastDpr = pixelRatio;
+      needsResize = false;
     };
-
-    resize();
-    const observer = new ResizeObserver(resize);
+    const observer = new ResizeObserver(() => { needsResize = true; });
     observer.observe(canvas);
     let frameId = 0;
     let previousFrame = performance.now();
+    let lastDebug = 0;
     const frame = (now: number) => {
-      const delta = Math.min(34, now - previousFrame || 16.7);
+      const interval = now - previousFrame || 16.7;
       previousFrame = now;
-      if (modeRef.current === "playing") game.update(delta);
-      const preview = modeRef.current === "playing" && !dropPendingRef.current
-        ? { tier: currentTierRef.current, x: previewXRef.current }
-        : null;
-      game.draw(context, preview);
+      const start = debug ? performance.now() : 0;
+      const playing = modeRef.current === "playing";
+      if (playing && !document.hidden && quality.observe(interval)) {
+        game.setQuality(quality.level); needsResize = true;
+      }
+      if (Math.min(quality.dpr, window.devicePixelRatio || 1) !== lastDpr) needsResize = true;
+      if (needsResize) resize();
+      if (playing) game.update(interval);
+      if (playing || dirty) {
+        const preview = playing && !dropPendingRef.current ? { tier: currentTierRef.current, x: previewXRef.current } : null;
+        game.draw(context, preview); dirty = false;
+        if (profiler && playing) profiler.record(interval, performance.now() - start, game.metrics);
+      }
+      if (debugPanel && now - lastDebug > 1000) {
+        lastDebug = now;
+        debugPanel.textContent = JSON.stringify(debugWindow.__schatzMerge?.snapshot(), null, 1);
+      }
       frameId = requestAnimationFrame(frame);
     };
     frameId = requestAnimationFrame(frame);
 
     return () => {
+      disposed = true;
       cancelAnimationFrame(frameId);
+      debugPanel?.remove();
+      delete debugWindow.__schatzMerge;
+      profilerRef.current = null;
       observer.disconnect();
       engineRef.current = null;
       const audio = audioContextRef.current;
@@ -234,8 +298,13 @@ export default function SchatzMergePage() {
   const currentDefinition = TREASURES[currentTier - 1];
 
   return (
+    <Profiler id="Schatz-Merge" onRender={(_id, _phase, duration) => {
+      const profiler = profilerRef.current;
+      if (profiler) { profiler.uiCommits++; profiler.uiMs += duration; }
+    }}>
     <main className="treasure-game-shell">
       <div className="treasure-game-card">
+        {assetError && <p role="alert">{assetError}</p>}
         <div className="treasure-header">
           <a className="back-link" href={sitePath("/")}>← Hanna&apos;s Spiele</a>
           <div className="treasure-title-row">
@@ -259,18 +328,18 @@ export default function SchatzMergePage() {
                   ? <button type="button" onClick={() => { modeRef.current = "playing"; setMode("playing"); }}>▶ Weiter</button>
                   : <button type="button" onClick={startRun}>{mode === "over" ? "↻ Nochmal" : "▶ Start"}</button>}
               <button type="button" onClick={startRun}>↻ Neu</button>
-              <button type="button" aria-pressed={soundEnabled} onClick={() => setSoundEnabled((value) => !value)}>{soundEnabled ? "♫ Ton an" : "♫ Ton aus"}</button>
+              <button type="button" aria-pressed={soundEnabled} onClick={() => { soundEnabledRef.current = !soundEnabledRef.current; setSoundEnabled(soundEnabledRef.current); }}>{soundEnabled ? "♫ Ton an" : "♫ Ton aus"}</button>
               <button className="treasure-guide-toggle" type="button" aria-expanded={showGuide} aria-controls="treasure-guide-panel" onClick={() => setShowGuide((value) => !value)}>◆ Schatzfolge</button>
             </div>
             <div className="treasure-item-preview-row" aria-label="Aktueller und nächster Schatz">
               <section className="treasure-current-card" aria-live="polite">
                 <span className="treasure-card-eyebrow">AKTUELL</span>
-                <span className="treasure-current-symbol" aria-hidden="true"><TreasureArtIcon tier={currentTier} size={40} className="treasure-preview-icon" /></span>
+                <span className="treasure-current-symbol" aria-hidden="true"><TreasureArtIcon tier={currentTier} size={40} className="treasure-preview-icon" use="preview" /></span>
                 <strong>{currentDefinition.name}</strong>
               </section>
               <section className="treasure-next-card" aria-live="polite">
                 <span className="treasure-card-eyebrow">ALS NÄCHSTES</span>
-                <span className="treasure-next-symbol" aria-hidden="true"><TreasureArtIcon tier={nextTier} size={40} className="treasure-preview-icon" /></span>
+                <span className="treasure-next-symbol" aria-hidden="true"><TreasureArtIcon tier={nextTier} size={40} className="treasure-preview-icon" use="preview" /></span>
                 <strong>{nextDefinition.name}</strong>
               </section>
             </div>
@@ -281,7 +350,7 @@ export default function SchatzMergePage() {
             <ol>
               {TREASURES.map((treasure, index) => (
                 <li aria-label={`${treasure.name}, Stufe ${treasure.tier}`} className={currentTier === treasure.tier ? "treasure-guide-current" : ""} key={treasure.id}>
-                  <span className="treasure-guide-art"><TreasureArtIcon tier={treasure.tier} size={28} className="treasure-guide-icon" /></span>
+                  <span className="treasure-guide-art"><TreasureArtIcon tier={treasure.tier} size={28} className="treasure-guide-icon" use="guide" /></span>
                   <span>{treasure.name}</span>
                   {index < TREASURES.length - 1 && <b aria-hidden="true">↓</b>}
                 </li>
@@ -358,5 +427,6 @@ export default function SchatzMergePage() {
         </div>
       </div>
     </main>
+    </Profiler>
   );
 }

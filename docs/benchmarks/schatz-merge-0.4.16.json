@@ -1,0 +1,1727 @@
+{
+  "date": "2026-10-02",
+  "baselineTag": "0.4.15",
+  "method": "Chromium headless, 390x620 CSS canvas, device DPR2, CPU1x or 6x, fixed seed, 180 warm-up steps and 180 measured RAFs (first20 excluded); commands vs frame intervals reported separately. New renderer uses supplied PNGs and their intrinsic proportions.",
+  "before": {
+    "date": "2026-10-02T14:37:51.915Z",
+    "engine": "0.4.15",
+    "chromium": "153.0.8010.12",
+    "results": [
+      {
+        "profile": "desktop",
+        "scenario": 5,
+        "fps": 60.003750234389656,
+        "frameMean": 16.665625,
+        "frameP95": 16.800000000000182,
+        "workMean": 0.1881250012665987,
+        "workP95": 0.30000001192092896,
+        "physics": 0.041249999403953554,
+        "background": 0.03312499932944775,
+        "treasures": 0.09125000163912773,
+        "particles": 0.0006249997764825821,
+        "preview": 0.015000001341104508,
+        "steps": 1,
+        "bodies": 5,
+        "parts": 6,
+        "particleCount": 0,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      },
+      {
+        "profile": "desktop",
+        "scenario": 10,
+        "fps": 60.001500037500946,
+        "frameMean": 16.666249999999998,
+        "frameP95": 16.700000000000728,
+        "workMean": 0.2743750002235174,
+        "workP95": 0.3999999761581421,
+        "physics": 0.08062500208616256,
+        "background": 0.03687499947845936,
+        "treasures": 0.14187499843537807,
+        "particles": 0.0006249997764825821,
+        "preview": 0.010000000149011612,
+        "steps": 1,
+        "bodies": 10,
+        "parts": 12,
+        "particleCount": 0,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      },
+      {
+        "profile": "desktop",
+        "scenario": 20,
+        "fps": 60.00150003750093,
+        "frameMean": 16.66625,
+        "frameP95": 16.799999999999272,
+        "workMean": 0.3868749998509884,
+        "workP95": 0.5,
+        "physics": 0.1450000025331974,
+        "background": 0.03437500186264515,
+        "treasures": 0.19249999709427357,
+        "particles": 0,
+        "preview": 0.010624998435378074,
+        "steps": 1,
+        "bodies": 20,
+        "parts": 23,
+        "particleCount": 0,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      },
+      {
+        "profile": "desktop",
+        "scenario": 30,
+        "fps": 55.493895671476125,
+        "frameMean": 18.020000000000003,
+        "frameP95": 33.30000000000109,
+        "workMean": 0.4468749985098839,
+        "workP95": 0.699999988079071,
+        "physics": 0.1675000011920929,
+        "background": 0.029374999925494194,
+        "treasures": 0.2362499985843897,
+        "particles": 0.000625000149011612,
+        "preview": 0.008749999105930328,
+        "steps": 1.08125,
+        "bodies": 30,
+        "parts": 35,
+        "particleCount": 0,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      },
+      {
+        "profile": "desktop",
+        "scenario": "small",
+        "fps": 60.00150003750097,
+        "frameMean": 16.66624999999999,
+        "frameP95": 16.799999999999272,
+        "workMean": 0.40812499858438966,
+        "workP95": 0.5,
+        "physics": 0.15562500357627868,
+        "background": 0.028124998882412912,
+        "treasures": 0.20499999783933162,
+        "particles": 0.0006249997764825821,
+        "preview": 0.011874999105930328,
+        "steps": 1,
+        "bodies": 30,
+        "parts": 30,
+        "particleCount": 0,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      },
+      {
+        "profile": "desktop",
+        "scenario": "compound",
+        "fps": 60.00150003750097,
+        "frameMean": 16.66624999999999,
+        "frameP95": 16.799999999999272,
+        "workMean": 0.22812499925494195,
+        "workP95": 0.30000001192092896,
+        "physics": 0.1081250011920929,
+        "background": 0.031875000521540645,
+        "treasures": 0.07124999947845936,
+        "particles": 0,
+        "preview": 0.011249998211860656,
+        "steps": 1,
+        "bodies": 6,
+        "parts": 30,
+        "particleCount": 0,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      },
+      {
+        "profile": "desktop",
+        "scenario": "chains",
+        "fps": 60.00150003750097,
+        "frameMean": 16.66624999999999,
+        "frameP95": 16.700000000000728,
+        "workMean": 0.3312499988824129,
+        "workP95": 0.5,
+        "physics": 0.08249999918043613,
+        "background": 0.04062500186264515,
+        "treasures": 0.1237499974668026,
+        "particles": 0.07124999985098839,
+        "preview": 0,
+        "steps": 1,
+        "bodies": 14,
+        "parts": 20,
+        "particleCount": 27,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      },
+      {
+        "profile": "tablet-6x",
+        "scenario": 5,
+        "fps": 18.973306928814527,
+        "frameMean": 52.705625,
+        "frameP95": 66.70000000000073,
+        "workMean": 1.390624998509884,
+        "workP95": 1.9000000357627869,
+        "physics": 0.23187499940395356,
+        "background": 0.3112500015646219,
+        "treasures": 0.671874999627471,
+        "particles": 0.004999999701976776,
+        "preview": 0.11937499903142453,
+        "steps": 2.0375,
+        "bodies": 5,
+        "parts": 6,
+        "particleCount": 0,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      },
+      {
+        "profile": "tablet-6x",
+        "scenario": 10,
+        "fps": 12.903746118795112,
+        "frameMean": 77.496875,
+        "frameP95": 83.40000000000146,
+        "workMean": 2.028124998882413,
+        "workP95": 2.800000011920929,
+        "physics": 0.4381249982863665,
+        "background": 0.30250000283122064,
+        "treasures": 1.1562499988824129,
+        "particles": 0.001249999925494194,
+        "preview": 0.09499999843537807,
+        "steps": 2.04375,
+        "bodies": 10,
+        "parts": 12,
+        "particleCount": 0,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      },
+      {
+        "profile": "tablet-6x",
+        "scenario": 20,
+        "fps": 7.86275560098481,
+        "frameMean": 127.18187499999999,
+        "frameP95": 149.90000000000146,
+        "workMean": 3.2568749986588954,
+        "workP95": 5.199999988079071,
+        "physics": 0.9774999994784593,
+        "background": 0.33874999955296514,
+        "treasures": 1.8131249997764827,
+        "particles": 0.001249999925494194,
+        "preview": 0.09000000059604644,
+        "steps": 2.04375,
+        "bodies": 20,
+        "parts": 23,
+        "particleCount": 0,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      },
+      {
+        "profile": "tablet-6x",
+        "scenario": 30,
+        "fps": 5.731582812416041,
+        "frameMean": 174.471875,
+        "frameP95": 183.40000000000146,
+        "workMean": 4.146249997988344,
+        "workP95": 6.300000011920929,
+        "physics": 1.3243750009685755,
+        "background": 0.2856250010430813,
+        "treasures": 2.40749999769032,
+        "particles": 0,
+        "preview": 0.0943749986588955,
+        "steps": 2.04375,
+        "bodies": 30,
+        "parts": 35,
+        "particleCount": 0,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      },
+      {
+        "profile": "tablet-6x",
+        "scenario": "small",
+        "fps": 9.95891945723889,
+        "frameMean": 100.4125,
+        "frameP95": 116.60000000000582,
+        "workMean": 3.187500002980232,
+        "workP95": 5,
+        "physics": 0.9575000017881393,
+        "background": 0.28499999828636646,
+        "treasures": 1.811250001937151,
+        "particles": 0.000625000149011612,
+        "preview": 0.09687500074505806,
+        "steps": 2.04375,
+        "bodies": 30,
+        "parts": 30,
+        "particleCount": 0,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      },
+      {
+        "profile": "tablet-6x",
+        "scenario": "compound",
+        "fps": 7.717389207231191,
+        "frameMean": 129.57750000000004,
+        "frameP95": 149.90000000000873,
+        "workMean": 1.703124999254942,
+        "workP95": 2.899999976158142,
+        "physics": 0.5987499989569187,
+        "background": 0.30500000305473807,
+        "treasures": 0.6531249981373548,
+        "particles": 0.0025000002235174177,
+        "preview": 0.11687499955296517,
+        "steps": 2.04375,
+        "bodies": 6,
+        "parts": 30,
+        "particleCount": 0,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      },
+      {
+        "profile": "tablet-6x",
+        "scenario": "chains",
+        "fps": 13.483789956261965,
+        "frameMean": 74.16312499999995,
+        "frameP95": 83.39999999999418,
+        "workMean": 2.9137500017881393,
+        "workP95": 4,
+        "physics": 0.8593749981373549,
+        "background": 0.36062500178813933,
+        "treasures": 1.0993749983608723,
+        "particles": 0.4631250012665987,
+        "preview": 0.005000000074505806,
+        "steps": 2.04375,
+        "bodies": 11,
+        "parts": 14,
+        "particleCount": 44,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      }
+    ]
+  },
+  "after": {
+    "date": "2026-10-02T15:19:57.782Z",
+    "engine": "working-tree",
+    "chromium": "153.0.8010.12",
+    "results": [
+      {
+        "profile": "desktop",
+        "scenario": 5,
+        "fps": 60.00375023438964,
+        "frameMean": 16.665625000000002,
+        "frameP95": 16.799999999999727,
+        "workMean": 0.23875000104308128,
+        "workP95": 0.3999999761581421,
+        "physics": 0.11249999888241291,
+        "background": 0.038750000298023224,
+        "treasures": 0.05312500149011612,
+        "particles": 0.000625000149011612,
+        "preview": 0.025,
+        "steps": 0.99375,
+        "bodies": 5,
+        "parts": 5,
+        "particleCount": 0,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      },
+      {
+        "profile": "desktop",
+        "scenario": 10,
+        "fps": 60.00150003750093,
+        "frameMean": 16.66625,
+        "frameP95": 16.800000000000182,
+        "workMean": 0.34249999970197675,
+        "workP95": 0.6000000238418579,
+        "physics": 0.23187500052154064,
+        "background": 0.0306249987334013,
+        "treasures": 0.05375000163912773,
+        "particles": 0.001250000298023224,
+        "preview": 0.019999998807907104,
+        "steps": 1,
+        "bodies": 10,
+        "parts": 10,
+        "particleCount": 0,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      },
+      {
+        "profile": "desktop",
+        "scenario": 20,
+        "fps": 60.00150003750093,
+        "frameMean": 16.66625,
+        "frameP95": 16.700000000000728,
+        "workMean": 0.5187500011175871,
+        "workP95": 0.7999999523162842,
+        "physics": 0.3949999984353781,
+        "background": 0.02562499903142452,
+        "treasures": 0.07437500096857548,
+        "particles": 0.001250000298023224,
+        "preview": 0.013125000521540642,
+        "steps": 1,
+        "bodies": 20,
+        "parts": 20,
+        "particleCount": 0,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      },
+      {
+        "profile": "desktop",
+        "scenario": 30,
+        "fps": 59.99925000937487,
+        "frameMean": 16.666875000000005,
+        "frameP95": 16.700000000000728,
+        "workMean": 0.8324999991804362,
+        "workP95": 1.199999988079071,
+        "physics": 0.6881249994039536,
+        "background": 0.02499999888241291,
+        "treasures": 0.10437499955296517,
+        "particles": 0,
+        "preview": 0.007499999925494194,
+        "steps": 1,
+        "bodies": 30,
+        "parts": 30,
+        "particleCount": 0,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      },
+      {
+        "profile": "desktop",
+        "scenario": "small",
+        "fps": 60.00150003750093,
+        "frameMean": 16.66625,
+        "frameP95": 16.799999999999272,
+        "workMean": 0.6643750045448542,
+        "workP95": 1,
+        "physics": 0.5343750007450581,
+        "background": 0.02499999888241291,
+        "treasures": 0.08187500387430191,
+        "particles": 0.0018749997019767762,
+        "preview": 0.014375000447034835,
+        "steps": 1,
+        "bodies": 30,
+        "parts": 30,
+        "particleCount": 0,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      },
+      {
+        "profile": "desktop",
+        "scenario": "compound",
+        "fps": 60.00150003750097,
+        "frameMean": 16.66624999999999,
+        "frameP95": 16.799999999999272,
+        "workMean": 0.3143749997019768,
+        "workP95": 0.5,
+        "physics": 0.21000000052154064,
+        "background": 0.04187499694526196,
+        "treasures": 0.03749999962747097,
+        "particles": 0.000625000149011612,
+        "preview": 0.017500002309679984,
+        "steps": 1,
+        "bodies": 6,
+        "parts": 10,
+        "particleCount": 0,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      },
+      {
+        "profile": "desktop",
+        "scenario": "chains",
+        "fps": 60.003750234389656,
+        "frameMean": 16.665625,
+        "frameP95": 16.799999999999272,
+        "workMean": 0.22687499597668648,
+        "workP95": 0.3999999761581421,
+        "physics": 0.09375000037252904,
+        "background": 0.03312499970197678,
+        "treasures": 0.06375000067055225,
+        "particles": 0.014374997094273567,
+        "preview": 0.003749999776482582,
+        "steps": 1,
+        "bodies": 8,
+        "parts": 8,
+        "particleCount": 7,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      },
+      {
+        "profile": "tablet-6x",
+        "scenario": 5,
+        "fps": 60.003750234389656,
+        "frameMean": 16.665625,
+        "frameP95": 16.700000000000273,
+        "workMean": 1.1549999963492155,
+        "workP95": 1.899999976158142,
+        "physics": 0.6018749974668026,
+        "background": 0.13187500275671482,
+        "treasures": 0.23812499679625035,
+        "particles": 0.011249999701976775,
+        "preview": 0.08874999843537808,
+        "steps": 0.99375,
+        "bodies": 5,
+        "parts": 5,
+        "particleCount": 0,
+        "canvas": [
+          390,
+          620
+        ],
+        "dpr": 1
+      },
+      {
+        "profile": "tablet-6x",
+        "scenario": 10,
+        "fps": 60.003750234389656,
+        "frameMean": 16.665625,
+        "frameP95": 16.700000000000728,
+        "workMean": 2.201249998062849,
+        "workP95": 4.099999964237213,
+        "physics": 1.559374997764826,
+        "background": 0.12875000312924384,
+        "treasures": 0.3537499975413084,
+        "particles": 0.011250000819563866,
+        "preview": 0.08999999910593033,
+        "steps": 0.99375,
+        "bodies": 10,
+        "parts": 10,
+        "particleCount": 0,
+        "canvas": [
+          390,
+          620
+        ],
+        "dpr": 1
+      },
+      {
+        "profile": "tablet-6x",
+        "scenario": 20,
+        "fps": 52.462456554528146,
+        "frameMean": 19.06125000000001,
+        "frameP95": 33.399999999999636,
+        "workMean": 3.280000000074506,
+        "workP95": 6.800000011920929,
+        "physics": 2.5337500005960463,
+        "background": 0.13374999947845936,
+        "treasures": 0.4787499975413084,
+        "particles": 0.004375000298023224,
+        "preview": 0.07562499903142453,
+        "steps": 1.14375,
+        "bodies": 20,
+        "parts": 20,
+        "particleCount": 0,
+        "canvas": [
+          390,
+          620
+        ],
+        "dpr": 1
+      },
+      {
+        "profile": "tablet-6x",
+        "scenario": 30,
+        "fps": 31.17024799828563,
+        "frameMean": 32.081875000000004,
+        "frameP95": 50,
+        "workMean": 6.622499999403954,
+        "workP95": 18.600000023841858,
+        "physics": 5.626874997839332,
+        "background": 0.1649999998509884,
+        "treasures": 0.7275000020861626,
+        "particles": 0.003750000149011612,
+        "preview": 0.061249999701976775,
+        "steps": 1.86875,
+        "bodies": 30,
+        "parts": 30,
+        "particleCount": 0,
+        "canvas": [
+          390,
+          620
+        ],
+        "dpr": 1
+      },
+      {
+        "profile": "tablet-6x",
+        "scenario": "small",
+        "fps": 50.26388539834134,
+        "frameMean": 19.894999999999982,
+        "frameP95": 33.39999999999782,
+        "workMean": 4.930000002682209,
+        "workP95": 11.100000023841858,
+        "physics": 4.000625002756715,
+        "background": 0.1625,
+        "treasures": 0.6049999978393317,
+        "particles": 0.00624999962747097,
+        "preview": 0.08250000104308128,
+        "steps": 1.19375,
+        "bodies": 30,
+        "parts": 30,
+        "particleCount": 0,
+        "canvas": [
+          390,
+          620
+        ],
+        "dpr": 1
+      },
+      {
+        "profile": "tablet-6x",
+        "scenario": "compound",
+        "fps": 60.00150003750097,
+        "frameMean": 16.66624999999999,
+        "frameP95": 16.799999999999272,
+        "workMean": 2.0549999993294477,
+        "workP95": 2.899999976158142,
+        "physics": 1.5268750011920929,
+        "background": 0.15687500014901162,
+        "treasures": 0.2137500002980232,
+        "particles": 0.005624999850988388,
+        "preview": 0.09624999910593032,
+        "steps": 1,
+        "bodies": 6,
+        "parts": 10,
+        "particleCount": 0,
+        "canvas": [
+          390,
+          620
+        ],
+        "dpr": 1
+      },
+      {
+        "profile": "tablet-6x",
+        "scenario": "chains",
+        "fps": 60.003750234389656,
+        "frameMean": 16.665625,
+        "frameP95": 16.799999999999272,
+        "workMean": 1.3893749963492155,
+        "workP95": 2.199999988079071,
+        "physics": 0.5993749961256981,
+        "background": 0.2000000037252903,
+        "treasures": 0.3637499962002039,
+        "particles": 0.040000001713633535,
+        "preview": 0.0387499988079071,
+        "steps": 0.99375,
+        "bodies": 8,
+        "parts": 8,
+        "particleCount": 0,
+        "canvas": [
+          390,
+          620
+        ],
+        "dpr": 1
+      }
+    ]
+  },
+  "fifteenBodies": {
+    "date": "2026-10-02T15:25:32.975Z",
+    "engine": "working-tree",
+    "chromium": "153.0.8010.12",
+    "results": [
+      {
+        "profile": "tablet-6x",
+        "scenario": 15,
+        "fps": 60.001500037500946,
+        "frameMean": 16.666249999999998,
+        "frameP95": 16.799999999999727,
+        "workMean": 2.35,
+        "workP95": 4.599999964237213,
+        "physics": 1.7206249997019767,
+        "background": 0.1131249986588955,
+        "treasures": 0.3693750023841858,
+        "particles": 0.015625,
+        "preview": 0.09499999806284905,
+        "steps": 1,
+        "bodies": 15,
+        "parts": 15,
+        "particleCount": 0,
+        "canvas": [
+          390,
+          620
+        ],
+        "dpr": 1
+      }
+    ]
+  },
+  "dprComparison": {
+    "date": "2026-10-02T15:22:00.926Z",
+    "engine": "working-tree",
+    "chromium": "153.0.8010.12",
+    "results": [
+      {
+        "profile": "tablet-6x",
+        "scenario": 15,
+        "fps": 25.94706798131811,
+        "frameMean": 38.54,
+        "frameP95": 50.099999999999454,
+        "workMean": 2.475,
+        "workP95": 6.399999976158142,
+        "physics": 1.6712500035762787,
+        "background": 0.16999999731779097,
+        "treasures": 0.44250000044703486,
+        "particles": 0.01249999888241291,
+        "preview": 0.10312500074505807,
+        "steps": 2.15,
+        "bodies": 15,
+        "parts": 15,
+        "particleCount": 0,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      },
+      {
+        "profile": "tablet-6x",
+        "scenario": 20,
+        "fps": 20.38294457113011,
+        "frameMean": 49.060624999999995,
+        "frameP95": 66.69999999999709,
+        "workMean": 2.7231250047683715,
+        "workP95": 8.800000011920929,
+        "physics": 1.9162500016391277,
+        "background": 0.17499999925494195,
+        "treasures": 0.4943749997764826,
+        "particles": 0.008750000596046447,
+        "preview": 0.07687500268220901,
+        "steps": 2.6875,
+        "bodies": 20,
+        "parts": 20,
+        "particleCount": 0,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      }
+    ]
+  },
+  "blurComparison": {
+    "date": "2026-10-02T15:01:28.910Z",
+    "engine": "0.4.15",
+    "chromium": "153.0.8010.12",
+    "results": [
+      {
+        "profile": "tablet-6x",
+        "scenario": 5,
+        "fps": 23.941343707915607,
+        "frameMean": 41.76875,
+        "frameP95": 50.09999999999991,
+        "workMean": 1.4681250039488076,
+        "workP95": 2,
+        "physics": 0.2587500028312206,
+        "background": 0.32624999769032004,
+        "treasures": 0.6968750018626452,
+        "particles": 0.003125,
+        "preview": 0.12062500081956387,
+        "steps": 2.0125,
+        "bodies": 5,
+        "parts": 6,
+        "particleCount": 0,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      },
+      {
+        "profile": "tablet-6x",
+        "scenario": 20,
+        "fps": 13.559896605788383,
+        "frameMean": 73.74687499999999,
+        "frameP95": 83.39999999999964,
+        "workMean": 3.339999997243285,
+        "workP95": 4.899999976158142,
+        "physics": 0.9899999991059303,
+        "background": 0.3181249998509884,
+        "treasures": 1.903124999627471,
+        "particles": 0.001875000074505806,
+        "preview": 0.09312500022351741,
+        "steps": 2.04375,
+        "bodies": 20,
+        "parts": 23,
+        "particleCount": 0,
+        "canvas": [
+          780,
+          1240
+        ],
+        "dpr": 2
+      }
+    ]
+  },
+  "solvers": [
+    {
+      "position": 8,
+      "velocity": 6,
+      "sleeping": true,
+      "drops": 120,
+      "merges": 68,
+      "frames": 14400,
+      "physicsMsPerFrame": 0.07341553472222351,
+      "steady20PhysicsMs": 0.12067199999999806,
+      "peakSpeed": 13.084732058483155,
+      "peakDepth": 24.527648058890975,
+      "persistentDepth": 7.851935462742517
+    },
+    {
+      "position": 10,
+      "velocity": 7,
+      "sleeping": true,
+      "drops": 120,
+      "merges": 63,
+      "frames": 14400,
+      "physicsMsPerFrame": 0.04692430555555602,
+      "steady20PhysicsMs": 0.12014383333335597,
+      "peakSpeed": 13.205493051559188,
+      "peakDepth": 18.08321753782087,
+      "persistentDepth": 0
+    },
+    {
+      "position": 12,
+      "velocity": 8,
+      "sleeping": true,
+      "drops": 120,
+      "merges": 76,
+      "frames": 14400,
+      "physicsMsPerFrame": 0.06781332638889188,
+      "steady20PhysicsMs": 0.14415000000000722,
+      "peakSpeed": 13.084732058483155,
+      "peakDepth": 14.302990759606246,
+      "persistentDepth": 5.659790604968862
+    },
+    {
+      "position": 8,
+      "velocity": 6,
+      "sleeping": false,
+      "drops": 120,
+      "merges": 51,
+      "frames": 14422,
+      "physicsMsPerFrame": 0.13891467896269996,
+      "steady20PhysicsMs": 0.18155649999999393,
+      "peakSpeed": 13.205493051559188,
+      "peakDepth": 11.5347649739889,
+      "persistentDepth": 6.90635896534377
+    }
+  ],
+  "realPage": [
+    {
+      "bodies": 5,
+      "guide": true,
+      "fps": 60.00436395374207,
+      "frameMean": 16.66545454545455,
+      "frameP95": 16.700000000000728,
+      "physics": 0.11636363538828763,
+      "background": 0.1300000011920929,
+      "treasures": 0.19272727261890066,
+      "steps": 1,
+      "parts": 5,
+      "canvas": [
+        561,
+        829
+      ],
+      "dpr": 1.25,
+      "quality": "MEDIUM",
+      "deviceDpr": 2,
+      "resizes": 1,
+      "uiCommits": 1
+    },
+    {
+      "bodies": 20,
+      "guide": true,
+      "fps": 60.00436395374207,
+      "frameMean": 16.66545454545455,
+      "frameP95": 16.799999999999272,
+      "physics": 0.2209090904756026,
+      "background": 0.10636363679712468,
+      "treasures": 0.4100000018423254,
+      "steps": 1,
+      "parts": 20,
+      "canvas": [
+        449,
+        663
+      ],
+      "dpr": 1,
+      "quality": "LOW",
+      "deviceDpr": 2,
+      "resizes": 1,
+      "uiCommits": 1
+    },
+    {
+      "bodies": 20,
+      "guide": false,
+      "fps": 35.10787693093322,
+      "frameMean": 28.48363636363637,
+      "frameP95": 33.400000000001455,
+      "physics": 0.28363636352799154,
+      "background": 0.1654545399275693,
+      "treasures": 0.4663636418906125,
+      "steps": 1.7,
+      "parts": 20,
+      "canvas": [
+        596,
+        879
+      ],
+      "dpr": 1,
+      "quality": "LOW",
+      "deviceDpr": 2,
+      "resizes": 2,
+      "uiCommits": 2
+    }
+  ],
+  "browserChecks": {
+    "devices": [
+      {
+        "device": "desktop",
+        "open": {
+          "board": [
+            356.5,
+            235.171875,
+            423,
+            622.046875
+          ],
+          "cards": [
+            [
+              204.4375,
+              72
+            ],
+            [
+              204.4375,
+              72
+            ]
+          ],
+          "overflowX": false,
+          "overflowY": false,
+          "images": true
+        },
+        "closed": {
+          "board": [
+            501,
+            235.171875,
+            423,
+            622.046875
+          ],
+          "cards": [
+            [
+              204.4375,
+              72
+            ],
+            [
+              204.4375,
+              72
+            ]
+          ],
+          "overflowX": false,
+          "overflowY": false,
+          "images": true
+        },
+        "released": {
+          "samples": 12,
+          "fps": 55.401662049861514,
+          "frameMean": 18.049999999999994,
+          "frameP95": 16.700000000000045,
+          "workMean": 0.28333332141240436,
+          "workP95": 0.3999999761581421,
+          "physics": 0.1749999870856603,
+          "background": 0.0333333412806193,
+          "treasures": 0.008333330353101095,
+          "particles": 0,
+          "preview": 0.024999991059303284,
+          "steps": 1,
+          "uiCommits": 3,
+          "uiMs": 2.399999976158142,
+          "resizes": 1,
+          "backingResizes": 1,
+          "bodies": 1,
+          "parts": 1,
+          "sleeping": 0,
+          "quality": "HIGH",
+          "pendingDrop": true,
+          "canvas": [
+            417,
+            616
+          ],
+          "dpr": 1,
+          "deviceDpr": 1,
+          "audioVoices": 2
+        },
+        "audioPeak": 24,
+        "final": {
+          "samples": 68,
+          "fps": 59.13557700669624,
+          "frameMean": 16.91029411764706,
+          "frameP95": 16.700000000000273,
+          "workMean": 0.13382352187353022,
+          "workP95": 0.30000001192092896,
+          "physics": 0.06617646795861862,
+          "background": 0.024999998071614432,
+          "treasures": 0.01470588059986339,
+          "particles": 0,
+          "preview": 0.008823528009302476,
+          "steps": 1,
+          "uiCommits": 5,
+          "uiMs": 3.600000023841858,
+          "resizes": 1,
+          "backingResizes": 1,
+          "bodies": 1,
+          "parts": 1,
+          "sleeping": 0,
+          "quality": "HIGH",
+          "pendingDrop": false,
+          "canvas": [
+            417,
+            616
+          ],
+          "dpr": 1,
+          "deviceDpr": 1,
+          "audioVoices": 0
+        }
+      },
+      {
+        "device": "tablet",
+        "open": {
+          "board": [
+            28.59375,
+            199.3125,
+            454.8125,
+            668.828125
+          ],
+          "cards": [
+            [
+              195.109375,
+              68
+            ],
+            [
+              195.109375,
+              68
+            ]
+          ],
+          "overflowX": false,
+          "overflowY": false,
+          "images": true
+        },
+        "closed": {
+          "board": [
+            99.203125,
+            199.3125,
+            601.59375,
+            884.6875
+          ],
+          "cards": [
+            [
+              195.109375,
+              68
+            ],
+            [
+              195.109375,
+              68
+            ]
+          ],
+          "overflowX": false,
+          "overflowY": false,
+          "images": true
+        },
+        "released": {
+          "samples": 10,
+          "fps": 60.02400960384152,
+          "frameMean": 16.660000000000004,
+          "frameP95": 16.69999999999999,
+          "workMean": 0.9800000011920929,
+          "workP95": 3,
+          "physics": 0.15,
+          "background": 0.5299999952316284,
+          "treasures": 0,
+          "particles": 0,
+          "preview": 0.04000000953674317,
+          "steps": 0.9,
+          "uiCommits": 3,
+          "uiMs": 2.5,
+          "resizes": 3,
+          "backingResizes": 3,
+          "bodies": 1,
+          "parts": 1,
+          "sleeping": 0,
+          "quality": "MEDIUM",
+          "pendingDrop": true,
+          "canvas": [
+            561,
+            829
+          ],
+          "dpr": 1.25,
+          "deviceDpr": 2,
+          "audioVoices": 2
+        },
+        "audioPeak": 24,
+        "final": {
+          "samples": 66,
+          "fps": 59.108006448146156,
+          "frameMean": 16.918181818181818,
+          "frameP95": 16.700000000000045,
+          "workMean": 0.2515151518763918,
+          "workP95": 0.30000001192092896,
+          "physics": 0.06666666720852707,
+          "background": 0.1045454532811136,
+          "treasures": 0.01060606042544047,
+          "particles": 0,
+          "preview": 0.010606063134742506,
+          "steps": 1,
+          "uiCommits": 5,
+          "uiMs": 3.800000011920929,
+          "resizes": 3,
+          "backingResizes": 3,
+          "bodies": 1,
+          "parts": 1,
+          "sleeping": 0,
+          "quality": "MEDIUM",
+          "pendingDrop": false,
+          "canvas": [
+            561,
+            829
+          ],
+          "dpr": 1.25,
+          "deviceDpr": 2,
+          "audioVoices": 0
+        }
+      },
+      {
+        "device": "phone",
+        "open": {
+          "board": [
+            19.5,
+            224.84375,
+            351,
+            516.171875
+          ],
+          "cards": [
+            [
+              177,
+              60
+            ],
+            [
+              177,
+              60
+            ]
+          ],
+          "overflowX": false,
+          "overflowY": false,
+          "images": true
+        },
+        "closed": {
+          "board": [
+            19.5,
+            224.84375,
+            351,
+            516.171875
+          ],
+          "cards": [
+            [
+              177,
+              60
+            ],
+            [
+              177,
+              60
+            ]
+          ],
+          "overflowX": false,
+          "overflowY": false,
+          "images": true
+        },
+        "released": {
+          "samples": 10,
+          "fps": 59.98800239952008,
+          "frameMean": 16.670000000000005,
+          "frameP95": 16.700000000000045,
+          "workMean": 0.26000001430511477,
+          "workP95": 0.30000001192092896,
+          "physics": 0.15,
+          "background": 0.010000002384185792,
+          "treasures": 0,
+          "particles": 0,
+          "preview": 0.040000003576278684,
+          "steps": 1,
+          "uiCommits": 3,
+          "uiMs": 2.599999964237213,
+          "resizes": 1,
+          "backingResizes": 1,
+          "bodies": 1,
+          "parts": 1,
+          "sleeping": 0,
+          "quality": "MEDIUM",
+          "pendingDrop": true,
+          "canvas": [
+            434,
+            640
+          ],
+          "dpr": 1.25,
+          "deviceDpr": 3,
+          "audioVoices": 2
+        },
+        "audioPeak": 24,
+        "final": {
+          "samples": 64,
+          "fps": 59.073287797673984,
+          "frameMean": 16.928125,
+          "frameP95": 16.700000000000045,
+          "workMean": 0.12812500353902578,
+          "workP95": 0.20000004768371582,
+          "physics": 0.0718750013038516,
+          "background": 0.01406250149011612,
+          "treasures": 0.007812499068677425,
+          "particles": 0,
+          "preview": 0.010937499813735485,
+          "steps": 1.015625,
+          "uiCommits": 5,
+          "uiMs": 3.799999952316284,
+          "resizes": 1,
+          "backingResizes": 1,
+          "bodies": 1,
+          "parts": 1,
+          "sleeping": 0,
+          "quality": "MEDIUM",
+          "pendingDrop": false,
+          "canvas": [
+            434,
+            640
+          ],
+          "dpr": 1.25,
+          "deviceDpr": 3,
+          "audioVoices": 0
+        }
+      }
+    ],
+    "routes": [
+      {
+        "route": "/",
+        "status": 200,
+        "title": "Hanna's Spiele",
+        "started": false
+      },
+      {
+        "route": "/fang-den-stern",
+        "status": 200,
+        "title": "Fang den Stern!",
+        "started": true
+      },
+      {
+        "route": "/fange-die-tiere",
+        "status": 200,
+        "title": "Fange die Tiere",
+        "started": true
+      },
+      {
+        "route": "/zwerge",
+        "status": 200,
+        "title": "Zwergengold",
+        "started": true
+      },
+      {
+        "route": "/schatz-merge",
+        "status": 200,
+        "title": "Schatz-Merge",
+        "started": true
+      }
+    ]
+  },
+  "colliderCoverage": [
+    {
+      "file": "01-goldnugget.png",
+      "opaqueMainCoverage": 0.972711071508131,
+      "hullAreaRatio": 0.9797282245488973
+    },
+    {
+      "file": "02-goldmuenze.png",
+      "opaqueMainCoverage": 0.9358938933407018,
+      "hullAreaRatio": 0.9358938933407018
+    },
+    {
+      "file": "03-2er-muenzstapel.png",
+      "opaqueMainCoverage": 0.9491599548088487,
+      "hullAreaRatio": 0.9491599548088487
+    },
+    {
+      "file": "04-kleiner-edelstein.png",
+      "opaqueMainCoverage": 0.9816037000467702,
+      "hullAreaRatio": 0.9817596008938315
+    },
+    {
+      "file": "05-grosser-edelstein.png",
+      "opaqueMainCoverage": 0.9820762615115306,
+      "hullAreaRatio": 0.9822665347438923
+    },
+    {
+      "file": "06-gold-edelsteinbeutel.png",
+      "opaqueMainCoverage": 0.9634733364794714,
+      "hullAreaRatio": 1.0172534214252005
+    },
+    {
+      "file": "07-schatzkaestchen.png",
+      "opaqueMainCoverage": 0.991725701331822,
+      "hullAreaRatio": 1.0386700670633797
+    },
+    {
+      "file": "08-goldener-kelch.png",
+      "opaqueMainCoverage": 0.9674507376457238,
+      "hullAreaRatio": 1.018157433199216
+    },
+    {
+      "file": "09-krone.png",
+      "opaqueMainCoverage": 0.9830778419271352,
+      "hullAreaRatio": 1.0690098275206776
+    },
+    {
+      "file": "10-schatztruhe.png",
+      "opaqueMainCoverage": 0.9978498431650309,
+      "hullAreaRatio": 1.0968708894060508
+    },
+    {
+      "file": "11-koenigsschatz.png",
+      "opaqueMainCoverage": 0.9966260121963411,
+      "hullAreaRatio": 1.055145956213136
+    },
+    {
+      "file": "12-goldener-thron.png",
+      "opaqueMainCoverage": 0.9986798146351977,
+      "hullAreaRatio": 1.1556875740920358
+    }
+  ],
+  "assetSha256": {
+    "public/schatz-merge/treasures/game/01-goldnugget.png": "cd264881ba6bd3e40ac2cc887a1469845a078d0bef657260e41b287cdfa5c816",
+    "public/schatz-merge/treasures/game/02-goldmuenze.png": "b16c40b2270ca635269e73ebf297f069118e2ffb4106f8819e8f8ed8e52d2e2f",
+    "public/schatz-merge/treasures/game/03-2er-muenzstapel.png": "5f56f715ea944d4b1404ffb3c4dcdbad45741775b49f75f7dff5e7d1d043b74e",
+    "public/schatz-merge/treasures/game/04-kleiner-edelstein.png": "5b2691987b64891e6155763e88128bbcb6ee72e48503bb98b71a1fcd50c3ce3e",
+    "public/schatz-merge/treasures/game/05-grosser-edelstein.png": "ab6f5cd92f8b32845816305a1edcff4f6b38a3bdeb62faeb9a7212c7c8433419",
+    "public/schatz-merge/treasures/game/06-gold-edelsteinbeutel.png": "ffd3366c2c18df65c5e17bf2da6bf5fd2600afdfac6102921a8d92e0e20cdaee",
+    "public/schatz-merge/treasures/game/07-schatzkaestchen.png": "1a67a9124cccb8e07d3654acec7fd2aba35c907ebb9f2e983ccadccc2c854be3",
+    "public/schatz-merge/treasures/game/08-goldener-kelch.png": "25a7728678df1a3eb89e9e38a70404aeba5636c2084a3134e8642718784d6654",
+    "public/schatz-merge/treasures/game/09-krone.png": "cddc3b10a2286ca08239bf5795ea6663ebd747770da4f1daedcafc8fc1aa6fc4",
+    "public/schatz-merge/treasures/game/10-schatztruhe.png": "57ee80cea96a579ea852c34e3eb80f94bc26e1a2de75c1d7832d0c3fda25bafe",
+    "public/schatz-merge/treasures/game/11-koenigsschatz.png": "10dc1fb5f2f91fd2638df1ddbf37f1cff20a1607577e3bd421e53b20cb20ff9c",
+    "public/schatz-merge/treasures/game/12-goldener-thron.png": "3e0b21f01b5861dfc2edc1f0cbc8cdddea7db4b3241c29d0342c3cf81cc971f5",
+    "public/schatz-merge/treasures/guide/01-goldnugget.png": "e2dc3e1a2c28d9ba135a30673226ed322cfd68a6bb6dafbb4dd84097d564d50e",
+    "public/schatz-merge/treasures/guide/02-goldmuenze.png": "eb12f6e1d5aa63e20aced827b23f1e36f7aa446c10a066b9ed76569e9ae055ae",
+    "public/schatz-merge/treasures/guide/03-2er-muenzstapel.png": "a45d2c71e64fc39f57649e141ca3b5746581928012945d91580b6e652b485975",
+    "public/schatz-merge/treasures/guide/04-kleiner-edelstein.png": "e05c3d9c7aa4e95a080589506d5dcb719f31b63109d26bbb23087e476a2b9758",
+    "public/schatz-merge/treasures/guide/05-grosser-edelstein.png": "0408b20480ffed494a242a92f66ce8b251ea1b95a3c7b9db97671ba4037c8c12",
+    "public/schatz-merge/treasures/guide/06-gold-edelsteinbeutel.png": "40ab4bb73312d2ae0f8597b8e1d7b9b977358dec4fc0ecb9b0b190ab5d6d1269",
+    "public/schatz-merge/treasures/guide/07-schatzkaestchen.png": "eea913ed64ebd241b46c99de694fa97bfc036e8c1594e62dfeba5789a4341f9e",
+    "public/schatz-merge/treasures/guide/08-goldener-kelch.png": "aba9e571dd411b6812e9358f135cd330d6e00094e780c87f4d5aa57d5a71361e",
+    "public/schatz-merge/treasures/guide/09-krone.png": "4d380ef8aa4d027f3e421a80e28eee2ff7afea56d217ea8015ba3d7849cf5df8",
+    "public/schatz-merge/treasures/guide/10-schatztruhe.png": "b18262acb211d4e7301699fef374b3cdb7f0b6ba85b004d344ab91496445f2cb",
+    "public/schatz-merge/treasures/guide/11-koenigsschatz.png": "c4470b4bb1a0c025efd7bb2ee3ab9fa80de6389c265dbc7072a6e80d94a9e578",
+    "public/schatz-merge/treasures/guide/12-goldener-thron.png": "2d06314d4e7c8de6ba7c4b956166ca6c41fbce3b44c627305ee1be4b4620f81c",
+    "public/schatz-merge/treasures/preview/01-goldnugget.png": "f4a4491ed686d452ab108820dad99093741a56bc9f5bb6fa879826245a84eadd",
+    "public/schatz-merge/treasures/preview/02-goldmuenze.png": "3b37da893d600624214574025404bc2b0990ab41366182cb52d82fd53e05a7c1",
+    "public/schatz-merge/treasures/preview/03-2er-muenzstapel.png": "0bd457d350c15cc51512153ffd35c2bcbddc3ae9568d4af06c7f8cdc596c9652",
+    "public/schatz-merge/treasures/preview/04-kleiner-edelstein.png": "7959081ffc70fac6a43167665b48bee03be66c76ce3cfd8946c865d49f36cbcc",
+    "public/schatz-merge/treasures/preview/05-grosser-edelstein.png": "8b20e1654d4541830bb1d9e11f283142ac60bd45b1244c9fa7d44b00b9077258",
+    "public/schatz-merge/treasures/preview/06-gold-edelsteinbeutel.png": "4d91b9c0e86aea6a6d37dc1182063815f3044bab93516e3edfb247d5fead8536",
+    "public/schatz-merge/treasures/preview/07-schatzkaestchen.png": "7923f90f60aff7816c11dfe72d42b16d0b40fc92b7872af64dc6811d6ff8528d",
+    "public/schatz-merge/treasures/preview/08-goldener-kelch.png": "f8ae3fce6018f04bc48814351d0662e9b160dc872f9d8451a31723c2a31b3105",
+    "public/schatz-merge/treasures/preview/09-krone.png": "1a2a967f3edacd9f7d35c8c2db39a0bc7373d6e1340f917a0f8ab610dfb56d36",
+    "public/schatz-merge/treasures/preview/10-schatztruhe.png": "0848ba696d0983a5707ab452cd6822a579f175bbea529721c8d56182e459e7bf",
+    "public/schatz-merge/treasures/preview/11-koenigsschatz.png": "948cb50249c3892ef475eca60553634bc761c7159c11ed92cdc001b9f0b9b978",
+    "public/schatz-merge/treasures/preview/12-goldener-thron.png": "9f23658e56a4af613fd71ef9175a373f3b6df07d6bf54f115e352c672ca6231a"
+  },
+  "pagesBrowserChecks": {
+    "baseUrl": "http://127.0.0.1:5194/spielesammlung",
+    "devices": [
+      {
+        "device": "desktop",
+        "open": {
+          "board": [
+            356.5,
+            235.171875,
+            423,
+            622.046875
+          ],
+          "cards": [
+            [
+              204.4375,
+              72
+            ],
+            [
+              204.4375,
+              72
+            ]
+          ],
+          "overflowX": false,
+          "overflowY": false,
+          "images": true
+        },
+        "closed": {
+          "board": [
+            501,
+            235.171875,
+            423,
+            622.046875
+          ],
+          "cards": [
+            [
+              204.4375,
+              72
+            ],
+            [
+              204.4375,
+              72
+            ]
+          ],
+          "overflowX": false,
+          "overflowY": false,
+          "images": true
+        },
+        "released": {
+          "samples": 12,
+          "fps": 60.00000000000001,
+          "frameMean": 16.666666666666664,
+          "frameP95": 16.700000000000045,
+          "workMean": 0.2666666656732559,
+          "workP95": 0.5,
+          "physics": 0.16666667660077414,
+          "background": 0.04166666169961294,
+          "treasures": 0.008333330353101095,
+          "particles": 0,
+          "preview": 0.025000000993410747,
+          "steps": 1,
+          "uiCommits": 0,
+          "uiMs": 0,
+          "resizes": 1,
+          "backingResizes": 1,
+          "bodies": 1,
+          "parts": 1,
+          "sleeping": 0,
+          "quality": "HIGH",
+          "pendingDrop": true,
+          "canvas": [
+            417,
+            616
+          ],
+          "dpr": 1,
+          "deviceDpr": 1,
+          "audioVoices": 2
+        },
+        "audioPeak": 24,
+        "final": {
+          "samples": 65,
+          "fps": 60.00184621065263,
+          "frameMean": 16.666153846153847,
+          "frameP95": 16.700000000000045,
+          "workMean": 0.12307692124293401,
+          "workP95": 0.20000004768371582,
+          "physics": 0.05846154047892644,
+          "background": 0.018461536444150484,
+          "treasures": 0.02153846025466919,
+          "particles": 0,
+          "preview": 0.0061538457870483395,
+          "steps": 0.9846153846153847,
+          "uiCommits": 0,
+          "uiMs": 0,
+          "resizes": 1,
+          "backingResizes": 1,
+          "bodies": 1,
+          "parts": 1,
+          "sleeping": 0,
+          "quality": "HIGH",
+          "pendingDrop": false,
+          "canvas": [
+            417,
+            616
+          ],
+          "dpr": 1,
+          "deviceDpr": 1,
+          "audioVoices": 0
+        }
+      },
+      {
+        "device": "tablet",
+        "open": {
+          "board": [
+            28.59375,
+            199.3125,
+            454.8125,
+            668.828125
+          ],
+          "cards": [
+            [
+              195.109375,
+              68
+            ],
+            [
+              195.109375,
+              68
+            ]
+          ],
+          "overflowX": false,
+          "overflowY": false,
+          "images": true
+        },
+        "closed": {
+          "board": [
+            99.203125,
+            199.3125,
+            601.59375,
+            884.6875
+          ],
+          "cards": [
+            [
+              195.109375,
+              68
+            ],
+            [
+              195.109375,
+              68
+            ]
+          ],
+          "overflowX": false,
+          "overflowY": false,
+          "images": true
+        },
+        "released": {
+          "samples": 10,
+          "fps": 59.98800239952009,
+          "frameMean": 16.67,
+          "frameP95": 16.700000000000045,
+          "workMean": 0.7700000107288361,
+          "workP95": 2.300000011920929,
+          "physics": 0.13000000715255738,
+          "background": 0.41000000238418577,
+          "treasures": 0,
+          "particles": 0,
+          "preview": 0,
+          "steps": 1,
+          "uiCommits": 0,
+          "uiMs": 0,
+          "resizes": 3,
+          "backingResizes": 3,
+          "bodies": 1,
+          "parts": 1,
+          "sleeping": 0,
+          "quality": "MEDIUM",
+          "pendingDrop": true,
+          "canvas": [
+            561,
+            829
+          ],
+          "dpr": 1.25,
+          "deviceDpr": 2,
+          "audioVoices": 2
+        },
+        "audioPeak": 24,
+        "final": {
+          "samples": 67,
+          "fps": 59.9982090086863,
+          "frameMean": 16.66716417910448,
+          "frameP95": 16.700000000000045,
+          "workMean": 0.18208955206088165,
+          "workP95": 0.30000001192092896,
+          "physics": 0.04925372974196477,
+          "background": 0.07761194189982627,
+          "treasures": 0.007462686567164179,
+          "particles": 0,
+          "preview": 0.004477611228601256,
+          "steps": 1,
+          "uiCommits": 0,
+          "uiMs": 0,
+          "resizes": 3,
+          "backingResizes": 3,
+          "bodies": 1,
+          "parts": 1,
+          "sleeping": 0,
+          "quality": "MEDIUM",
+          "pendingDrop": false,
+          "canvas": [
+            561,
+            829
+          ],
+          "dpr": 1.25,
+          "deviceDpr": 2,
+          "audioVoices": 0
+        }
+      },
+      {
+        "device": "phone",
+        "open": {
+          "board": [
+            19.5,
+            224.84375,
+            351,
+            516.171875
+          ],
+          "cards": [
+            [
+              177,
+              60
+            ],
+            [
+              177,
+              60
+            ]
+          ],
+          "overflowX": false,
+          "overflowY": false,
+          "images": true
+        },
+        "closed": {
+          "board": [
+            19.5,
+            224.84375,
+            351,
+            516.171875
+          ],
+          "cards": [
+            [
+              177,
+              60
+            ],
+            [
+              177,
+              60
+            ]
+          ],
+          "overflowX": false,
+          "overflowY": false,
+          "images": true
+        },
+        "released": {
+          "samples": 10,
+          "fps": 59.98800239952009,
+          "frameMean": 16.67,
+          "frameP95": 16.700000000000017,
+          "workMean": 0.2099999964237213,
+          "workP95": 0.20000004768371582,
+          "physics": 0.1100000023841858,
+          "background": 0.030000001192092896,
+          "treasures": 0,
+          "particles": 0,
+          "preview": 0.049999988079071044,
+          "steps": 1,
+          "uiCommits": 0,
+          "uiMs": 0,
+          "resizes": 1,
+          "backingResizes": 1,
+          "bodies": 1,
+          "parts": 1,
+          "sleeping": 0,
+          "quality": "MEDIUM",
+          "pendingDrop": true,
+          "canvas": [
+            434,
+            640
+          ],
+          "dpr": 1.25,
+          "deviceDpr": 3,
+          "audioVoices": 2
+        },
+        "audioPeak": 24,
+        "final": {
+          "samples": 62,
+          "fps": 59.04761904761905,
+          "frameMean": 16.93548387096774,
+          "frameP95": 16.799999999999955,
+          "workMean": 0.1080645130526635,
+          "workP95": 0.19999998807907104,
+          "physics": 0.05483870929287326,
+          "background": 0.016129033219429753,
+          "treasures": 0.011290321427006875,
+          "particles": 0,
+          "preview": 0.011290320465641638,
+          "steps": 1.0161290322580645,
+          "uiCommits": 0,
+          "uiMs": 0,
+          "resizes": 1,
+          "backingResizes": 1,
+          "bodies": 1,
+          "parts": 1,
+          "sleeping": 0,
+          "quality": "MEDIUM",
+          "pendingDrop": false,
+          "canvas": [
+            434,
+            640
+          ],
+          "dpr": 1.25,
+          "deviceDpr": 3,
+          "audioVoices": 0
+        }
+      }
+    ],
+    "routes": [
+      {
+        "route": "/",
+        "status": 200,
+        "title": "Hanna's Spiele",
+        "started": false
+      },
+      {
+        "route": "/fang-den-stern",
+        "status": 200,
+        "title": "Fang den Stern!",
+        "started": true
+      },
+      {
+        "route": "/fange-die-tiere",
+        "status": 200,
+        "title": "Fange die Tiere",
+        "started": true
+      },
+      {
+        "route": "/zwerge",
+        "status": 200,
+        "title": "Zwergengold",
+        "started": true
+      },
+      {
+        "route": "/schatz-merge",
+        "status": 200,
+        "title": "Schatz-Merge",
+        "started": true
+      }
+    ]
+  }
+}

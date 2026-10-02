@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import test, { after } from "node:test";
 import Matter from "matter-js";
-import { randomDropTier, SchatzMergeEngine, TREASURES } from "../app/schatz-merge/engine.ts";
+import { createServer } from "vite";
+const vite = await createServer({ configFile: false, cacheDir: "work/schatz-profile/vite-tests", server: { middlewareMode: true } });
+after(() => vite.close());
+const { randomDropTier, SchatzMergeEngine, TREASURES } = await vite.ssrLoadModule("/app/schatz-merge/engine.ts");
 
 function createGame(overrides = {}) {
   const events = [];
@@ -27,8 +30,12 @@ function assertHealthy(game) {
     for (const value of [body.position.x, body.position.y, body.velocity.x, body.velocity.y, body.angle, body.angularVelocity]) {
       assert.ok(Number.isFinite(value), `body ${body.id} has a non-finite physics value`);
     }
-    assert.ok(body.bounds.min.x > -2, `body ${body.id} crossed the left wall`);
-    assert.ok(body.bounds.max.x < game.boardWidth + 2, `body ${body.id} crossed the right wall`);
+    // Matter bounds include a predictive velocity margin even after the contact solver.
+    // Physical vertices, rather than that broad-phase margin, establish a wall passage.
+    const vertices = (body.parts.length > 1 ? body.parts.slice(1) : [body]).flatMap(part => part.vertices);
+    assert.ok(Math.min(...vertices.map(v => v.x)) > -2, `body ${body.id} crossed the left wall`);
+    assert.ok(Math.max(...vertices.map(v => v.x)) < game.boardWidth + 2, `body ${body.id} crossed the right wall`);
+    assert.ok(Math.max(...vertices.map(v => v.y)) < game.height + 2, `body ${body.id} crossed the floor`);
   }
 }
 
@@ -98,6 +105,9 @@ test("300 Drops, Größenwechsel und Resets erzeugen keine NaN-Bodies oder Wandd
   let submitted = 0;
   for (let index = 0; index < 300; index += 1) {
     if (index % 12 === 0) game.reset();
+    // A real user cannot drop again until the complete previous figure crossed the line.
+    for (let frame = 0; frame < 240 && game.previewBlockedByPendingDrop && !game.gameOver; frame++) game.update(16.7);
+    if (game.gameOver) game.reset();
     const x = 24 + ((index * 53) % 342);
     game.drop((index % 4) + 1, x);
     submitted += 1;
@@ -136,4 +146,150 @@ test("kurzer Kontakt an der Gefahrenlinie löst kein Game Over aus, ein voller K
   }
   step(160);
   assert.equal(events.some((event) => event.type === "game-over"), true, "bodies kept above the danger line for 1.5 seconds should end the round");
+});
+
+test("ein Drop bleibt sichtbar und sperrt Folge-Drops bis vollständig unter der Linie", () => {
+  let ready = 0;
+  const { game, events } = createGame({ onPreviewReady: () => ready++ });
+  game.drop(6, 200);
+  const first = activeBodies(game)[0];
+  assert.equal(first.position.y, game.spawnY(6) - game.radiusForTier(6) * game.bodies.get(first.id).renderOffsetYFactor);
+  game.drop(2, 200);
+  assert.equal(activeBodies(game).length, 1);
+  for (let i = 0; i < 120 && !ready; i++) {
+    const wasWaiting = game.previewBlockedByPendingDrop;
+    game.update(1000 / 60);
+    if (wasWaiting && first.bounds.min.y <= game.dangerLine) assert.equal(ready, 0);
+  }
+  assert.equal(ready, 1);
+  game.drop(2, 200);
+  assert.equal(events.filter(e => e.type === "drop").length, 2);
+});
+
+test("nach Support-Merge wachen schlafende Nachbarn auf und fallen mit normaler Gravitation", () => {
+  const { game } = createGame();
+  const add = (tier, x, y) => {
+    const body = game.createTreasureBody(tier, x, y);
+    Matter.Composite.add(game.engine.world, body);
+    game.bodies.set(body.id, game.createBodyMeta(tier, body, x, y));
+    return body;
+  };
+  const left = add(2, 154, 574), right = add(2, 202, 574);
+  const upper = add(1, 250, 527);
+  const distant = add(1, 45, 400);
+  Matter.Sleeping.set(upper, true); Matter.Sleeping.set(distant, true);
+  game.tryMerge(left, right);
+  assert.equal(upper.isSleeping, false);
+  assert.equal(distant.isSleeping, true, "unaffected support column should remain asleep");
+  for (let i = 0; i < 150; i++) game.update(1000 / 60);
+  assert.ok(upper.position.y > 560, "unsupported neighbor must fall rather than float");
+  assertHealthy(game);
+});
+
+test("Particles sind begrenzt, Resize bleibt bei identischer Größe ohne Wirkung, Catch-up maximal drei Schritte", () => {
+  const { game } = createGame();
+  game.drop(1, 100);
+  const body = activeBodies(game)[0], area = body.area, count = game.resizeCount;
+  for (let i = 0; i < 100; i++) game.resize(390, 620);
+  assert.equal(body.area, area); assert.equal(game.resizeCount, count);
+  game.setQuality("LOW");
+  for (let i = 0; i < 40; i++) game.spawnParticles(200, 300, 12, true);
+  assert.equal(game.particles.length, 24);
+  game.update(10000);
+  assert.ok(game.metrics.steps <= 3);
+  assert.ok(game.accumulator < 1000 / 60);
+});
+
+test("adaptive Qualität reagiert auf dauerhafte Last mit Pause zwischen zwei Reduktionen", async () => {
+  const { RenderQuality } = await vite.ssrLoadModule("/app/schatz-merge/quality.ts");
+  const quality = new RenderQuality();
+  for (let i = 0; i < 120; i++) quality.observe(30);
+  assert.equal(quality.level, "MEDIUM");
+  for (let i = 0; i < 120; i++) quality.observe(30);
+  assert.equal(quality.level, "MEDIUM");
+  for (let i = 0; i < 600; i++) quality.observe(30);
+  assert.equal(quality.level, "LOW");
+  const fixed = new RenderQuality("HIGH");
+  for (let i = 0; i < 1000; i++) fixed.observe(40);
+  assert.equal(fixed.level, "HIGH");
+});
+
+test("Frame-Diagnose startet ohne erfundene FPS und hält höchstens 600 Messungen", async () => {
+  const { FrameProfiler } = await vite.ssrLoadModule("/app/schatz-merge/performance.ts");
+  const profiler = new FrameProfiler();
+  assert.equal(profiler.snapshot().fps, 0);
+  const metrics = { physics: 1, background: 2, treasures: 3, particles: 4, preview: 5, steps: 1 };
+  for (let i = 0; i < 1000; i++) profiler.record(1000 / 60, 15, metrics);
+  const result = profiler.snapshot();
+  assert.equal(result.samples, 600);
+  assert.ok(Math.abs(result.fps - 60) < .001);
+  assert.equal(result.workP95, 15);
+  assert.equal(result.physics, 1);
+  assert.equal(result.preview, 5);
+});
+
+test("600 gültige Drops über sechs Läufe: keine NaN-Werte, Durchgänge oder explosive Geschwindigkeiten", () => {
+  let seed = 619;
+  const random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
+  let drops = 0, merges = 0, maximumSpeed = 0;
+  for (let run = 0; run < 6; run++) {
+    const { game } = createGame({ onMerge: () => merges++, onDrop: () => drops++ });
+    game.resize(run % 2 ? 344 : 390, run % 2 ? 548 : 620);
+    for (let drop = 0; drop < 100; drop++) {
+      for (let frame = 0; frame < 240 && game.previewBlockedByPendingDrop && !game.gameOver; frame++) game.update(1000 / 60);
+      if (game.gameOver) game.reset();
+      game.drop(1 + Math.floor(random() * 6), random() * game.boardWidth);
+      for (let frame = 0; frame < 100; frame++) {
+        game.update(1000 / 60);
+        maximumSpeed = Math.max(maximumSpeed, ...activeBodies(game).map(b => b.speed));
+        assertHealthy(game);
+      }
+    }
+  }
+  assert.equal(drops, 600);
+  assert.ok(merges > 100);
+  assert.ok(maximumSpeed < 25, `maximum speed ${maximumSpeed}`);
+});
+
+test("alle zwölf Collider bleiben nach seitlichen Kontakten und Ruhephase stabil", () => {
+  for (let tier = 1; tier <= 12; tier++) {
+    const { game } = createGame();
+    game.drop(tier, tier % 2 ? 0 : 390);
+    for (let frame = 0; frame < 420; frame++) { game.update(1000 / 60); assertHealthy(game); }
+    const body = activeBodies(game)[0];
+    assert.ok(body.isSleeping, `tier ${tier} should settle instead of oscillating forever`);
+    assert.ok(body.parts.length <= 4, "compound complexity must remain small");
+    assert.ok(Matter.Query.collides(body, game.walls).every(c => c.depth < 1), "settled floor/wall penetration must stay below one pixel");
+  }
+});
+
+test("alle sechs Drop-Grafiken passen vollständig über die rote Linie; Rendergröße und Collider sind konsistent", () => {
+  const { game } = createGame();
+  for (let tier = 1; tier <= 12; tier++) {
+    const body = game.createTreasureBody(tier, 195, 300);
+    const meta = game.createBodyMeta(tier, body, 195, 300);
+    const image = { tier };
+    game.setSprites(Array.from({ length: 12 }, () => image));
+    let rectangle;
+    game.drawSprite({ drawImage: (_image,_sx,_sy,_sw,_sh,x,y,width,height) => { rectangle={x,y,width,height}; } },tier,195,300);
+    const physical = game.physicalBounds(body);
+    assert.ok(physical.min.x >= rectangle.x - 1 && physical.max.x <= rectangle.x + rectangle.width + 1);
+    assert.ok(physical.min.y >= rectangle.y - 1 && physical.max.y <= rectangle.y + rectangle.height + 1);
+    assert.ok(Math.abs(body.position.x + meta.renderOffsetXFactor * game.radiusForTier(tier) - 195) < 1e-8);
+    assert.ok(Math.abs(body.position.y + meta.renderOffsetYFactor * game.radiusForTier(tier) - 300) < 1e-8);
+    if (tier <= 6) assert.ok(game.spawnY(tier) + rectangle.height / 2 < game.dangerLine);
+  }
+});
+
+test("Shuffle-Bag bleibt gleichverteilt auf Stufen 1 bis 6 begrenzt", async () => {
+  const { DropShuffleBag } = await vite.ssrLoadModule("/app/schatz-merge/drop-shuffle-bag.ts");
+  let seed=199;
+  const bag=new DropShuffleBag(()=>((seed=(Math.imul(seed,1664525)+1013904223)>>>0)/4294967296));
+  let previous=0, streak=0, maximum=0;
+  for(let pool=0;pool<100;pool++) {
+    const items=Array.from({length:6},()=>bag.next());
+    assert.deepEqual([...items].sort(),[1,2,3,4,5,6]);
+    for(const tier of items) { streak=tier===previous?streak+1:1; maximum=Math.max(maximum,streak); previous=tier; }
+  }
+  assert.ok(maximum <= 2);
 });
