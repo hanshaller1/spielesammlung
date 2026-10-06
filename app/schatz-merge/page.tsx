@@ -38,7 +38,6 @@ export default function SchatzMergePage() {
   const modeRef = useRef<Mode>("ready");
   const currentTierRef = useRef(1);
   const nextTierRef = useRef(1);
-  const dropPendingRef = useRef(false);
   const activePointerRef = useRef<number | null>(null);
   const ignoredPointersRef = useRef(new Set<number>());
   const previewXRef = useRef(180);
@@ -113,8 +112,6 @@ export default function SchatzMergePage() {
   }, [playNotes]);
 
   const handlePreviewReady = useCallback(() => {
-    if (!dropPendingRef.current) return;
-    dropPendingRef.current = false;
     const promoted = nextTierRef.current;
     const following = dropBag.next();
     currentTierRef.current = promoted;
@@ -173,7 +170,7 @@ export default function SchatzMergePage() {
     let debugPanel: HTMLPreElement | null = null;
     const debugWindow = window as Window & { __schatzMerge?: { game: SchatzMergeEngine; snapshot: () => object; canvas: HTMLCanvasElement; stress: (count: number, kind?: string) => void } };
     if (debug && profiler) {
-      debugWindow.__schatzMerge = { game, canvas, stress: (count, kind) => { game.loadDebugScene(count, kind); dropPendingRef.current = false; modeRef.current = "playing"; setMode("playing"); }, snapshot: () => ({ ...profiler.snapshot(), ...game.debugSnapshot(), canvas: [canvas.width, canvas.height], dpr: lastDpr, deviceDpr: window.devicePixelRatio, audioVoices: activeVoicesRef.current }) };
+      debugWindow.__schatzMerge = { game, canvas, stress: (count, kind) => { game.loadDebugScene(count, kind); modeRef.current = "playing"; setMode("playing"); }, snapshot: () => ({ ...profiler.snapshot(), ...game.debugSnapshot(), uiDropPending: game.previewBlockedByPendingDrop, mode: modeRef.current, currentTier: currentTierRef.current, nextTier: nextTierRef.current, canvas: [canvas.width, canvas.height], dpr: lastDpr, deviceDpr: window.devicePixelRatio, audioVoices: activeVoicesRef.current }) };
       debugPanel = document.createElement("pre");
       debugPanel.style.cssText = "position:fixed;bottom:8px;left:8px;z-index:100;max-width:390px;max-height:28vh;overflow:auto;background:#071522e8;color:#aef4cd;font:10px monospace;padding:6px;pointer-events:none";
       document.body.appendChild(debugPanel);
@@ -221,7 +218,7 @@ export default function SchatzMergePage() {
       if (needsResize) resize();
       if (playing) game.update(interval);
       if (playing || dirty) {
-        const preview = playing && !dropPendingRef.current ? { tier: currentTierRef.current, x: previewXRef.current } : null;
+        const preview = playing && game.canDrop ? { tier: currentTierRef.current, x: previewXRef.current } : null;
         game.draw(context, preview); dirty = false;
         if (profiler && playing) profiler.record(interval, performance.now() - start, game.metrics);
       }
@@ -250,7 +247,6 @@ export default function SchatzMergePage() {
   const startRun = () => {
     engineRef.current?.reset();
     dropBag.reset();
-    dropPendingRef.current = false;
     activePointerRef.current = null;
     ignoredPointersRef.current.clear();
     scoreRef.current = 0;
@@ -267,10 +263,9 @@ export default function SchatzMergePage() {
   };
 
   const dropCurrent = () => {
-    if (modeRef.current !== "playing" || dropPendingRef.current) return;
+    if (modeRef.current !== "playing" || !engineRef.current?.canDrop) return;
     const game = engineRef.current;
     if (!game) return;
-    dropPendingRef.current = true;
     game.drop(currentTierRef.current, previewXRef.current);
   };
 
@@ -282,7 +277,7 @@ export default function SchatzMergePage() {
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (modeRef.current !== "playing" || dropPendingRef.current) return;
+    if (modeRef.current !== "playing" || !engineRef.current?.canDrop) return;
     if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
       event.preventDefault();
       previewXRef.current += event.key === "ArrowLeft" ? -20 : 20;
@@ -364,13 +359,13 @@ export default function SchatzMergePage() {
               onPointerMove={(event) => {
                 const activePointer = activePointerRef.current;
                 if (ignoredPointersRef.current.has(event.pointerId)) return;
-                if (dropPendingRef.current || (activePointer !== null && activePointer !== event.pointerId)) return;
+                if (!engineRef.current?.canDrop || (activePointer !== null && activePointer !== event.pointerId)) return;
                 movePreview(event.clientX, event.currentTarget);
               }}
               onPointerDown={(event) => {
                 if (modeRef.current !== "playing") return;
                 if (ignoredPointersRef.current.has(event.pointerId)) return;
-                if (dropPendingRef.current || (activePointerRef.current !== null && activePointerRef.current !== event.pointerId)) {
+                if (!engineRef.current?.canDrop || (activePointerRef.current !== null && activePointerRef.current !== event.pointerId)) {
                   ignoredPointersRef.current.add(event.pointerId);
                   event.currentTarget.setPointerCapture(event.pointerId);
                   return;
@@ -383,7 +378,7 @@ export default function SchatzMergePage() {
                 if (ignoredPointersRef.current.delete(event.pointerId)) return;
                 if (activePointerRef.current !== event.pointerId) return;
                 activePointerRef.current = null;
-                if (modeRef.current !== "playing" || dropPendingRef.current) return;
+                if (modeRef.current !== "playing" || !engineRef.current?.canDrop) return;
                 movePreview(event.clientX, event.currentTarget);
                 dropCurrent();
               }}

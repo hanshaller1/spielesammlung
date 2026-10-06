@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test, { after } from "node:test";
 import Matter from "matter-js";
 import { createServer } from "vite";
-const vite = await createServer({ configFile: false, cacheDir: "work/schatz-profile/vite-tests", server: { middlewareMode: true } });
+const vite = await createServer({ configFile: false, optimizeDeps: { noDiscovery: true }, ssr: { external: ["matter-js"] }, cacheDir: "work/schatz-profile/vite-tests", server: { middlewareMode: true } });
 after(() => vite.close());
 const { randomDropTier, SchatzMergeEngine, TREASURES } = await vite.ssrLoadModule("/app/schatz-merge/engine.ts");
 
@@ -12,6 +12,7 @@ function createGame(overrides = {}) {
     onMerge: (event) => events.push({ type: "merge", ...event }),
     onGameOver: () => { events.push({ type: "game-over" }); },
     onDrop: () => { events.push({ type: "drop" }); },
+    onPreviewReady: () => { events.push({ type: "preview-ready" }); },
     onImpact: (tier) => { events.push({ type: "impact", tier }); },
     ...overrides,
   });
@@ -292,4 +293,178 @@ test("Shuffle-Bag bleibt gleichverteilt auf Stufen 1 bis 6 begrenzt", async () =
     for(const tier of items) { streak=tier===previous?streak+1:1; maximum=Math.max(maximum,streak); previous=tier; }
   }
   assert.ok(maximum <= 2);
+});
+
+
+function addTreasure(game, tier, x = 195, y = 300) {
+  const body = game.createTreasureBody(tier, x, y);
+  Matter.Composite.add(game.engine.world, body);
+  game.bodies.set(body.id, game.createBodyMeta(tier, body, x, y));
+  return body;
+}
+function assertPendingInvariant(game) {
+  const snapshot = game.debugSnapshot();
+  if (!snapshot.gameOver && snapshot.previewBlocked) {
+    assert.equal(snapshot.awaitingPreviewAfterDrop, 1, "one live blocker owns the accepted drop");
+    assert.notEqual(snapshot.pendingBodyId, null);
+    assert.ok(Math.min(snapshot.physicalTop, snapshot.visualTop) <= snapshot.dangerLine + snapshot.lineClearance);
+    assert.equal(snapshot.canDrop, false);
+  } else {
+    assert.equal(snapshot.awaitingPreviewAfterDrop, 0);
+    assert.equal(snapshot.previewBlocked, false);
+  }
+}
+function steps(game, count) {
+  for (let frame = 0; frame < count; frame++) { game.update(1000 / 60); assertPendingInvariant(game); }
+}
+
+test("direkter Merge des ursprünglichen Drops gibt Preview genau einmal frei", () => {
+  const { game, events } = createGame();
+  assert.equal(game.drop(2, 195), true);
+  assert.equal(game.drop(2, 195), false, "rejected input cannot consume another preview");
+  const original = activeBodies(game)[0];
+  const partner = addTreasure(game, 2, 195, 300);
+  Matter.Body.setPosition(original, { x: 195, y: 300 });
+  assert.equal(game.tryMerge(original, partner), true);
+  assert.equal(game.bodies.has(original.id), false);
+  steps(game, 180);
+  assert.equal(events.filter(e => e.type === "preview-ready").length, 1);
+  assert.equal(game.canDrop, true);
+});
+
+test("Kettenmerge nach ursprünglicher Überquerung vergrößert die Drop-Sperre nicht erneut", () => {
+  const { game, events } = createGame();
+  game.drop(1, 195);
+  let original = activeBodies(game)[0];
+  Matter.Body.translate(original, { x: 0, y: game.dangerLine + 1 - game.lineTops(original, game.bodies.get(original.id)).top });
+  for (let tier = 1; tier <= 8; tier++) {
+    const partner = addTreasure(game, tier, original.position.x, original.position.y);
+    game.tryMerge(original, partner);
+    original = activeBodies(game)[0];
+  }
+  assert.ok(game.lineTops(original, game.bodies.get(original.id)).top < game.dangerLine, "larger successor grew back above line");
+  game.update(1000 / 60);
+  assert.equal(game.canDrop, true, "clearance cannot be revoked by subsequent growth");
+  assert.equal(events.filter(e => e.type === "preview-ready").length, 1);
+  steps(game, 180);
+  assert.equal(events.filter(e => e.type === "preview-ready").length, 1);
+});
+
+test("Merge und Kettenmerge vor der Überquerung behalten nur einen tatsächlichen Blocker", () => {
+  const { game, events } = createGame();
+  game.drop(1, 195);
+  let blocker = activeBodies(game)[0];
+  for (let tier = 1; tier <= 6; tier++) {
+    const partner = addTreasure(game, tier, blocker.position.x, blocker.position.y);
+    game.tryMerge(blocker, partner);
+    blocker = activeBodies(game)[0];
+    assertPendingInvariant(game);
+  }
+  Matter.Sleeping.set(blocker, true);
+  steps(game, 180);
+  assert.equal(game.gameOver, true, "settled near-line successor must end the round");
+  assert.equal(events.filter(e => e.type === "game-over").length, 1);
+  assert.equal(events.filter(e => e.type === "preview-ready").length, 0);
+  assert.equal(game.drop(1, 100), false);
+});
+
+test("Regression: gedrehter schlafender Beutel hat Collider unter, Grafik über der Linie", () => {
+  const { game, events } = createGame();
+  game.drop(6, 195);
+  const body = activeBodies(game)[0];
+  Matter.Body.setAngle(body, Math.PI / 4);
+  Matter.Body.translate(body, { x: 0, y: game.dangerLine + 1 - body.bounds.min.y });
+  Matter.Sleeping.set(body, true);
+  const snapshot = game.debugSnapshot();
+  assert.ok(snapshot.physicalTop > snapshot.dangerLine);
+  assert.ok(snapshot.visualTop < snapshot.dangerLine);
+  steps(game, 360);
+  assert.equal(game.gameOver, true, "old code stayed blocked forever with no game-over");
+  assert.equal(events.filter(e => e.type === "game-over").length, 1);
+});
+
+test("Sleeping unterhalb der Linie gibt frei; subpixel Solver-Jitter verhindert Game Over nicht", () => {
+  const { game, events } = createGame();
+  game.drop(6, 195);
+  const body = activeBodies(game)[0];
+  Matter.Body.translate(body, { x: 0, y: game.dangerLine + 3 - game.lineTops(body, game.bodies.get(body.id)).top });
+  Matter.Sleeping.set(body, true);
+  game.update(1000 / 60);
+  assert.equal(game.canDrop, true);
+  assert.equal(events.filter(e => e.type === "preview-ready").length, 1);
+  game.reset();
+  game.drop(6, 195);
+  const blocked = activeBodies(game)[0];
+  for (let frame = 0; frame < 180 && !game.gameOver; frame++) {
+    const top = game.lineTops(blocked, game.bodies.get(blocked.id)).top;
+    Matter.Body.translate(blocked, { x: 0, y: game.dangerLine + (frame % 2 ? .2 : -.2) - top });
+    Matter.Sleeping.set(blocked, true);
+    game.update(1000 / 60);
+    assertPendingInvariant(game);
+  }
+  assert.equal(game.gameOver, true);
+});
+
+test("terminaler Merge entfernt Pending vollständig, ohne auf Nachfolger zu warten", () => {
+  const { game, events } = createGame();
+  game.drop(12, 195);
+  const body = activeBodies(game)[0];
+  const partner = addTreasure(game, 12, body.position.x, body.position.y);
+  assert.equal(game.tryMerge(body, partner), true);
+  steps(game, 180);
+  assert.equal(activeBodies(game).length, 0);
+  assert.equal(game.canDrop, true);
+  assert.equal(events.filter(e => e.type === "preview-ready").length, 1);
+});
+
+test("verwaister Pending-Body oder Metadatensatz wird zustandsbasiert einmalig freigegeben", () => {
+  for (const remove of ["body", "metadata"]) {
+    const { game, events } = createGame();
+    game.drop(1, 195);
+    const body = activeBodies(game)[0];
+    if (remove === "body") Matter.Composite.remove(game.engine.world, body);
+    else game.bodies.delete(body.id);
+    steps(game, 20);
+    const snapshot = game.debugSnapshot();
+    assert.equal(game.canDrop, true);
+    assert.equal(snapshot.pendingRecoveries, 1);
+    assert.match(snapshot.lastPendingRecovery, /Missing pending/);
+    assert.equal(events.filter(e => e.type === "preview-ready").length, 1);
+  }
+});
+
+test("Preview-Gate besitzt keinen festen Timeout für einen noch gültigen Drop", () => {
+  const { game, events } = createGame();
+  game.drop(6, 195);
+  game.elapsed = 10000;
+  game.updatePreviewGate();
+  assert.equal(game.canDrop, false);
+  assert.equal(game.debugSnapshot().pendingRecoveries, 0);
+  assert.equal(events.filter(e => e.type === "preview-ready").length, 0);
+  assertPendingInvariant(game);
+  game.reset();
+  assert.equal(game.canDrop, true);
+});
+
+test("400 zufällige Drops: Invariante pro Frame, binnen 6 Simulationssekunden ready oder Game Over", () => {
+  let seed = 4716, ready = 0, over = 0, merges = 0;
+  const random = () => ((seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296);
+  const { game } = createGame({ onPreviewReady: () => ready++, onGameOver: () => over++, onMerge: () => merges++ });
+  for (let drop = 0; drop < 400; drop++) {
+    if (game.gameOver) game.reset();
+    if (drop % 37 === 0) game.resize(drop % 2 ? 344 : 390, drop % 2 ? 548 : 620);
+    const beforeReady = ready, beforeOver = over;
+    assert.equal(game.drop(1 + Math.floor(random() * 6), random() * game.boardWidth), true);
+    for (let frame = 0; frame < 360 && !game.canDrop && !game.gameOver; frame++) {
+      game.update(1000 / 60);
+      assertPendingInvariant(game);
+      assertHealthy(game);
+    }
+    assert.ok(game.canDrop || game.gameOver, `drop ${drop} stuck: ${JSON.stringify(game.debugSnapshot())}`);
+    assert.equal((ready - beforeReady) + (over - beforeOver), 1, "exactly one lifecycle completion");
+    steps(game, 35);
+  }
+  assert.ok(over > 0, "must exercise full boards without stress bypass");
+  assert.ok(merges > 100, "must exercise many merges");
+  assert.equal(game.debugSnapshot().pendingRecoveries, 0, "normal physics must need no failsafe");
 });

@@ -77,8 +77,12 @@ type BodyMeta = {
   merged: boolean;
   renderOffsetXFactor: number;
   renderOffsetYFactor: number;
-  awaitingPreviewAfterDrop: boolean;
 };
+// A single accepted drop owns the gate. A merge may replace its blocker only
+// while the original has not yet cleared the entry zone. Clearance is irreversible.
+type PendingDrop = { originalBodyId: number; bodyId: number | null; tier: number; startedAt: number };
+const LINE_CLEARANCE = 0.5; // subpixel contact jitter: same boundary for preview and danger
+
 type Particle = { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; size: number; hue: number };
 
 const { Bodies, Body, Composite, Engine, Events, Vector, Query, Sleeping } = Matter;
@@ -131,7 +135,12 @@ export class SchatzMergeEngine {
   private accumulator = 0;
   private lastImpactAt = Number.NEGATIVE_INFINITY;
   private dangerStartedAt: number | null = null;
-  private previewBlockedByPendingDrop = false;
+  private pendingDrop: PendingDrop | null = null;
+  private pendingRecoveries = 0;
+  private lastPendingRecovery: string | null = null;
+
+  get previewBlockedByPendingDrop(): boolean { return this.pendingDrop !== null; }
+  get canDrop(): boolean { return !this.gameOver && this.pendingDrop === null; }
   private gameOver = false;
   private stressScene: string | null = null;
   private readonly pendingMerges: Array<[Matter.Body, Matter.Body]> = [];
@@ -151,7 +160,22 @@ export class SchatzMergeEngine {
   }
   debugSnapshot() {
     const bodies = Composite.allBodies(this.engine.world).filter(body => this.bodies.has(body.id));
-    return { bodies: bodies.length, parts: bodies.reduce((n, b) => n + (b.parts.length > 1 ? b.parts.length - 1 : 1), 0), sleeping: bodies.filter(b => b.isSleeping).length, particles: this.particles.length, quality: this.quality, resizes: this.resizeCount, pendingDrop: this.previewBlockedByPendingDrop };
+    const pending = this.pendingDrop;
+    const body = bodies.find(b => b.id === pending?.bodyId);
+    const meta = body ? this.bodies.get(body.id) : undefined;
+    const tops = body && meta ? this.lineTops(body, meta) : null;
+    return {
+      bodies: bodies.length, parts: bodies.reduce((n, b) => n + (b.parts.length > 1 ? b.parts.length - 1 : 1), 0),
+      sleeping: bodies.filter(b => b.isSleeping).length, particles: this.particles.length, quality: this.quality, resizes: this.resizeCount,
+      pendingDrop: this.previewBlockedByPendingDrop, previewBlocked: this.previewBlockedByPendingDrop, canDrop: this.canDrop, gameOver: this.gameOver,
+      awaitingPreviewAfterDrop: body && meta ? 1 : 0,
+      pendingBodyId: pending?.bodyId ?? null, pendingTier: meta?.tier ?? pending?.tier ?? null,
+      originalDropBodyId: pending?.originalBodyId ?? null,
+      physicalTop: tops?.physicalTop ?? null, boundsMinY: body?.bounds.min.y ?? null, visualTop: tops?.visualTop ?? null,
+      dangerLine: this.dangerLine, lineClearance: LINE_CLEARANCE, speed: body?.speed ?? null, sleepingPending: body?.isSleeping ?? null,
+      pendingDurationMs: pending ? this.elapsed - pending.startedAt : 0,
+      pendingRecoveries: this.pendingRecoveries, lastPendingRecovery: this.lastPendingRecovery,
+    };
   }
 
   loadDebugScene(count: number, kind = "mixed"): void {
@@ -223,16 +247,17 @@ export class SchatzMergeEngine {
     return Math.max(halfWidth + 8, Math.min(this.width - halfWidth - 8, x));
   }
 
-  drop(tier: number, x: number): void {
-    if (this.gameOver || this.previewBlockedByPendingDrop) return;
+  drop(tier: number, x: number): boolean {
+    if (!this.canDrop) return false;
     const safeTier = Math.max(1, Math.min(TREASURES.length, tier));
     const safeX = this.clampX(x, safeTier);
     const y = this.spawnY(safeTier);
     const body = this.createTreasureBody(safeTier, safeX, y);
     WorldAdd(this.engine.world, body);
-    this.bodies.set(body.id, this.createBodyMeta(safeTier, body, safeX, y, false, true));
-    this.previewBlockedByPendingDrop = true;
+    this.bodies.set(body.id, this.createBodyMeta(safeTier, body, safeX, y));
+    this.pendingDrop = { originalBodyId: body.id, bodyId: body.id, tier: safeTier, startedAt: this.elapsed };
     this.callbacks.onDrop();
+    return true;
   }
 
   reset(): void {
@@ -246,7 +271,9 @@ export class SchatzMergeEngine {
     this.accumulator = 0;
     this.lastImpactAt = Number.NEGATIVE_INFINITY;
     this.dangerStartedAt = null;
-    this.previewBlockedByPendingDrop = false;
+    this.pendingDrop = null;
+    this.pendingRecoveries = 0;
+    this.lastPendingRecovery = null;
     this.gameOver = false;
     this.stressScene = null;
   }
@@ -257,21 +284,24 @@ export class SchatzMergeEngine {
     if (this.gameOver) return;
     // At most three fixed steps; missed wall time is discarded, never accumulated forever.
     this.accumulator = Math.min(FIXED_STEP_MS * 3, this.accumulator + Math.max(0, Math.min(50, deltaMs)));
-    while (this.accumulator + 1e-6 >= FIXED_STEP_MS && this.metrics.steps < 3) {
+    while (!this.gameOver && this.accumulator + 1e-6 >= FIXED_STEP_MS && this.metrics.steps < 3) {
       this.elapsed += FIXED_STEP_MS;
       const start = this.diagnosticsEnabled ? performance.now() : 0;
       Engine.update(this.engine, FIXED_STEP_MS);
+      // Observe the original geometry before a merge grows/repositions its successor.
+      this.observePendingClearance();
       // World mutations happen after the solver finishes using its body/pair snapshot.
       for (const [first, second] of this.pendingMerges) this.tryMerge(first, second);
       this.pendingMerges.length = 0;
       this.stabilizeContacts();
+      this.checkForGameOver();
+      this.updatePreviewGate();
       if (this.diagnosticsEnabled) this.metrics.physics += performance.now() - start;
       this.metrics.steps++;
       this.updateEffects(FIXED_STEP_MS);
       this.accumulator -= FIXED_STEP_MS;
     }
     this.updatePreviewGate();
-    this.checkForGameOver();
   }
 
   draw(context: CanvasRenderingContext2D, preview: { tier: number; x: number } | null): void {
@@ -410,36 +440,53 @@ export class SchatzMergeEngine {
     anchorX: number,
     anchorY: number,
     merged = false,
-    awaitingPreviewAfterDrop = false,
   ): BodyMeta {
     return {
       tier,
       merged,
       renderOffsetXFactor: (anchorX - body.position.x) / this.radiusForTier(tier),
       renderOffsetYFactor: (anchorY - body.position.y) / this.radiusForTier(tier),
-      awaitingPreviewAfterDrop,
     };
   }
 
+  // Use exact collider vertices (Matter broad-phase bounds include velocity padding)
+  // and the rotated render rectangle. Both gate and game-over use this same top.
+  private lineTops(body: Matter.Body, meta: BodyMeta) {
+    const [, , width, height] = SPRITE_PROFILES[meta.tier - 1].game;
+    const radius = this.radiusForTier(meta.tier), scale = this.spriteScale();
+    const cos = Math.cos(body.angle), sin = Math.sin(body.angle);
+    const centerY = body.position.y + radius * (meta.renderOffsetXFactor * sin + meta.renderOffsetYFactor * cos);
+    const visualTop = centerY - Math.abs(sin) * width * scale / 2 - Math.abs(cos) * height * scale / 2;
+    let physicalTop = Infinity;
+    for (const vertex of body.vertices) physicalTop = Math.min(physicalTop, vertex.y);
+    return { physicalTop, visualTop, top: Math.min(physicalTop, visualTop) };
+  }
+
+  private observePendingClearance(): void {
+    const pending = this.pendingDrop;
+    if (!pending || pending.bodyId === null) return;
+    const body = Composite.allBodies(this.engine.world).find(b => b.id === pending.bodyId);
+    const meta = this.bodies.get(pending.bodyId);
+    if (body && meta && this.lineTops(body, meta).top > this.dangerLine + LINE_CLEARANCE) pending.bodyId = null;
+  }
+
   private updatePreviewGate(): void {
-    if (!this.previewBlockedByPendingDrop) return;
-
-    for (const body of Composite.allBodies(this.engine.world)) {
-      const meta = this.bodies.get(body.id);
-      if (!meta?.awaitingPreviewAfterDrop) continue;
-      const [, , width, height] = SPRITE_PROFILES[meta.tier - 1].game;
-      const radius = this.radiusForTier(meta.tier), scale = this.spriteScale();
-      const cos = Math.cos(body.angle), sin = Math.sin(body.angle);
-      const centerY = body.position.y + radius * (meta.renderOffsetXFactor * sin + meta.renderOffsetYFactor * cos);
-      const visualTop = centerY - Math.abs(sin) * width * scale / 2 - Math.abs(cos) * height * scale / 2;
-      if (Math.min(body.bounds.min.y, visualTop) > this.dangerLine) meta.awaitingPreviewAfterDrop = false;
+    if (!this.pendingDrop || this.gameOver) return;
+    this.observePendingClearance();
+    const pending = this.pendingDrop;
+    if (pending.bodyId !== null) {
+      const body = Composite.allBodies(this.engine.world).find(b => b.id === pending.bodyId);
+      const meta = this.bodies.get(pending.bodyId);
+      if (body && meta && !meta.merged) return;
+      // Recovery is based on missing ownership, never on a deadline for slow drops.
+      this.pendingRecoveries++;
+      this.lastPendingRecovery = `Missing pending body or metadata: ${pending.bodyId}`;
+      if (this.diagnosticsEnabled) console.warn(`[Schatz-Merge] ${this.lastPendingRecovery}`);
     }
-
-    const stillWaiting = [...this.bodies.values()].some((meta) => meta.awaitingPreviewAfterDrop);
-    if (!stillWaiting) {
-      this.previewBlockedByPendingDrop = false;
-      this.callbacks.onPreviewReady?.();
-    }
+    // Clear before the callback: reentrancy and duplicate pointer releases cannot
+    // consume the same drop twice. There is no independent UI pending flag.
+    this.pendingDrop = null;
+    this.callbacks.onPreviewReady?.();
   }
 
   private rebuildWalls(): void {
@@ -465,7 +512,10 @@ export class SchatzMergeEngine {
     firstMeta.merged = true;
     secondMeta.merged = true;
     const tier = firstMeta.tier;
-    const awaitingPreviewAfterDrop = firstMeta.awaitingPreviewAfterDrop || secondMeta.awaitingPreviewAfterDrop;
+    const pending = this.pendingDrop;
+    const consumesPending = pending?.bodyId === first.id || pending?.bodyId === second.id;
+    // An original drop can have crossed immediately before collisionStart/merge.
+    if (consumesPending) this.observePendingClearance();
     const terminal = tier === TREASURES.length;
     const nextTier = terminal ? null : tier + 1;
     const x = (first.position.x + second.position.x) / 2;
@@ -483,7 +533,7 @@ export class SchatzMergeEngine {
 
     if (nextTier !== null) {
       const merged = this.createTreasureBody(nextTier, x, y);
-      const meta = this.createBodyMeta(nextTier, merged, x, y, false, awaitingPreviewAfterDrop);
+      const meta = this.createBodyMeta(nextTier, merged, x, y);
       this.placeMergedBody(merged);
       changedBounds.min.x = Math.min(changedBounds.min.x, merged.bounds.min.x);
       changedBounds.max.x = Math.max(changedBounds.max.x, merged.bounds.max.x);
@@ -491,8 +541,14 @@ export class SchatzMergeEngine {
       Body.setAngularVelocity(merged, angularVelocity);
       Composite.add(this.engine.world, merged);
       this.bodies.set(merged.id, meta);
+      if (consumesPending && pending && pending.bodyId !== null) {
+        // Only an actual entry-zone obstruction retains the token, not every
+        // descendant in a chain. A settled obstruction now ends the round.
+        pending.bodyId = this.lineTops(merged, meta).top <= this.dangerLine + LINE_CLEARANCE ? merged.id : null;
+      }
     }
 
+    if (terminal && consumesPending && pending) pending.bodyId = null;
     this.wakeAfterSupportChange(changedBounds);
     this.spawnParticles(x, y, tier, terminal);
     this.callbacks.onMerge({ tier, nextTier, points: TREASURES[tier - 1].score, x, y, terminal });
@@ -598,10 +654,10 @@ export class SchatzMergeEngine {
   }
 
   private checkForGameOver(): void {
-    if (this.stressScene) return;
+    if (this.stressScene || this.gameOver) return;
     const hasSettledAboveLine = Composite.allBodies(this.engine.world).some((body) => {
       const meta = this.bodies.get(body.id);
-      return Boolean(meta && !meta.merged && body.bounds.min.y < this.dangerLine && body.speed < 1.6);
+      return Boolean(meta && !meta.merged && (body.isSleeping || body.speed < 1.6) && this.lineTops(body, meta).top <= this.dangerLine + LINE_CLEARANCE);
     });
 
     if (!hasSettledAboveLine) {
@@ -612,6 +668,7 @@ export class SchatzMergeEngine {
     if (this.dangerStartedAt === null) this.dangerStartedAt = this.elapsed;
     if (this.elapsed - this.dangerStartedAt >= 1500) {
       this.gameOver = true;
+      this.pendingDrop = null;
       this.callbacks.onGameOver();
     }
   }
