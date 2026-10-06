@@ -9,6 +9,18 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.17",
+    title: "Schatz-Merge: Vorschau zuverlässig freigeben",
+    date: "6. Oktober 2026",
+    changes: [
+      "Die Engine verwaltet die Drop-Sperre allein; eine vollständig überquerte rote Linie wird durch spätere Merges nicht erneut blockiert.",
+      "Preview und Game Over berücksichtigen dieselbe sichtbare und physische Objektgrenze, einschließlich Rotation und Sleeping.",
+      "Verwaiste Sperren werden zustandsbasiert erkannt und sicher aufgelöst; die Entwicklerdiagnose zeigt Blocker, Grenzen und Pending-Dauer.",
+      "23 Engine-Tests und lange Browserrunden prüfen Freigaben, Kettenmerges, volle Stapel und Mehrfinger-Eingaben bei unveränderter Physik und Darstellung.",
+    ],
+    commits: [{ id: "363d437", description: "Schatz-Merge: Pending-Preview-Deadlock verhindern" }],
+  },
+  {
     version: "0.4.16",
     title: "Schatz-Merge flüssiger und physikalisch stabiler",
     date: "2. Oktober 2026",
