@@ -7,7 +7,7 @@ import {
   moveItem, removeTriple, shuffleBoard, type Board, type Difficulty, type Move, type Outcome, type Position,
 } from "./engine";
 
-type Phase = "ready" | "playing" | "won" | "lost";
+type Phase = "ready" | "playing" | "paused" | "won" | "lost";
 type Progress = { unlocked: number; stars: Record<string, number>; best: Record<string, number> };
 type Boosters = { wand: number; shuffle: number; freeze: number };
 type Effect = { id: number; shelf: number; goods: number[]; label: string };
@@ -99,6 +99,7 @@ export default function WarenSortierenPage() {
   const freezeRef = useRef(0);
   const comboRef = useRef({ count: 0, until: 0 });
   const lastActionRef = useRef(0);
+  const pausedAtRef = useRef(0);
   const hintShownRef = useRef(false);
   const dragRef = useRef<Drag | null>(null);
   const suppressClickUntilRef = useRef(0);
@@ -211,6 +212,51 @@ export default function WarenSortierenPage() {
     }, 100);
     return () => window.clearInterval(timer);
   }, [phase, playNotes]);
+
+  const pauseGame = useCallback(() => {
+    if (phaseRef.current !== "playing") return;
+    const drag = dragRef.current;
+    if (drag) {
+      dragRef.current = null;
+      if (drag.hoverElement) delete drag.hoverElement.dataset.dropHover;
+      if (drag.shelfElement) drag.shelfElement.style.zIndex = "";
+      drag.element.style.transform = "";
+      delete drag.element.dataset.dragging;
+    }
+    pausedAtRef.current = performance.now();
+    setSelected(null);
+    setHint(null);
+    phaseRef.current = "paused";
+    setPhase("paused");
+  }, []);
+
+  const resumeGame = useCallback(() => {
+    if (phaseRef.current !== "paused") return;
+    // Combo und Tipp-Wartezeit laufen erst ab dem Weiterspielen wieder.
+    const now = performance.now();
+    comboRef.current.until += now - pausedAtRef.current;
+    lastActionRef.current = now;
+    hintShownRef.current = false;
+    phaseRef.current = "playing";
+    setPhase("playing");
+  }, []);
+
+  useEffect(() => {
+    const pauseWhenHidden = () => {
+      if (document.hidden) pauseGame();
+    };
+    const togglePause = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" && event.key.toLowerCase() !== "p") return;
+      if (phaseRef.current === "playing") pauseGame();
+      else resumeGame();
+    };
+    document.addEventListener("visibilitychange", pauseWhenHidden);
+    window.addEventListener("keydown", togglePause);
+    return () => {
+      document.removeEventListener("visibilitychange", pauseWhenHidden);
+      window.removeEventListener("keydown", togglePause);
+    };
+  }, [pauseGame, resumeGame]);
 
   const startLevel = useCallback((nextLevel: number) => {
     const config = levelConfig(nextLevel);
@@ -509,13 +555,15 @@ export default function WarenSortierenPage() {
   const config = levelConfig(level);
   const totalSeconds = levelSeconds(level, difficulty);
   const playing = phase === "playing";
+  const paused = phase === "paused";
   const timeShare = Math.max(0, Math.min(1, seconds / totalSeconds));
   const levelStars = progress.stars[level] ?? 0;
   const status = notice
     || (combo > 1 ? `Combo ×${Math.min(combo, 5)}!` : "")
     || (hint ? "Tipp: Schau auf die wackelnde Ware!" : "")
     || (selected ? "Tippe jetzt auf einen freien Platz." : "")
-    || (playing ? "Ziehe drei gleiche Waren in ein Fach." : "");
+    || (playing ? "Ziehe drei gleiche Waren in ein Fach." : "")
+    || (paused ? "Pause" : "");
 
   return (
     <main className="game-shell waren-game-shell">
@@ -524,7 +572,8 @@ export default function WarenSortierenPage() {
           <a className="back-link" href={sitePath("/")}>← Hanna&apos;s Spiele</a>
           <div className="waren-controls">
             <button onClick={toggleSound} aria-pressed={soundEnabled} aria-label={soundEnabled ? "Ton ausschalten" : "Ton einschalten"}>{soundEnabled ? "🔊" : "🔇"}</button>
-            <button onClick={() => startLevel(level)} disabled={!playing} aria-label="Level neu starten">↻</button>
+            <button onClick={paused ? resumeGame : pauseGame} disabled={!playing && !paused} aria-label={paused ? "Weiterspielen" : "Pause"}>{paused ? "▶" : "⏸"}</button>
+            <button onClick={() => startLevel(level)} disabled={!playing && !paused} aria-label="Level neu starten">↻</button>
           </div>
         </div>
         <header>
@@ -656,6 +705,21 @@ export default function WarenSortierenPage() {
                 <button onClick={() => chooseLevel(level + 1)} disabled={level >= progress.unlocked} aria-label="Nächstes Level">▶</button>
               </div>
               <button className="start-button" onClick={() => startLevel(level)}>Spiel starten</button>
+            </div>
+          )}
+
+          {paused && (
+            <div className="waren-overlay" data-pause>
+              <div className="waren-panel">
+                <div className="waren-logo" aria-hidden="true">⏸</div>
+                <h2>Pause</h2>
+                <p>Die Uhr steht. Das Regal bleibt so lange verdeckt.</p>
+                <div className="start-actions">
+                  <button className="start-button" onClick={resumeGame}>Weiterspielen</button>
+                  <button className="reset-button" onClick={() => startLevel(level)}>Level neu starten</button>
+                  <button className="reset-button" onClick={openLevelSelect}>Level auswählen</button>
+                </div>
+              </div>
             </div>
           )}
 

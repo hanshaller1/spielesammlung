@@ -79,6 +79,8 @@
 .waren-stars i { color:#ffffff30; font-style:normal; }
 .waren-stars i[data-earned] { color:#ffd166; text-shadow:0 0 10px #ffd16699; }
 .waren-overlay .waren-stars { font-size:2.6rem; }
+.waren-overlay[data-pause] { background:#1b1020fa; backdrop-filter:blur(14px); }
+.waren-overlay[data-pause] .start-actions { gap:10px; }
 
 @media (min-width:700px) {
   .waren-board[data-shelves="6"] { width:min(100%,650px); grid-template-columns:repeat(3,minmax(0,1fr)); }
