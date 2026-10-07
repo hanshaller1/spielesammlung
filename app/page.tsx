@@ -35,8 +35,7 @@ const games: Array<{
   },
   {
     href: sitePath("/schatz-merge"),
-    icon: "👑🪙💎",
-    iconClass: "home-treasure",
+    image: `${publicBasePath}/startseite/schatz-merge.svg`,
     title: "Schatz-Merge",
     description: "Lass Schätze fallen und verbinde gleiche Gegenstände.",
     meta: "12 Schatzstufen",
