@@ -9,6 +9,7 @@ import {
   type Resolution, type Tool,
 } from "./engine";
 import { DISTRICTS, EMPTY_KINGDOM, build, canBuild, currentDistrict, sanitizeKingdom, type Kingdom } from "./kingdom";
+import { Sprite, SpriteSheet, powerSprite, type SpriteId } from "./sprites";
 
 type Phase = "ready" | "kingdom" | "playing" | "won" | "lost";
 type Progress = { unlocked: number; stars: Record<string, number>; best: Record<string, number> };
@@ -27,20 +28,27 @@ const SWAP_TIME = 170;
 const CLEAR_TIME = 190;
 const FALL_TIME = 250;
 
-const START_POWERS: Array<{ id: StartPower; name: string; symbol: string }> = [
-  { id: "rocket", name: "Rakete", symbol: "🚀" },
-  { id: "dynamite", name: "Dynamit", symbol: "🧨" },
-  { id: "electro", name: "Elektrokugel", symbol: "🔮" },
+const START_POWERS: Array<{ id: StartPower; name: string; sprite: SpriteId }> = [
+  { id: "rocket", name: "Rakete", sprite: "rocket" },
+  { id: "dynamite", name: "Dynamit", sprite: "dynamite" },
+  { id: "electro", name: "Elektrokugel", sprite: "electro" },
 ];
 
-const HELPERS: Array<{ id: keyof Helpers; name: string; symbol: string; title: string }> = [
-  { id: "hammer", name: "Hammer", symbol: "🔨", title: "Zerschlägt ein Feld" },
-  { id: "arrow", name: "Pfeil", symbol: "🏹", title: "Räumt eine ganze Reihe ab" },
-  { id: "cannon", name: "Kanone", symbol: "💣", title: "Räumt eine ganze Spalte ab" },
-  { id: "shuffle", name: "Narrenkappe", symbol: "🃏", title: "Mischt alle Steine neu" },
+const HELPERS: Array<{ id: keyof Helpers; name: string; sprite: SpriteId; title: string }> = [
+  { id: "hammer", name: "Hammer", sprite: "hammer", title: "Zerschlägt ein Feld" },
+  { id: "arrow", name: "Pfeil", sprite: "arrow", title: "Räumt eine ganze Reihe ab" },
+  { id: "cannon", name: "Kanone", sprite: "cannon", title: "Räumt eine ganze Spalte ab" },
+  { id: "shuffle", name: "Narrenkappe", sprite: "jester", title: "Mischt alle Steine neu" },
 ];
 
-const GOAL_SYMBOL: Record<Exclude<Goal["kind"], "color">, string> = { crate: "📦", vine: "🌿", owl: "🦉", boss: "😈" };
+const LEGEND: Array<{ sprite: SpriteId; text: string }> = [
+  { sprite: "rocket", text: "4 in einer Reihe" },
+  { sprite: "spinner", text: "4 im Quadrat" },
+  { sprite: "dynamite", text: "L- oder T-Form" },
+  { sprite: "electro", text: "5 in einer Reihe" },
+];
+
+const GOAL_SPRITE: Record<Exclude<Goal["kind"], "color">, SpriteId> = { crate: "crate-1", vine: "sprig", owl: "owl", boss: "boss" };
 const GOAL_NAME: Record<Goal["kind"], string> = { color: "", crate: "Kisten", vine: "Ranken", owl: "Eulen", boss: "Lebenspunkte des Dunklen Königs" };
 
 function progressKey(difficulty: Difficulty): string {
@@ -106,8 +114,11 @@ function Stars({ count }: { count: number }) {
 }
 
 function GoalIcon({ goal }: { goal: Goal }) {
-  if (goal.kind === "color") return <span className="reich-gem reich-goal-gem" data-color={GEMS[goal.color].key} aria-hidden="true" />;
-  return <span aria-hidden="true">{GOAL_SYMBOL[goal.kind]}</span>;
+  return <Sprite id={goal.kind === "color" ? `gem-${goal.color}` : GOAL_SPRITE[goal.kind]} className="reich-goal-icon" />;
+}
+
+function Potion() {
+  return <Sprite id="potion" className="reich-inline" />;
 }
 
 export default function KoenigreichPage() {
@@ -581,6 +592,7 @@ export default function KoenigreichPage() {
 
   return (
     <main className="game-shell reich-game-shell">
+      <SpriteSheet />
       <section className="game-card reich-game-card" aria-labelledby="reich-title">
         <div className="reich-topbar">
           <a className="back-link" href={sitePath("/")}>← Hanna&apos;s Spiele</a>
@@ -595,7 +607,7 @@ export default function KoenigreichPage() {
           <div className="stats">
             <span>Level <b>{level}</b> · {difficulty.name}</span>
             {game && <span><b>{movesShown}</b> Züge</span>}
-            <span title="Zaubertränke zum Bauen"><b>{kingdom.potions}</b> 🧪</span>
+            <span title="Zaubertränke zum Bauen"><b>{kingdom.potions}</b> <Potion /></span>
           </div>
         </header>
 
@@ -614,7 +626,7 @@ export default function KoenigreichPage() {
             </div>
             {game.boss && (
               <div className="reich-boss" data-hit={shake || undefined}>
-                <span className="reich-boss-face" aria-hidden="true">😈<i>👑</i></span>
+                <Sprite id="boss" className="reich-boss-face" />
                 <div>
                   <strong>Dunkler König <b>{game.boss.hp} / {game.boss.maxHp}</b></strong>
                   <div className="reich-boss-bar" role="progressbar" aria-label="Lebenspunkte des Dunklen Königs" aria-valuemin={0} aria-valuemax={game.boss.maxHp} aria-valuenow={game.boss.hp}>
@@ -634,7 +646,7 @@ export default function KoenigreichPage() {
                   aria-pressed={tool === helper.id}
                   title={helper.title}
                 >
-                  <span aria-hidden="true">{helper.symbol}</span><em>{helper.name}</em><b>{helpers[helper.id]}</b>
+                  <Sprite id={helper.sprite} className="reich-helper-icon" /><em>{helper.name}</em><b>{helpers[helper.id]}</b>
                 </button>
               ))}
             </div>
@@ -677,7 +689,8 @@ export default function KoenigreichPage() {
                     data-hp={cell.blocker.hp}
                     title={isHouse ? `Vogelhaus mit ${cell.blocker.hp} Eulen` : `Kiste mit ${cell.blocker.hp} ${cell.blocker.hp === 1 ? "Schicht" : "Schichten"}`}
                   >
-                    {isHouse ? <><span aria-hidden="true">🏠</span><b>🦉{cell.blocker.hp}</b></> : null}
+                    <Sprite id={isHouse ? "birdhouse" : cell.blocker.hp >= 2 ? "crate-2" : "crate-1"} className="reich-blocker-art" />
+                    {isHouse && <b>{cell.blocker.hp}</b>}
                   </div>
                 );
               })}
@@ -700,10 +713,8 @@ export default function KoenigreichPage() {
                     data-hint={isHint(x, y) || undefined}
                     title={`${tile.power ? POWERS[tile.power].name : GEMS[tile.color].name}${tile.vines ? " mit Ranken" : ""}`}
                   >
-                    {tile.power
-                      ? <span className="reich-power">{POWERS[tile.power].symbol}</span>
-                      : <span className="reich-gem" data-color={GEMS[tile.color].key} />}
-                    {tile.vines && <span className="reich-vines" aria-hidden="true" />}
+                    <Sprite id={tile.power ? powerSprite(tile.power) : `gem-${tile.color}`} className={tile.power ? "reich-power" : "reich-gem"} />
+                    {tile.vines && <Sprite id="vines" className="reich-vines" />}
                   </div>
                 );
               })}
@@ -717,10 +728,9 @@ export default function KoenigreichPage() {
               <h2>Rette das Königreich!</h2>
               <p>Tausche benachbarte Steine, bis drei gleiche in einer Reihe liegen. Erfülle die Ziele, bevor die Züge ausgehen, und verdiene Zaubertränke für dein Königreich.</p>
               <ul className="reich-legend" aria-label="Power-ups">
-                <li><span>🚀</span>4 in einer Reihe</li>
-                <li><span>🌀</span>4 im Quadrat</li>
-                <li><span>🧨</span>L- oder T-Form</li>
-                <li><span>🔮</span>5 in einer Reihe</li>
+                {LEGEND.map((entry) => (
+                  <li key={entry.sprite}><Sprite id={entry.sprite} className="reich-legend-icon" />{entry.text}</li>
+                ))}
               </ul>
               <div className="reich-difficulty" role="radiogroup" aria-label="Schwierigkeit">
                 {DIFFICULTIES.map((entry, index) => (
@@ -747,21 +757,21 @@ export default function KoenigreichPage() {
                       aria-pressed={picks.includes(entry.id)}
                       disabled={difficulty.startPowers === 0}
                     >
-                      <span aria-hidden="true">{entry.symbol}</span>{entry.name}
+                      <Sprite id={entry.sprite} className="reich-pick-icon" />{entry.name}
                     </button>
                   ))}
                 </div>
               </div>
               <div className="start-actions">
                 <button className="start-button" onClick={() => startLevel(level)}>Spiel starten</button>
-                <button className="reset-button" onClick={openKingdom}>🏰 Königreich bauen · {kingdom.potions} 🧪</button>
+                <button className="reset-button" onClick={openKingdom}>🏰 Königreich bauen · {kingdom.potions} <Potion /></button>
               </div>
             </div>
           )}
 
           {phase === "kingdom" && (
             <div className="reich-panel reich-kingdom">
-              <p className="reich-potions"><b>{kingdom.potions}</b> 🧪 Zaubertränke</p>
+              <p className="reich-potions"><b>{kingdom.potions}</b> <Potion /> Zaubertränke</p>
               {district ? (
                 <>
                   <h2>{district.name}</h2>
@@ -792,7 +802,7 @@ export default function KoenigreichPage() {
                           <strong>{task.name}</strong>
                           {done
                             ? <em>Gebaut ✓</em>
-                            : <button onClick={() => buildTask(task.id)} disabled={!canBuild(kingdom, task.id)}>Bauen · {task.cost} 🧪</button>}
+                            : <button onClick={() => buildTask(task.id)} disabled={!canBuild(kingdom, task.id)}>Bauen · {task.cost} <Potion /></button>}
                         </li>
                       );
                     })}
@@ -819,7 +829,7 @@ export default function KoenigreichPage() {
               <div className="reich-panel">
                 <Stars count={result.stars} />
                 <h2>Level {level} geschafft!</h2>
-                <p><b>{result.score} Punkte</b>{(progress.best[level] ?? 0) > result.score ? ` · Bestwert ${progress.best[level]}` : " · Neuer Bestwert!"}<br />Du erhältst <b>{result.potions} 🧪</b> für dein Königreich.</p>
+                <p><b>{result.score} Punkte</b>{(progress.best[level] ?? 0) > result.score ? ` · Bestwert ${progress.best[level]}` : " · Neuer Bestwert!"}<br />Du erhältst <b>{result.potions} <Potion /></b> für dein Königreich.</p>
                 <div className="start-actions">
                   <button className="start-button" onClick={() => startLevel(level + 1)}>Nächstes Level</button>
                   <button className="reset-button" onClick={openKingdom}>🏰 Königreich bauen</button>
@@ -855,9 +865,13 @@ function FxView({ entry }: { entry: Fx }) {
   if (burst) {
     if (burst.color === -1) return null;
     const style = { "--x": burst.x, "--y": burst.y } as CSSProperties;
-    if (burst.color === -2) return <span className="reich-burst reich-burst-wood" style={style} aria-hidden="true" />;
-    if (burst.color === -3) return <span className="reich-burst reich-burst-leaf" style={style} aria-hidden="true">🍃</span>;
-    return <span className="reich-burst" style={style} data-color={GEMS[burst.color].key} aria-hidden="true" />;
+    if (burst.color === -2) return <span className="reich-burst reich-burst-wood" style={style} aria-hidden="true"><i /><i /><i /><i /></span>;
+    if (burst.color === -3) return <span className="reich-burst reich-burst-leaf" style={style} aria-hidden="true"><Sprite id="sprig" /></span>;
+    return (
+      <span className="reich-burst" style={style} data-color={GEMS[burst.color].key} aria-hidden="true">
+        <Sprite id={`gem-${burst.color}`} className="reich-burst-gem" />
+      </span>
+    );
   }
   if (!effect) return null;
   if (effect.kind === "row") return <span className="reich-beam" data-dir="row" style={{ "--y": effect.y } as CSSProperties} aria-hidden="true" />;
@@ -865,19 +879,19 @@ function FxView({ entry }: { entry: Fx }) {
   if (effect.kind === "blast") {
     return (
       <span className="reich-blast" style={{ "--x": effect.x, "--y": effect.y, "--r": effect.radius } as CSSProperties} aria-hidden="true">
-        {effect.radius === 0 ? "🔨" : ""}
+        {effect.radius === 0 && <Sprite id="hammer" className="reich-blast-tool" />}
       </span>
     );
   }
   if (effect.kind === "spin") {
-    return <span className="reich-spin" style={{ "--x": effect.x, "--y": effect.y, "--dx": effect.tx - effect.x, "--dy": effect.ty - effect.y } as CSSProperties} aria-hidden="true">🌀</span>;
+    return <span className="reich-spin" style={{ "--x": effect.x, "--y": effect.y, "--dx": effect.tx - effect.x, "--dy": effect.ty - effect.y } as CSSProperties} aria-hidden="true"><Sprite id="spinner" /></span>;
   }
   if (effect.kind === "electro") {
     return (
       <>
         <span className="reich-flash" aria-hidden="true" />
         {effect.targets.map((target, index) => (
-          <span className="reich-spark" key={index} style={{ "--x": target.x, "--y": target.y } as CSSProperties} aria-hidden="true">⚡</span>
+          <span className="reich-spark" key={index} style={{ "--x": target.x, "--y": target.y } as CSSProperties} aria-hidden="true"><Sprite id="bolt" /></span>
         ))}
       </>
     );
@@ -886,7 +900,7 @@ function FxView({ entry }: { entry: Fx }) {
     return (
       <>
         {effect.targets.map((target, index) => (
-          <span className="reich-spark reich-attack" key={index} style={{ "--x": target.x, "--y": target.y } as CSSProperties} aria-hidden="true">🌩️</span>
+          <span className="reich-spark reich-attack" key={index} style={{ "--x": target.x, "--y": target.y } as CSSProperties} aria-hidden="true"><Sprite id="bolt-dark" /></span>
         ))}
       </>
     );
