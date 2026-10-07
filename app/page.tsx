@@ -12,8 +12,7 @@ const games: Array<{
 }> = [
   {
     href: sitePath("/fang-den-stern"),
-    icon: "★",
-    iconClass: "home-star",
+    image: `${publicBasePath}/startseite/fang-den-stern.svg`,
     title: "Fang den Stern!",
     description: "Tippe schnell auf Sterne und löse die Zahlenreihen.",
     meta: "20 Sekunden",
