@@ -43,6 +43,14 @@ const games: Array<{
     description: "Lass Schätze fallen und verbinde gleiche Gegenstände.",
     meta: "12 Schatzstufen",
   },
+  {
+    href: sitePath("/waren-sortieren"),
+    icon: "🍎🥛🧸",
+    iconClass: "home-goods",
+    title: "Waren sortieren",
+    description: "Stelle drei gleiche Waren in ein Fach und räume den Laden auf.",
+    meta: "12 Level",
+  },
 ];
 
 export default function Home() {
