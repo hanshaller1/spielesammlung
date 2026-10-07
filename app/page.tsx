@@ -49,8 +49,7 @@ const games: Array<{
   },
   {
     href: sitePath("/hungriges-loch"),
-    icon: "🍩🕳️🚗",
-    iconClass: "home-hole",
+    image: `${publicBasePath}/startseite/hungriges-loch.svg`,
     title: "Hungriges Loch",
     description: "Verschlucke alles, werde größer und schnapp dir die Ziele.",
     meta: "10 Level",
