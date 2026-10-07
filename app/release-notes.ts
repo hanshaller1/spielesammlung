@@ -9,6 +9,17 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.23",
+    title: "Königreich in neuer Grafik",
+    date: "7. Oktober 2026",
+    changes: [
+      "Edelsteine, Power-ups, Kisten, Vogelhäuser, Ranken und alle Hilfsmittel sind jetzt eigene Vektorgrafiken und bleiben auf jedem Bildschirm gestochen scharf.",
+      "Die sechs Edelsteine haben geschliffene Facetten und Glanzlichter; Rakete, Dynamit, Kreisel und Elektrokugel sind detailliert gezeichnet und bewegen sich leicht.",
+      "Ausgewählte Steine leuchten, aufgelöste Steine zerplatzen, Kisten splittern, und der Hammer schwingt beim Zuschlagen.",
+    ],
+    commits: [{ id: "7e3dc66", description: "Königreich: Spielsteine, Power-ups, Hindernisse und Hilfen als hochauflösende Grafiken" }],
+  },
+  {
     version: "0.4.22",
     title: "Neues Spiel: Königreich",
     date: "7. Oktober 2026",
