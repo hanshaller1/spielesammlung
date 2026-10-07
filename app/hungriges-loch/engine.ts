@@ -96,9 +96,9 @@ export type Difficulty = {
 };
 
 export const DIFFICULTIES: Difficulty[] = [
-  { id: "leicht", name: "Leicht", summary: "Volle Zeit · 2 Booster je Sorte · Wegweiser", timeFactor: 1, boosters: 2, pointer: true },
-  { id: "mittel", name: "Mittel", summary: "80 % Zeit · 1 Booster je Sorte · Wegweiser", timeFactor: 0.8, boosters: 1, pointer: true },
-  { id: "schwer", name: "Schwer", summary: "65 % Zeit · 1 Booster je Sorte · kein Wegweiser", timeFactor: 0.65, boosters: 1, pointer: false },
+  { id: "leicht", name: "Leicht", summary: "90 % Zeit · 2 Booster je Sorte · Wegweiser", timeFactor: 0.9, boosters: 2, pointer: true },
+  { id: "mittel", name: "Mittel", summary: "72 % Zeit · 1 Booster je Sorte · Wegweiser", timeFactor: 0.72, boosters: 1, pointer: true },
+  { id: "schwer", name: "Schwer", summary: "58 % Zeit · 1 Booster je Sorte · kein Wegweiser", timeFactor: 0.58, boosters: 1, pointer: false },
 ];
 
 /** Levelbeschreibung mit der zur Schwierigkeit passenden Zeit. */

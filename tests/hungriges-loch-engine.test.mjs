@@ -200,17 +200,16 @@ test("the magnet pulls distant fitting things in, the giant booster swallows one
   assert.equal(giant.size, 1, "the booster does not change the earned size");
 });
 
-test("easy keeps the original level, harder grades only shorten the clock and stay winnable", () => {
+test("every grade only shortens the clock, harder grades more, and all stay winnable", () => {
   assert.deepEqual(DIFFICULTIES.map((entry) => entry.id), ["leicht", "mittel", "schwer"]);
   const [easy, medium, hard] = DIFFICULTIES;
-  assert.deepEqual({ time: easy.timeFactor, boosters: easy.boosters, pointer: easy.pointer }, { time: 1, boosters: 2, pointer: true });
+  assert.deepEqual({ time: easy.timeFactor, boosters: easy.boosters, pointer: easy.pointer }, { time: 0.9, boosters: 2, pointer: true });
   assert.ok(medium.boosters <= easy.boosters && hard.boosters <= medium.boosters);
   assert.equal(hard.pointer, false);
   LEVELS.forEach((config, index) => {
-    assert.deepEqual(difficultyLevel(index + 1, easy), config);
     const seconds = DIFFICULTIES.map((entry) => difficultyLevel(index + 1, entry).seconds);
-    assert.ok(seconds[0] > seconds[1] && seconds[1] > seconds[2], `level ${index + 1}: ${seconds}`);
-    assert.deepEqual({ ...difficultyLevel(index + 1, hard), seconds: config.seconds }, config);
+    assert.ok(config.seconds > seconds[0] && seconds[0] > seconds[1] && seconds[1] > seconds[2], `level ${index + 1}: ${seconds}`);
+    for (const entry of DIFFICULTIES) assert.deepEqual({ ...difficultyLevel(index + 1, entry), seconds: config.seconds }, config);
     for (let seed = 1; seed <= 8; seed++) {
       const { game, stuck } = playGreedy(difficultyLevel(index + 1, hard), index * 70 + seed);
       assert.equal(stuck, false, `level ${index + 1}, seed ${seed}`);
