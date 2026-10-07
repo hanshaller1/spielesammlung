@@ -9,6 +9,20 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.25",
+    title: "Hungriges Loch und Waren sortieren etwas schwieriger",
+    date: "7. Oktober 2026",
+    changes: [
+      "In beiden Spielen geben Leicht, Mittel und Schwer jetzt 90 %, 72 % und 58 % der Levelzeit statt bisher 100 %, 80 % und 65 %.",
+      "Bei Waren sortieren erscheinen Tipps später: auf Leicht nach 10 statt 8 Sekunden, auf Mittel nach 20 statt 15 Sekunden.",
+      "Booster, Wegweiser und gespeicherte Fortschritte bleiben unverändert; die Tests bestätigen weiterhin, dass jedes Level lösbar ist.",
+    ],
+    commits: [
+      { id: "f3f5289", description: "Hungriges Loch: Alle Schwierigkeitsgrade etwas verschärfen" },
+      { id: "cb7f00c", description: "Waren sortieren: Alle Schwierigkeitsgrade etwas verschärfen" },
+    ],
+  },
+  {
     version: "0.4.24",
     title: "Neue Bilder auf der Startseite",
     date: "7. Oktober 2026",
