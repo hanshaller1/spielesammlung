@@ -51,6 +51,14 @@ const games: Array<{
     description: "Stelle drei gleiche Waren in ein Fach und räume den Laden auf.",
     meta: "12 Level",
   },
+  {
+    href: sitePath("/hungriges-loch"),
+    icon: "🍩🕳️🚗",
+    iconClass: "home-hole",
+    title: "Hungriges Loch",
+    description: "Verschlucke alles, werde größer und schnapp dir die Ziele.",
+    meta: "10 Level",
+  },
 ];
 
 export default function Home() {

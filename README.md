@@ -1,6 +1,6 @@
 # Spielesammlung
 
-Die gemeinsame Spielesammlung für „Hanna's Spiele“ mit den Spielen „Fang den Stern“, „Fange die Tiere“, „Zwergengold“, „Schatz-Merge“ und „Waren sortieren“.
+Die gemeinsame Spielesammlung für „Hanna's Spiele“ mit den Spielen „Fang den Stern“, „Fange die Tiere“, „Zwergengold“, „Schatz-Merge“, „Waren sortieren“ und „Hungriges Loch“.
 
 ## GitHub Pages
 
