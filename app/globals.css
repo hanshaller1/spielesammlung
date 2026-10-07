@@ -21,7 +21,6 @@ a { color:inherit; }
 .game-tile-icon { min-height:80px; display:flex; align-items:center; line-height:1; }
 .game-tile-icon img { width:clamp(105px,15vw,150px); height:auto; filter:drop-shadow(0 7px 10px #00000070); transition:transform .18s ease; }
 .game-tile:hover .game-tile-icon img { transform:scale(1.05) rotate(-2deg); }
-.home-kingdom { font-size:clamp(3.4rem,9vw,5.2rem); letter-spacing:-.2em; filter:drop-shadow(0 5px 10px #0008); }
 .game-tile-copy h2 { margin:16px 0 7px; font-size:clamp(1.35rem,3vw,1.9rem); }
 .game-tile-copy p { min-height:3em; margin:0 0 18px; color:#c7dcf5; font-family:Arial,sans-serif; line-height:1.5; }
 .game-tile-copy span { color:var(--accent); font-family:Arial,sans-serif; font-size:.92rem; font-weight:800; }

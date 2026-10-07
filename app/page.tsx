@@ -56,8 +56,7 @@ const games: Array<{
   },
   {
     href: sitePath("/koenigreich"),
-    icon: "👑💎🏰",
-    iconClass: "home-kingdom",
+    image: `${publicBasePath}/startseite/koenigreich.svg`,
     title: "Königreich",
     description: "Tausche Edelsteine, besiege den Dunklen König und baue dein Reich auf.",
     meta: "12 Level",
