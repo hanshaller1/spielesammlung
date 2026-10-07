@@ -9,6 +9,19 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.22",
+    title: "Neues Spiel: Königreich",
+    date: "7. Oktober 2026",
+    changes: [
+      "Im neuen Match-3-Abenteuer tauschst du Edelsteine, bis drei gleiche in einer Reihe liegen, und erfüllst die Levelziele, bevor die Züge ausgehen.",
+      "Vier in einer Reihe ergeben eine Rakete, vier im Quadrat einen Kreisel, L- und T-Formen Dynamit und fünf in einer Reihe eine Elektrokugel. Zwei getauschte Power-ups lösen starke Kombinationen aus.",
+      "Kisten, Ranken und Vogelhäuser mit Eulen versperren das Brett. In drei Boss-Leveln kämpfst du gegen den Dunklen König, der immer wieder Steine in Kisten verwandelt.",
+      "Start-Power-ups, Hammer, Pfeil, Kanone und Narrenkappe helfen; übrige Züge werden am Ende zum Königsbonus. Leicht, Mittel und Schwer unterscheiden sich in Zügen und Hilfen.",
+      "Jeder Sieg bringt Zaubertränke, mit denen du Schlosshof, Marktplatz, Prinzessinnenturm und Universität aufbaust. Ein simulierter Spieler prüft in den Tests, dass alle zwölf Level lösbar sind.",
+    ],
+    commits: [{ id: "1409590", description: "Königreich: Neues Match-3-Spiel mit Boss-Kämpfen und Königreich-Aufbau ergänzen" }],
+  },
+  {
     version: "0.4.21",
     title: "Veröffentlichung auf GitHub Pages abgesichert",
     date: "7. Oktober 2026",

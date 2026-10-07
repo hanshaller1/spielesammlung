@@ -59,6 +59,14 @@ const games: Array<{
     description: "Verschlucke alles, werde größer und schnapp dir die Ziele.",
     meta: "10 Level",
   },
+  {
+    href: sitePath("/koenigreich"),
+    icon: "👑💎🏰",
+    iconClass: "home-kingdom",
+    title: "Königreich",
+    description: "Tausche Edelsteine, besiege den Dunklen König und baue dein Reich auf.",
+    meta: "12 Level",
+  },
 ];
 
 export default function Home() {
@@ -68,7 +76,7 @@ export default function Home() {
         <p className="eyebrow">SPIELESAMMLUNG</p>
         <div className="home-title-row">
           <h1 id="home-title">Hanna&apos;s Spiele</h1>
-          <small className="home-version">(v0.4.21)</small>
+          <small className="home-version">(v0.4.22)</small>
         </div>
         <p className="home-intro">Welches Spiel möchtest du spielen?</p>
 
