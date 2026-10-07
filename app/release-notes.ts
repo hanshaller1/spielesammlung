@@ -9,6 +9,27 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.24",
+    title: "Neue Bilder auf der Startseite",
+    date: "7. Oktober 2026",
+    changes: [
+      "Jedes Spiel außer Zwergengold hat auf der Startseite ein eigenes, gezeichnetes Bild statt Emoji-Zeichen.",
+      "Fang den Stern zeigt einen lachenden Stern mit Zahlensternen, Fange die Tiere einen Tiger mit Affe, Koala und Vogel und Schatz-Merge eine leuchtende Schatztruhe.",
+      "Waren sortieren zeigt ein Regal mit drei gleichen Äpfeln, Hungriges Loch einen Donut, der ins Loch fällt, und Königreich ein Märchenschloss mit Krone und Edelsteinen.",
+      "Die Bilder sind Vektorgrafiken, bleiben auf jedem Bildschirm scharf und vergrößern sich leicht, wenn man mit der Maus darüberfährt.",
+    ],
+    commits: [
+      { id: "7423ace", description: "Spielesammlung: Startseitenkacheln einheitlich für Bilder vorbereiten" },
+      { id: "fbf9273", description: "Fang den Stern: Neues Startseitenbild mit lachendem Stern" },
+      { id: "c9d1288", description: "Fange die Tiere: Neues Startseitenbild mit Tiger, Affe, Koala und Vogel" },
+      { id: "963686f", description: "Schatz-Merge: Neues Startseitenbild mit offener Schatztruhe" },
+      { id: "4122947", description: "Waren sortieren: Neues Startseitenbild mit sortiertem Regal" },
+      { id: "92848d1", description: "Hungriges Loch: Neues Startseitenbild mit Loch, Donut und Auto" },
+      { id: "b6fdcdb", description: "Königreich: Neues Startseitenbild mit Schloss, Krone und Edelsteinen" },
+      { id: "67684a1", description: "Spielesammlung: Emoji-Ersatz der Startseitenkacheln entfernen" },
+    ],
+  },
+  {
     version: "0.4.23",
     title: "Königreich in neuer Grafik",
     date: "7. Oktober 2026",
