@@ -9,6 +9,24 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.20",
+    title: "Schwierigkeitsgrade, Pause und größeres Loch-Spielfeld",
+    date: "7. Oktober 2026",
+    changes: [
+      "Waren sortieren und Hungriges Loch haben jetzt die Stufen Leicht, Mittel und Schwer. Leicht ist das bisherige Spiel; Mittel und Schwer geben 80 % bzw. 65 % der Zeit und nur einen Booster je Sorte.",
+      "Auf Schwer entfallen zusätzlich die Tipps im Sortierspiel und der Wegweiser im Loch-Spiel. Fortschritt, Sterne und Bestwerte zählen je Stufe getrennt; vorhandene Spielstände gelten für Leicht.",
+      "Beide Spiele lassen sich per Knopf, Taste P oder Esc pausieren und pausieren von selbst, wenn der Tab verlassen wird. Das Spielfeld bleibt so lange verdeckt.",
+      "Im Hungrigen Loch füllt die Karte jetzt die ganze Höhe: Zeit, Ziele und Lochgröße liegen als schmale Leiste im Spielfeld, breite Bildschirme zeigen mehr von der Karte.",
+    ],
+    commits: [
+      { id: "2bea45e", description: "Waren sortieren: Drei Schwierigkeitsgrade einführen" },
+      { id: "b44b4ef", description: "Waren sortieren: Pause-Funktion ergänzen" },
+      { id: "397c4ad", description: "Hungriges Loch: Drei Schwierigkeitsgrade einführen" },
+      { id: "a65342f", description: "Hungriges Loch: Pause-Funktion ergänzen" },
+      { id: "65c9fff", description: "Hungriges Loch: Spielfeld vergrößern und Anzeigen ins Feld legen" },
+    ],
+  },
+  {
     version: "0.4.19",
     title: "Neues Spiel: Hungriges Loch",
     date: "7. Oktober 2026",
