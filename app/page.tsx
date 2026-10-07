@@ -42,8 +42,7 @@ const games: Array<{
   },
   {
     href: sitePath("/waren-sortieren"),
-    icon: "🍎🥛🧸",
-    iconClass: "home-goods",
+    image: `${publicBasePath}/startseite/waren-sortieren.svg`,
     title: "Waren sortieren",
     description: "Stelle drei gleiche Waren in ein Fach und räume den Laden auf.",
     meta: "12 Level",
