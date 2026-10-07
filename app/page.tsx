@@ -59,6 +59,14 @@ const games: Array<{
     description: "Verschlucke alles, werde größer und schnapp dir die Ziele.",
     meta: "10 Level",
   },
+  {
+    href: sitePath("/koenigreich"),
+    icon: "👑💎🏰",
+    iconClass: "home-kingdom",
+    title: "Königreich",
+    description: "Tausche Edelsteine, besiege den Dunklen König und baue dein Reich auf.",
+    meta: "12 Level",
+  },
 ];
 
 export default function Home() {
