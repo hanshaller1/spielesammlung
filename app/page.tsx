@@ -3,8 +3,8 @@ import { publicBasePath, sitePath } from "./site-paths";
 
 const games: Array<{
   href: string;
-  icon: string;
-  iconClass: string;
+  icon?: string;
+  iconClass?: string;
   title: string;
   description: string;
   meta: string;
@@ -83,7 +83,7 @@ export default function Home() {
         <div className="game-grid">
           {games.map((game) => (
             <a className="game-tile" href={game.href} key={game.href}>
-              <div className={`game-tile-icon ${game.iconClass}`} aria-hidden="true">
+              <div className={`game-tile-icon ${game.iconClass ?? ""}`} aria-hidden="true">
                 {game.image ? <img src={game.image} alt="" width="150" height="150" /> : game.icon}
               </div>
               <div className="game-tile-copy">

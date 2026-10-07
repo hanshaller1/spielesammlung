@@ -19,9 +19,10 @@ a { color:inherit; }
 .game-tile:hover { transform:translateY(-5px); border-color:#57d5ff8a; box-shadow:0 18px 38px #00000050; }
 .game-tile:focus-visible { outline:4px solid var(--accent); outline-offset:5px; }
 .game-tile-icon { min-height:80px; display:flex; align-items:center; line-height:1; }
+.game-tile-icon img { width:clamp(105px,15vw,150px); height:auto; filter:drop-shadow(0 7px 10px #00000070); transition:transform .18s ease; }
+.game-tile:hover .game-tile-icon img { transform:scale(1.05) rotate(-2deg); }
 .home-star { color:var(--primary); font-size:6rem; filter:drop-shadow(0 0 18px #ffd84d94); }
 .home-animals { font-size:clamp(2.6rem,7vw,4.7rem); letter-spacing:-.2em; }
-.home-dwarf img { width:clamp(105px,15vw,150px); height:auto; filter:drop-shadow(0 7px 10px #00000070); }
 .home-treasure { color:#ffe48a; font-size:clamp(3.8rem,10vw,5.7rem); letter-spacing:-.24em; filter:drop-shadow(0 5px 10px #0008); }
 .home-goods { font-size:clamp(3.4rem,9vw,5.2rem); letter-spacing:-.2em; filter:drop-shadow(0 5px 10px #0008); }
 .home-hole { font-size:clamp(3.4rem,9vw,5.2rem); letter-spacing:-.2em; filter:drop-shadow(0 5px 10px #0008); }
