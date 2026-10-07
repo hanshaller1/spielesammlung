@@ -59,7 +59,8 @@ export function drawGame(
   showPointer: boolean,
 ) {
   const { hole } = game;
-  const scale = Math.min(width, height) * 0.072 / HOLE_RADIUS[0] * Math.pow(HOLE_RADIUS[0] / hole.radius, 0.55);
+  // Breite Spielfelder zeigen mehr Karte, statt das Loch nur größer zu zeichnen.
+  const scale = Math.min(width, height * 0.62) * 0.072 / HOLE_RADIUS[0] * Math.pow(HOLE_RADIUS[0] / hole.radius, 0.55);
   const viewWidth = width / scale;
   const viewHeight = height / scale;
   const cameraX = viewWidth >= game.width + VIEW_PADDING * 2 ? game.width / 2 : clamp(hole.x, viewWidth / 2 - VIEW_PADDING, game.width - viewWidth / 2 + VIEW_PADDING);

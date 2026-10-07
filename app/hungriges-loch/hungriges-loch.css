@@ -1,50 +1,47 @@
-.loch-game-shell { background:radial-gradient(circle at 50% 0%,#4b3aa8 0,#241a52 52%,#0e0a24 100%); }
-.loch-game-card { width:min(940px,100%); border-color:#c9bcff3d; background:#1a1440f2; }
-.loch-topbar { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px; }
-.loch-game-card .back-link { margin:0; color:#d9d0ff; }
-.loch-game-card .eyebrow { color:#b9a6ff; }
-.loch-game-card h1 { color:#f3efff; text-shadow:0 3px 0 #3b2a8a; }
-.loch-game-card header { margin-bottom:12px; }
-.loch-game-card .stats b { color:#ffd166; }
-.loch-game-card .stats .loch-stat-frozen { background:#7fd8ff38; }
-.loch-game-card .stats .loch-stat-frozen b { color:#c9f0ff; }
-
-.loch-timebar { height:12px; overflow:hidden; border-radius:999px; background:#00000052; box-shadow:inset 0 1px 3px #0008; }
-.loch-timebar i { display:block; height:100%; border-radius:inherit; background:linear-gradient(90deg,#8f7bff,#d6c9ff); transition:width .25s linear; }
-.loch-timebar[data-low] i { background:linear-gradient(90deg,#ff5d5d,#ff9a6b); }
-.loch-timebar[data-frozen] i { background:linear-gradient(90deg,#7fd8ff,#d6f4ff); }
-
-.loch-goals { display:flex; flex-wrap:wrap; align-items:stretch; gap:8px; margin-top:12px; }
-.loch-goal,.loch-size { display:inline-flex; min-height:42px; align-items:center; gap:6px; padding:4px 12px; border:1px solid #c9bcff40; border-radius:14px; background:#ffffff12; font-size:.95rem; font-weight:800; white-space:nowrap; }
-.loch-goal span { font-size:1.45rem; line-height:1; }
-.loch-goal b { color:#ffd166; }
-.loch-goal[data-done] { border-color:#7be3a27a; background:#7be3a22e; }
-.loch-goal[data-done] b { color:#9af0bb; }
-.loch-size { flex-direction:column; align-items:stretch; justify-content:center; gap:4px; margin-left:auto; min-width:118px; }
-.loch-size span { display:flex; justify-content:space-between; gap:10px; font-size:.82rem; }
-.loch-size b { color:#ffd166; }
-.loch-size i { display:block; height:7px; overflow:hidden; border-radius:999px; background:#0000005c; }
-.loch-size i::after { display:block; width:var(--loch-growth,0%); height:100%; border-radius:inherit; background:linear-gradient(90deg,#ffb347,#ffe27a); content:""; transition:width .2s ease-out; }
+.loch-game-shell { --loch-gap:clamp(6px,1.6vw,20px); padding:var(--loch-gap); background:radial-gradient(circle at 50% 0%,#4b3aa8 0,#241a52 52%,#0e0a24 100%); }
+/* Die Karte füllt die Fensterhöhe, damit das Spielfeld allen Platz unter der Kopfzeile bekommt. */
+.loch-game-card { display:flex; width:min(1100px,100%); min-height:min(calc(100svh - 2 * var(--loch-gap)),1000px); flex-direction:column; gap:10px; padding:clamp(10px,1.8vw,20px); border-color:#c9bcff3d; background:#1a1440f2; }
+.loch-topbar { display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:10px; }
+.loch-game-card .back-link { min-width:40px; min-height:40px; justify-content:center; margin:0; color:#d9d0ff; }
+.loch-game-card h1 { overflow:hidden; color:#f3efff; font-size:clamp(1.05rem,4.4vw,1.7rem); letter-spacing:-.02em; line-height:1.2; text-overflow:ellipsis; text-shadow:0 2px 0 #3b2a8a; white-space:nowrap; }
 
 .loch-boosters,.loch-controls { display:flex; flex-wrap:wrap; gap:8px; }
-.loch-boosters { margin:12px 0; }
-.loch-booster,.loch-controls button { display:inline-flex; min-height:44px; align-items:center; justify-content:center; gap:7px; padding:0 12px; border:1px solid #c9bcff57; border-radius:14px; color:#f3efff; background:linear-gradient(180deg,#4a3b9c,#2d2368); font-size:.88rem; font-weight:800; cursor:pointer; box-shadow:0 3px 0 #130d33; touch-action:manipulation; }
+.loch-boosters { justify-content:center; }
+.loch-booster,.loch-controls button { display:inline-flex; min-height:44px; align-items:center; justify-content:center; gap:7px; padding:0 14px; border:1px solid #c9bcff57; border-radius:14px; color:#f3efff; background:linear-gradient(180deg,#4a3b9c,#2d2368); font-size:.88rem; font-weight:800; cursor:pointer; box-shadow:0 3px 0 #130d33; touch-action:manipulation; }
 .loch-booster span { font-size:1.25rem; line-height:1; }
 .loch-booster em { font-style:normal; }
 .loch-booster b { min-width:22px; padding:2px 6px; border-radius:999px; color:#2a1a05; background:#ffd166; font-size:.78rem; }
 .loch-booster[data-active] { border-color:#ffe27a; background:linear-gradient(180deg,#8a6a1e,#5a4310); opacity:1; }
-.loch-controls button { min-width:44px; min-height:40px; padding:0 10px; font-size:1.1rem; }
+.loch-controls button { min-width:40px; min-height:40px; padding:0 8px; font-size:1.05rem; }
 .loch-booster:hover:enabled,.loch-controls button:hover:enabled { border-color:#e6deff; background:linear-gradient(180deg,#5c4bb8,#392c80); }
 .loch-booster:active:enabled,.loch-controls button:active:enabled { transform:translateY(2px); box-shadow:0 1px 0 #130d33; }
 .loch-booster:focus-visible,.loch-controls button:focus-visible { outline:3px solid #ffe27a; outline-offset:3px; }
 .loch-booster:disabled:not([data-active]),.loch-controls button:disabled { opacity:.45; cursor:default; }
 
-.loch-board { position:relative; height:clamp(300px,calc(100svh - 372px),620px); overflow:hidden; border:3px solid #8f7bff8f; border-radius:20px; background:#1d4a35; box-shadow:inset 0 0 40px #0006; touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
-.loch-board[data-phase="ready"] { height:auto; min-height:clamp(300px,calc(100svh - 372px),620px); }
-.loch-board[data-phase="ready"] .loch-overlay { position:relative; min-height:inherit; }
+.loch-board { position:relative; flex:1 1 auto; min-height:340px; overflow:hidden; border:3px solid #8f7bff8f; border-radius:20px; background:#1d4a35; box-shadow:inset 0 0 40px #0006; touch-action:none; user-select:none; -webkit-user-select:none; -webkit-touch-callout:none; }
 .loch-canvas { position:absolute; inset:0; display:block; width:100%; height:100%; cursor:grab; outline:none; }
 .loch-canvas:focus-visible { outline:3px solid #ffe27a; outline-offset:-6px; }
-.loch-hint { position:absolute; top:12px; right:10px; left:10px; margin:0; color:#fff; font-size:.95rem; font-weight:800; text-align:center; text-shadow:0 2px 4px #000c; pointer-events:none; }
+.loch-hint { position:absolute; right:10px; bottom:14px; left:10px; margin:0; color:#fff; font-size:.95rem; font-weight:800; text-align:center; text-shadow:0 2px 4px #000c; pointer-events:none; }
+
+/* Anzeigen liegen über der Karte und lassen Berührungen zum Spielfeld durch. */
+.loch-hud { position:absolute; z-index:2; top:0; right:0; left:0; display:grid; gap:6px; padding:0 8px; pointer-events:none; }
+.loch-timebar { height:7px; margin:0 -8px 2px; overflow:hidden; background:#0000007a; }
+.loch-timebar i { display:block; height:100%; border-radius:0 999px 999px 0; background:linear-gradient(90deg,#b9a6ff,#f0eaff); transition:width .25s linear; }
+.loch-timebar[data-low] i { background:linear-gradient(90deg,#ff5d5d,#ff9a6b); }
+.loch-timebar[data-frozen] i { background:linear-gradient(90deg,#7fd8ff,#d6f4ff); }
+.loch-hud-row { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+.loch-chip { display:inline-flex; min-height:32px; align-items:center; gap:6px; padding:3px 11px; border:1px solid #ffffff33; border-radius:999px; color:#f3efff; background:#140e30d6; font-size:.84rem; font-weight:800; line-height:1; white-space:nowrap; }
+.loch-chip b { color:#ffd166; }
+.loch-chip em { font-style:normal; }
+.loch-chip span { font-size:1.25rem; line-height:1; }
+.loch-chip[data-done] { border-color:#7be3a2a6; background:#17472fdb; }
+.loch-chip[data-done] b { color:#9af0bb; }
+.loch-time { margin-left:auto; font-size:1.02rem; }
+.loch-time[data-low] { border-color:#ff8b8b; background:#6b1420e0; }
+.loch-time[data-frozen] { border-color:#9fe0ff; background:#12456ae0; }
+.loch-time[data-frozen] b { color:#c9f0ff; }
+.loch-size i { display:block; width:46px; height:7px; overflow:hidden; border-radius:999px; background:#00000080; }
+.loch-size i::after { display:block; width:var(--loch-growth,0%); height:100%; border-radius:inherit; background:linear-gradient(90deg,#ffb347,#ffe27a); content:""; transition:width .2s ease-out; }
 
 .loch-overlay { position:absolute; z-index:3; inset:0; display:grid; overflow:auto; place-items:center; padding:12px; background:#0e0a24c9; backdrop-filter:blur(4px); }
 .loch-overlay[data-pause] { background:#0e0a24f5; backdrop-filter:blur(14px); }
@@ -74,17 +71,20 @@
 .loch-overlay[data-result] .loch-stars { font-size:2.6rem; }
 
 @media (max-width:699px) {
-  .loch-game-card h1 { font-size:clamp(1.7rem,7.5vw,2.4rem); }
-  .loch-game-card header { gap:10px; margin-bottom:10px; }
-  .loch-goals { gap:6px; margin-top:10px; }
-  .loch-goal,.loch-size { min-height:38px; padding:3px 9px; font-size:.86rem; }
-  .loch-goal span { font-size:1.25rem; }
-  .loch-size { min-width:104px; }
-  .loch-boosters { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); margin:10px 0; }
-  .loch-booster { display:grid; grid-template-columns:auto auto; align-content:center; justify-content:center; gap:2px 6px; min-height:50px; padding:4px; font-size:.74rem; }
-  .loch-booster em { grid-row:2; grid-column:1 / -1; }
-  .loch-board { height:clamp(300px,calc(100svh - 398px),620px); }
-  .loch-board[data-phase="ready"] { min-height:clamp(300px,calc(100svh - 398px),620px); }
+  .loch-game-card { gap:8px; }
+  .loch-game-card .back-link span { display:none; }
+  .loch-boosters { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .loch-booster { gap:4px; padding:0 4px; font-size:.76rem; }
+  .loch-booster span { font-size:1.1rem; }
+  .loch-booster b { min-width:20px; padding:2px 5px; }
+  .loch-level-picker { width:100%; gap:8px; }
+  .loch-level-picker > div { min-width:0; flex:1; }
+  .loch-level-picker button { flex:none; }
+  .loch-difficulty button { padding:0 13px; }
+  .loch-chip { min-height:30px; padding:3px 9px; font-size:.8rem; }
+  .loch-chip span { font-size:1.15rem; }
+  .loch-chip em { display:none; }
+  .loch-size i { width:38px; }
 }
 @keyframes loch-swirl { 50% { transform:scale(1.08) rotate(8deg); box-shadow:0 0 38px #b9a6ffb8; } }
 @media (prefers-reduced-motion:reduce) { .loch-logo { animation:none; } .loch-timebar i,.loch-size i::after { transition:none; } }

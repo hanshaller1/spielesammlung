@@ -414,6 +414,7 @@ export default function HungrigesLochPage() {
   const playing = phase === "playing";
   const paused = phase === "paused";
   const timeShare = Math.max(0, Math.min(1, hud.seconds / config.seconds));
+  const lowTime = timeShare <= 0.2;
   const levelStars = progress.stars[level] ?? 0;
   const bestTime = progress.best[level];
   const missing = hud.goals.filter((goal) => goal.left > 0);
@@ -422,63 +423,16 @@ export default function HungrigesLochPage() {
     <main className="game-shell loch-game-shell">
       <section className="game-card loch-game-card" aria-labelledby="loch-title">
         <div className="loch-topbar">
-          <a className="back-link" href={sitePath("/")}>← Hanna&apos;s Spiele</a>
+          <a className="back-link" href={sitePath("/")} aria-label="Zurück zu Hanna's Spiele">←<span>&nbsp;Hanna&apos;s Spiele</span></a>
+          <h1 id="loch-title">Hungriges Loch</h1>
           <div className="loch-controls">
             <button onClick={toggleSound} aria-pressed={soundEnabled} aria-label={soundEnabled ? "Ton ausschalten" : "Ton einschalten"}>{soundEnabled ? "🔊" : "🔇"}</button>
             <button onClick={paused ? resumeGame : pauseGame} disabled={!playing && !paused} aria-label={paused ? "Weiterspielen" : "Pause"}>{paused ? "▶" : "⏸"}</button>
             <button onClick={() => startLevel(level)} disabled={!playing && !paused} aria-label="Level neu starten">↻</button>
           </div>
         </div>
-        <header>
-          <div><p className="eyebrow">FRESSSPIEL</p><h1 id="loch-title">Hungriges Loch</h1></div>
-          <div className="stats">
-            <span>Level <b>{level}</b> · {difficulty.name}</span>
-            <span className={hud.freeze ? "loch-stat-frozen" : undefined}><b>{hud.seconds}</b> Sek.{hud.freeze ? " ❄️" : ""}</span>
-          </div>
-        </header>
 
-        <div
-          className="loch-timebar"
-          role="progressbar"
-          aria-label="Verbleibende Zeit"
-          aria-valuemin={0}
-          aria-valuemax={config.seconds}
-          aria-valuenow={hud.seconds}
-          data-low={timeShare <= 0.2 || undefined}
-          data-frozen={hud.freeze || undefined}
-        >
-          <i style={{ width: `${timeShare * 100}%` }} />
-        </div>
-
-        <div className="loch-goals" aria-label="Ziele">
-          {hud.goals.map((goal) => (
-            <div className="loch-goal" key={goal.kind} data-done={goal.left === 0 || undefined} aria-label={`${KINDS[goal.kind].name}: ${goal.need - goal.left} von ${goal.need}`}>
-              <span aria-hidden="true">{KINDS[goal.kind].symbol}</span>
-              <b aria-hidden="true">{goal.left === 0 ? "✓" : `${goal.need - goal.left}/${goal.need}`}</b>
-            </div>
-          ))}
-          <div className="loch-size" aria-label={`Lochgröße ${hud.size} von ${MAX_SIZE}`}>
-            <span aria-hidden="true">Größe <b>{hud.size}</b></span>
-            <i style={{ "--loch-growth": `${Math.min(1, hud.growth) * 100}%` } as React.CSSProperties} />
-          </div>
-        </div>
-
-        <div className="loch-boosters">
-          {BOOSTER_BUTTONS.map((button) => (
-            <button
-              className="loch-booster"
-              key={button.id}
-              onClick={() => activateBooster(button.id)}
-              disabled={!playing || boosters[button.id] === 0 || hud[button.id]}
-              data-active={playing && hud[button.id] || undefined}
-              title={button.title}
-            >
-              <span aria-hidden="true">{button.icon}</span><em>{button.label}</em><b>{boosters[button.id]}</b>
-            </button>
-          ))}
-        </div>
-
-        <div className="loch-board" data-phase={phase}>
+        <div className="loch-board">
           <canvas
             className="loch-canvas"
             ref={canvasRef}
@@ -491,6 +445,40 @@ export default function HungrigesLochPage() {
             onPointerCancel={handlePointerEnd}
             onLostPointerCapture={handlePointerEnd}
           />
+          {phase !== "ready" && (
+            <div className="loch-hud">
+              <div
+                className="loch-timebar"
+                role="progressbar"
+                aria-label="Verbleibende Zeit"
+                aria-valuemin={0}
+                aria-valuemax={config.seconds}
+                aria-valuenow={hud.seconds}
+                data-low={lowTime || undefined}
+                data-frozen={hud.freeze || undefined}
+              >
+                <i style={{ width: `${timeShare * 100}%` }} />
+              </div>
+              <div className="loch-hud-row">
+                <div className="loch-chip">Level <b>{level}</b><em>· {difficulty.name}</em></div>
+                <div className="loch-chip loch-size" aria-label={`Lochgröße ${hud.size} von ${MAX_SIZE}`}>
+                  Größe <b aria-hidden="true">{hud.size}</b>
+                  <i style={{ "--loch-growth": `${Math.min(1, hud.growth) * 100}%` } as React.CSSProperties} />
+                </div>
+                <div className="loch-chip loch-time" data-low={lowTime || undefined} data-frozen={hud.freeze || undefined} aria-label={`Noch ${hud.seconds} Sekunden`}>
+                  <span aria-hidden="true">{hud.freeze ? "❄️" : "⏱️"}</span><b aria-hidden="true">{hud.seconds}</b>
+                </div>
+              </div>
+              <div className="loch-hud-row" aria-label="Ziele">
+                {hud.goals.map((goal) => (
+                  <div className="loch-chip" key={goal.kind} data-done={goal.left === 0 || undefined} aria-label={`${KINDS[goal.kind].name}: ${goal.need - goal.left} von ${goal.need}`}>
+                    <span aria-hidden="true">{KINDS[goal.kind].symbol}</span>
+                    <b aria-hidden="true">{goal.left === 0 ? "✓" : `${goal.need - goal.left}/${goal.need}`}</b>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {playing && !steered && <p className="loch-hint">Ziehe mit dem Finger, um das Loch zu bewegen.</p>}
 
           {phase === "ready" && (
@@ -561,6 +549,21 @@ export default function HungrigesLochPage() {
               </div>
             </div>
           )}
+        </div>
+
+        <div className="loch-boosters">
+          {BOOSTER_BUTTONS.map((button) => (
+            <button
+              className="loch-booster"
+              key={button.id}
+              onClick={() => activateBooster(button.id)}
+              disabled={!playing || boosters[button.id] === 0 || hud[button.id]}
+              data-active={playing && hud[button.id] || undefined}
+              title={button.title}
+            >
+              <span aria-hidden="true">{button.icon}</span><em>{button.label}</em><b>{boosters[button.id]}</b>
+            </button>
+          ))}
         </div>
       </section>
     </main>
