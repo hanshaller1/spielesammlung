@@ -9,6 +9,18 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.19",
+    title: "Neues Spiel: Hungriges Loch",
+    date: "7. Oktober 2026",
+    changes: [
+      "Im neuen Fressspiel steuerst du ein Loch über die Karte: Was hineinpasst, fällt hinein und lässt das Loch in sechs Größen wachsen.",
+      "Jedes der zehn Level nennt Ziele, die vor Ablauf der Zeit gefressen werden müssen – vom Apfel bis zum Riesenrad. Ein Pfeil am Rand zeigt zum nächsten passenden Ziel.",
+      "Gesteuert wird mit dem Finger, der Maus oder den Pfeiltasten. Magnet, Riesig und Eiszeit helfen in kniffligen Momenten.",
+      "Ein simulierter Spieler prüft in den Tests, dass jedes Level lösbar ist. Sterne und Bestzeiten bleiben im Browser gespeichert.",
+    ],
+    commits: [{ id: "395851e", description: "Hungriges Loch: Neues Fressspiel mit Leveln und Boostern ergänzen" }],
+  },
+  {
     version: "0.4.18",
     title: "Neues Spiel: Waren sortieren",
     date: "7. Oktober 2026",
