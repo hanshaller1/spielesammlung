@@ -56,6 +56,7 @@ export function drawGame(
   floaters: Floater[],
   stick: Stick | null,
   time: number,
+  showPointer: boolean,
 ) {
   const { hole } = game;
   const scale = Math.min(width, height) * 0.072 / HOLE_RADIUS[0] * Math.pow(HOLE_RADIUS[0] / hole.radius, 0.55);
@@ -163,7 +164,7 @@ export function drawGame(
   }
   context.globalAlpha = 1;
 
-  drawPointer(context, width, height, game, left, top, scale);
+  if (showPointer) drawPointer(context, width, height, game, left, top, scale);
 
   if (stick) {
     const dx = stick.x - stick.originX;

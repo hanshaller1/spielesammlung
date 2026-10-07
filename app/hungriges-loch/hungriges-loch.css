@@ -52,6 +52,12 @@
 .loch-panel p { margin:0 0 16px; color:#d9d0ff; font-family:Arial,sans-serif; font-size:.95rem; line-height:1.5; }
 .loch-panel p b { color:#ffe27a; }
 .loch-logo { position:relative; display:grid; width:clamp(74px,18vw,104px); aspect-ratio:1; place-items:center; border:5px solid #8f7bff; border-radius:50%; background:radial-gradient(circle at 50% 62%,#000 0 52%,#2a1f66 100%); box-shadow:0 0 26px #8f7bff8f; font-size:clamp(1.8rem,6vw,2.6rem); animation:loch-swirl 2.6s ease-in-out infinite; }
+.loch-difficulty { display:flex; gap:4px; padding:4px; border:1px solid #c9bcff3d; border-radius:999px; background:#00000038; }
+.loch-difficulty button { min-height:38px; padding:0 15px; border:0; border-radius:999px; color:#d9d0ff; background:none; font-size:.88rem; font-weight:800; cursor:pointer; touch-action:manipulation; }
+.loch-difficulty button:hover { background:#ffffff1a; }
+.loch-difficulty button[aria-checked="true"] { color:#2a1a05; background:#ffd166; }
+.loch-difficulty button:focus-visible { outline:3px solid #ffe27a; outline-offset:2px; }
+.loch-difficulty-note { margin:7px 0 14px; color:#c3b8ee; font-family:Arial,sans-serif; font-size:.78rem; }
 .loch-level-picker { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
 .loch-level-picker > div { display:grid; min-width:176px; justify-items:center; gap:3px; }
 .loch-level-picker strong { color:#f3efff; font-size:1.3rem; }

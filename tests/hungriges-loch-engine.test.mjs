@@ -5,8 +5,8 @@ import { createServer } from "vite";
 const vite = await createServer({ configFile: false, optimizeDeps: { noDiscovery: true }, cacheDir: "work/hungriges-loch/vite-tests", server: { middlewareMode: true } });
 after(() => vite.close());
 const {
-  BOOSTER_TIME, FIT_FACTOR, GIANT_FACTOR, HOLE_RADIUS, HoleEngine, KINDS, LEVELS, MAX_SIZE, TIER_RADIUS, TIER_XP, XP_STEPS,
-  levelConfig, mulberry32,
+  BOOSTER_TIME, DIFFICULTIES, FIT_FACTOR, GIANT_FACTOR, HOLE_RADIUS, HoleEngine, KINDS, LEVELS, MAX_SIZE, TIER_RADIUS, TIER_XP, XP_STEPS,
+  difficultyLevel, levelConfig, mulberry32,
 } = await vite.ssrLoadModule("/app/hungriges-loch/engine.ts");
 
 const STEP = 1 / 30;
@@ -198,4 +198,23 @@ test("the magnet pulls distant fitting things in, the giant booster swallows one
   run(giant, 1);
   assert.equal(giant.status, "won");
   assert.equal(giant.size, 1, "the booster does not change the earned size");
+});
+
+test("easy keeps the original level, harder grades only shorten the clock and stay winnable", () => {
+  assert.deepEqual(DIFFICULTIES.map((entry) => entry.id), ["leicht", "mittel", "schwer"]);
+  const [easy, medium, hard] = DIFFICULTIES;
+  assert.deepEqual({ time: easy.timeFactor, boosters: easy.boosters, pointer: easy.pointer }, { time: 1, boosters: 2, pointer: true });
+  assert.ok(medium.boosters <= easy.boosters && hard.boosters <= medium.boosters);
+  assert.equal(hard.pointer, false);
+  LEVELS.forEach((config, index) => {
+    assert.deepEqual(difficultyLevel(index + 1, easy), config);
+    const seconds = DIFFICULTIES.map((entry) => difficultyLevel(index + 1, entry).seconds);
+    assert.ok(seconds[0] > seconds[1] && seconds[1] > seconds[2], `level ${index + 1}: ${seconds}`);
+    assert.deepEqual({ ...difficultyLevel(index + 1, hard), seconds: config.seconds }, config);
+    for (let seed = 1; seed <= 8; seed++) {
+      const { game, stuck } = playGreedy(difficultyLevel(index + 1, hard), index * 70 + seed);
+      assert.equal(stuck, false, `level ${index + 1}, seed ${seed}`);
+      assert.equal(game.status, "won", `level ${index + 1}, seed ${seed}: the simple player ran out of time on hard`);
+    }
+  });
 });

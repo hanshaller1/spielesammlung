@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { sitePath } from "../site-paths";
-import { HoleEngine, KINDS, MAX_SIZE, TIER_XP, levelConfig, type Booster } from "./engine";
+import { DIFFICULTIES, HoleEngine, KINDS, MAX_SIZE, TIER_XP, difficultyLevel, type Booster, type Difficulty } from "./engine";
 import { FLOATER_TIME, STICK_RADIUS, drawGame, type Floater, type Stick } from "./render";
 
 type Phase = "ready" | "playing" | "won" | "lost";
@@ -13,8 +13,8 @@ type Hud = { seconds: number; size: number; growth: number; goals: Goal[]; magne
 type Result = { stars: number; used: number; record: boolean };
 
 const PROGRESS_KEY = "hannas-spiele-hungriges-loch-fortschritt";
+const DIFFICULTY_KEY = "hannas-spiele-hungriges-loch-schwierigkeit";
 const EMPTY_PROGRESS: Progress = { unlocked: 1, stars: {}, best: {} };
-const START_BOOSTERS: Record<Booster, number> = { magnet: 2, giant: 2, freeze: 2 };
 const BOOSTER_BUTTONS: Array<{ id: Booster; icon: string; label: string; title: string }> = [
   { id: "magnet", icon: "🧲", label: "Magnet", title: "Zieht alles an, was ins Loch passt" },
   { id: "giant", icon: "🍄", label: "Riesig", title: "Macht das Loch kurz viel größer" },
@@ -25,9 +25,26 @@ const KEY_DIRECTIONS: Record<string, [number, number]> = {
   ArrowUp: [0, -1], w: [0, -1], ArrowDown: [0, 1], s: [0, 1],
 };
 
-function loadProgress(): Progress {
+/** Der Fortschritt wird je Schwierigkeit getrennt gespeichert; "leicht" behält den bisherigen Schlüssel. */
+function progressKey(difficulty: Difficulty): string {
+  return difficulty.id === "leicht" ? PROGRESS_KEY : `${PROGRESS_KEY}-${difficulty.id}`;
+}
+
+function startBoosters(difficulty: Difficulty): Record<Booster, number> {
+  return { magnet: difficulty.boosters, giant: difficulty.boosters, freeze: difficulty.boosters };
+}
+
+function loadDifficulty(): number {
   try {
-    const stored = JSON.parse(window.localStorage.getItem(PROGRESS_KEY) ?? "null") as Partial<Progress> | null;
+    return Math.max(0, DIFFICULTIES.findIndex((entry) => entry.id === window.localStorage.getItem(DIFFICULTY_KEY)));
+  } catch {
+    return 0;
+  }
+}
+
+function loadProgress(difficulty: Difficulty): Progress {
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(progressKey(difficulty)) ?? "null") as Partial<Progress> | null;
     const unlocked = Math.floor(Number(stored?.unlocked));
     return {
       unlocked: Number.isFinite(unlocked) && unlocked > 1 ? unlocked : 1,
@@ -39,8 +56,8 @@ function loadProgress(): Progress {
   }
 }
 
-function previewHud(level: number): Hud {
-  const config = levelConfig(level);
+function previewHud(level: number, difficulty: Difficulty): Hud {
+  const config = difficultyLevel(level, difficulty);
   const goals = Object.entries(config.targets).map(([symbol, need]) => ({ kind: KINDS.findIndex((kind) => kind.symbol === symbol), need, left: need }));
   return { seconds: config.seconds, size: 1, growth: 0, goals, magnet: false, giant: false, freeze: false };
 }
@@ -68,17 +85,21 @@ function Stars({ count }: { count: number }) {
 export default function HungrigesLochPage() {
   const [phase, setPhase] = useState<Phase>("ready");
   const [level, setLevel] = useState(1);
+  const [difficultyIndex, setDifficultyIndex] = useState(0);
   const [progress, setProgress] = useState<Progress>(EMPTY_PROGRESS);
-  const [hud, setHud] = useState<Hud>(() => previewHud(1));
-  const [boosters, setBoosters] = useState(START_BOOSTERS);
+  const [hud, setHud] = useState<Hud>(() => previewHud(1, DIFFICULTIES[0]));
+  const [boosters, setBoosters] = useState(() => startBoosters(DIFFICULTIES[0]));
   const [result, setResult] = useState<Result | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [steered, setSteered] = useState(false);
+
+  const difficulty = DIFFICULTIES[difficultyIndex];
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<HoleEngine | null>(null);
   const phaseRef = useRef<Phase>("ready");
   const levelRef = useRef(1);
+  const difficultyRef = useRef(DIFFICULTIES[0]);
   const progressRef = useRef<Progress>(EMPTY_PROGRESS);
   const hudKeyRef = useRef("");
   const stickRef = useRef<Stick | null>(null);
@@ -119,12 +140,16 @@ export default function HungrigesLochPage() {
     let mounted = true;
     queueMicrotask(() => {
       if (!mounted) return;
-      const stored = loadProgress();
+      const index = loadDifficulty();
+      const stored = loadProgress(DIFFICULTIES[index]);
+      difficultyRef.current = DIFFICULTIES[index];
+      setDifficultyIndex(index);
+      setBoosters(startBoosters(DIFFICULTIES[index]));
       progressRef.current = stored;
       setProgress(stored);
       levelRef.current = stored.unlocked;
       setLevel(stored.unlocked);
-      setHud(previewHud(stored.unlocked));
+      setHud(previewHud(stored.unlocked, DIFFICULTIES[index]));
     });
     return () => {
       mounted = false;
@@ -149,7 +174,7 @@ export default function HungrigesLochPage() {
       progressRef.current = next;
       setProgress(next);
       try {
-        window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(next));
+        window.localStorage.setItem(progressKey(difficultyRef.current), JSON.stringify(next));
       } catch {
         // Das Spiel bleibt auch ohne verfügbaren Browserspeicher spielbar.
       }
@@ -226,7 +251,7 @@ export default function HungrigesLochPage() {
         canvas.height = Math.round(height * ratio);
       }
       context.setTransform(ratio, 0, 0, ratio, 0, 0);
-      drawGame(context, width, height, game, floatersRef.current, stickRef.current, now / 1000);
+      drawGame(context, width, height, game, floatersRef.current, stickRef.current, now / 1000, difficultyRef.current.pointer);
 
       const next = readHud(game);
       const key = JSON.stringify(next);
@@ -262,7 +287,7 @@ export default function HungrigesLochPage() {
   }, [phase, finishLevel, playNotes]);
 
   const startLevel = useCallback((nextLevel: number) => {
-    const game = new HoleEngine(levelConfig(nextLevel));
+    const game = new HoleEngine(difficultyLevel(nextLevel, difficultyRef.current));
     engineRef.current = game;
     floatersRef.current = [];
     stickRef.current = null;
@@ -270,7 +295,7 @@ export default function HungrigesLochPage() {
     levelRef.current = nextLevel;
     setLevel(nextLevel);
     setHud(readHud(game));
-    setBoosters(START_BOOSTERS);
+    setBoosters(startBoosters(difficultyRef.current));
     setResult(null);
     phaseRef.current = "playing";
     setPhase("playing");
@@ -291,14 +316,32 @@ export default function HungrigesLochPage() {
   const chooseLevel = (nextLevel: number) => {
     levelRef.current = nextLevel;
     setLevel(nextLevel);
-    setHud(previewHud(nextLevel));
+    setHud(previewHud(nextLevel, difficulty));
+  };
+
+  const chooseDifficulty = (index: number) => {
+    const next = DIFFICULTIES[index];
+    const stored = loadProgress(next);
+    difficultyRef.current = next;
+    setDifficultyIndex(index);
+    setBoosters(startBoosters(next));
+    progressRef.current = stored;
+    setProgress(stored);
+    levelRef.current = stored.unlocked;
+    setLevel(stored.unlocked);
+    setHud(previewHud(stored.unlocked, next));
+    try {
+      window.localStorage.setItem(DIFFICULTY_KEY, next.id);
+    } catch {
+      // Ohne Browserspeicher gilt die Auswahl nur für diesen Besuch.
+    }
   };
 
   const openLevelSelect = () => {
     engineRef.current = null;
     phaseRef.current = "ready";
     setPhase("ready");
-    setHud(previewHud(level));
+    setHud(previewHud(level, difficulty));
   };
 
   const pointOnCanvas = (event: ReactPointerEvent<HTMLCanvasElement>): [number, number] => {
@@ -336,7 +379,7 @@ export default function HungrigesLochPage() {
     if (stickRef.current?.pointerId === event.pointerId) stickRef.current = null;
   };
 
-  const config = levelConfig(level);
+  const config = difficultyLevel(level, difficulty);
   const playing = phase === "playing";
   const timeShare = Math.max(0, Math.min(1, hud.seconds / config.seconds));
   const levelStars = progress.stars[level] ?? 0;
@@ -356,7 +399,7 @@ export default function HungrigesLochPage() {
         <header>
           <div><p className="eyebrow">FRESSSPIEL</p><h1 id="loch-title">Hungriges Loch</h1></div>
           <div className="stats">
-            <span>Level <b>{level}</b></span>
+            <span>Level <b>{level}</b> · {difficulty.name}</span>
             <span className={hud.freeze ? "loch-stat-frozen" : undefined}><b>{hud.seconds}</b> Sek.{hud.freeze ? " ❄️" : ""}</span>
           </div>
         </header>
@@ -423,6 +466,12 @@ export default function HungrigesLochPage() {
                 <div className="loch-logo" aria-hidden="true">🍩</div>
                 <h2>Friss dich groß!</h2>
                 <p>Was ins Loch passt, fällt hinein und lässt es wachsen. Schnapp dir alle Ziele, bevor die Zeit um ist.</p>
+                <div className="loch-difficulty" role="radiogroup" aria-label="Schwierigkeit">
+                  {DIFFICULTIES.map((entry, index) => (
+                    <button key={entry.id} role="radio" aria-checked={index === difficultyIndex} onClick={() => chooseDifficulty(index)}>{entry.name}</button>
+                  ))}
+                </div>
+                <small className="loch-difficulty-note">{difficulty.summary}</small>
                 <div className="loch-level-picker">
                   <button onClick={() => chooseLevel(level - 1)} disabled={level <= 1} aria-label="Vorheriges Level">◀</button>
                   <div aria-live="polite">
