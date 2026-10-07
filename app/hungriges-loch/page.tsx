@@ -5,7 +5,7 @@ import { sitePath } from "../site-paths";
 import { DIFFICULTIES, HoleEngine, KINDS, MAX_SIZE, TIER_XP, difficultyLevel, type Booster, type Difficulty } from "./engine";
 import { FLOATER_TIME, STICK_RADIUS, drawGame, type Floater, type Stick } from "./render";
 
-type Phase = "ready" | "playing" | "won" | "lost";
+type Phase = "ready" | "playing" | "paused" | "won" | "lost";
 /** best speichert je Level die schnellste Zeit in Sekunden. */
 type Progress = { unlocked: number; stars: Record<string, number>; best: Record<string, number> };
 type Goal = { kind: number; need: number; left: number };
@@ -286,6 +286,37 @@ export default function HungrigesLochPage() {
     };
   }, [phase, finishLevel, playNotes]);
 
+  const pauseGame = useCallback(() => {
+    if (phaseRef.current !== "playing") return;
+    stickRef.current = null;
+    phaseRef.current = "paused";
+    setPhase("paused");
+  }, []);
+
+  // Die Spielschleife läuft nur in der Phase "playing"; die Engine bleibt bis dahin unverändert stehen.
+  const resumeGame = useCallback(() => {
+    if (phaseRef.current !== "paused") return;
+    phaseRef.current = "playing";
+    setPhase("playing");
+  }, []);
+
+  useEffect(() => {
+    const pauseWhenHidden = () => {
+      if (document.hidden) pauseGame();
+    };
+    const togglePause = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" && event.key.toLowerCase() !== "p") return;
+      if (phaseRef.current === "playing") pauseGame();
+      else resumeGame();
+    };
+    document.addEventListener("visibilitychange", pauseWhenHidden);
+    window.addEventListener("keydown", togglePause);
+    return () => {
+      document.removeEventListener("visibilitychange", pauseWhenHidden);
+      window.removeEventListener("keydown", togglePause);
+    };
+  }, [pauseGame, resumeGame]);
+
   const startLevel = useCallback((nextLevel: number) => {
     const game = new HoleEngine(difficultyLevel(nextLevel, difficultyRef.current));
     engineRef.current = game;
@@ -381,6 +412,7 @@ export default function HungrigesLochPage() {
 
   const config = difficultyLevel(level, difficulty);
   const playing = phase === "playing";
+  const paused = phase === "paused";
   const timeShare = Math.max(0, Math.min(1, hud.seconds / config.seconds));
   const levelStars = progress.stars[level] ?? 0;
   const bestTime = progress.best[level];
@@ -393,7 +425,8 @@ export default function HungrigesLochPage() {
           <a className="back-link" href={sitePath("/")}>← Hanna&apos;s Spiele</a>
           <div className="loch-controls">
             <button onClick={toggleSound} aria-pressed={soundEnabled} aria-label={soundEnabled ? "Ton ausschalten" : "Ton einschalten"}>{soundEnabled ? "🔊" : "🔇"}</button>
-            <button onClick={() => startLevel(level)} disabled={!playing} aria-label="Level neu starten">↻</button>
+            <button onClick={paused ? resumeGame : pauseGame} disabled={!playing && !paused} aria-label={paused ? "Weiterspielen" : "Pause"}>{paused ? "▶" : "⏸"}</button>
+            <button onClick={() => startLevel(level)} disabled={!playing && !paused} aria-label="Level neu starten">↻</button>
           </div>
         </div>
         <header>
@@ -482,6 +515,21 @@ export default function HungrigesLochPage() {
                   <button onClick={() => chooseLevel(level + 1)} disabled={level >= progress.unlocked} aria-label="Nächstes Level">▶</button>
                 </div>
                 <button className="start-button" onClick={() => startLevel(level)}>Spiel starten</button>
+              </div>
+            </div>
+          )}
+
+          {paused && (
+            <div className="loch-overlay" data-pause>
+              <div className="loch-panel">
+                <div className="loch-logo" aria-hidden="true">⏸</div>
+                <h2>Pause</h2>
+                <p>Die Uhr steht. Die Karte bleibt so lange verdeckt.</p>
+                <div className="start-actions">
+                  <button className="start-button" onClick={resumeGame}>Weiterspielen</button>
+                  <button className="reset-button" onClick={() => startLevel(level)}>Level neu starten</button>
+                  <button className="reset-button" onClick={openLevelSelect}>Level auswählen</button>
+                </div>
               </div>
             </div>
           )}
