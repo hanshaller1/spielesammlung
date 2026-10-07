@@ -9,6 +9,18 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.18",
+    title: "Neues Spiel: Waren sortieren",
+    date: "7. Oktober 2026",
+    changes: [
+      "Im neuen Sortierspiel verschwinden drei gleiche Waren in einem Fach; dahinter wartende Reihen rücken nach, bis der Laden leer ist.",
+      "Zwölf Level steigern Regale, Reihen und Warensorten; Kettenregale öffnen sich erst nach einigen Treffern.",
+      "Waren lassen sich ziehen oder antippen. Zauberstab, Mischen und Eiszeit helfen, ein Tipp zeigt nach kurzer Pause den nächsten Zug.",
+      "Jedes Regal wird vor dem Start als lösbar bestätigt; festgefahrene Regale mischen sich von selbst. Sterne und Bestwerte bleiben im Browser gespeichert.",
+    ],
+    commits: [{ id: "dc1f625", description: "Waren sortieren: Neues Sortierspiel mit Leveln und Boostern ergänzen" }],
+  },
+  {
     version: "0.4.17",
     title: "Schatz-Merge: Vorschau zuverlässig freigeben",
     date: "6. Oktober 2026",
