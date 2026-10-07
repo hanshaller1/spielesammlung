@@ -61,6 +61,12 @@
 .waren-panel p b { color:#ffe27a; }
 .waren-logo { font-size:clamp(3rem,11vw,4.6rem); line-height:1; letter-spacing:-.12em; filter:drop-shadow(0 6px 8px #0007); }
 .waren-overlay { position:absolute; z-index:8; inset:-6px; display:grid; overflow:auto; place-items:center; padding:12px; border-radius:18px; background:#1b1020c9; backdrop-filter:blur(4px); }
+.waren-difficulty { display:flex; gap:4px; padding:4px; border:1px solid #ffd9a83d; border-radius:999px; background:#00000038; }
+.waren-difficulty button { min-height:38px; padding:0 15px; border:0; border-radius:999px; color:#f1d9c0; background:none; font-size:.88rem; font-weight:800; cursor:pointer; touch-action:manipulation; }
+.waren-difficulty button:hover { background:#ffffff1a; }
+.waren-difficulty button[aria-checked="true"] { color:#3a2010; background:#ffd166; }
+.waren-difficulty button:focus-visible { outline:3px solid #ffe27a; outline-offset:2px; }
+.waren-difficulty-note { margin:7px 0 16px; color:#d9bfa8; font-family:Arial,sans-serif; font-size:.78rem; }
 .waren-level-picker { display:flex; align-items:center; gap:12px; margin-bottom:22px; }
 .waren-level-picker > div { display:grid; min-width:170px; justify-items:center; gap:3px; }
 .waren-level-picker strong { color:#fff0d2; font-size:1.3rem; }

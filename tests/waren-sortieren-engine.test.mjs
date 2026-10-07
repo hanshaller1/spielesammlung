@@ -5,8 +5,8 @@ import { createServer } from "vite";
 const vite = await createServer({ configFile: false, optimizeDeps: { noDiscovery: true }, cacheDir: "work/waren-sortieren/vite-tests", server: { middlewareMode: true } });
 after(() => vite.close());
 const {
-  LEVELS, SLOTS, canMove, cloneBoard, countItems, createLevel, findHint, hasUsefulMove, isCleared,
-  levelConfig, moveItem, mulberry32, removeTriple, shuffleBoard, solveBoard,
+  DIFFICULTIES, LEVELS, SLOTS, canMove, cloneBoard, countItems, createLevel, findHint, hasUsefulMove, isCleared,
+  levelConfig, levelSeconds, moveItem, mulberry32, removeTriple, shuffleBoard, solveBoard,
 } = await vite.ssrLoadModule("/app/waren-sortieren/engine.ts");
 
 let nextId = 1000;
@@ -151,4 +151,21 @@ test("the wand removes exactly one triple and counts as a match", () => {
     }
   }
   assert.equal(removeTriple({ shelves: [shelf([[null, null, null]])] }), null);
+});
+
+test("easy keeps the original times and helpers, harder grades shorten them", () => {
+  assert.deepEqual(DIFFICULTIES.map((entry) => entry.id), ["leicht", "mittel", "schwer"]);
+  const [easy, medium, hard] = DIFFICULTIES;
+  assert.deepEqual({ time: easy.timeFactor, boosters: easy.boosters, hint: easy.hintDelay }, { time: 1, boosters: 2, hint: 8 });
+  assert.ok(medium.boosters <= easy.boosters && hard.boosters <= medium.boosters);
+  assert.ok(medium.hintDelay > easy.hintDelay);
+  assert.equal(hard.hintDelay, null);
+  LEVELS.forEach((config, index) => {
+    const seconds = DIFFICULTIES.map((entry) => levelSeconds(index + 1, entry));
+    assert.equal(seconds[0], config.seconds);
+    assert.ok(seconds[0] > seconds[1] && seconds[1] > seconds[2], `level ${index + 1}: ${seconds}`);
+    // Auch auf "schwer" bleibt mehr als eine Sekunde je Ware.
+    assert.ok(seconds[2] >= config.triples * SLOTS, `level ${index + 1}: only ${seconds[2]}s`);
+  });
+  assert.equal(levelSeconds(LEVELS.length + 4, hard), levelSeconds(LEVELS.length, hard));
 });

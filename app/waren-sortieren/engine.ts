@@ -59,6 +59,28 @@ export function levelConfig(level: number): LevelConfig {
   return LEVELS[Math.min(Math.max(1, level), LEVELS.length) - 1];
 }
 
+export type Difficulty = {
+  id: "leicht" | "mittel" | "schwer";
+  name: string;
+  summary: string;
+  /** Anteil der Levelzeit, der zur Verfügung steht. */
+  timeFactor: number;
+  /** Anzahl je Booster-Sorte pro Level. */
+  boosters: number;
+  /** Sekunden ohne Zug bis zum Tipp; null schaltet Tipps ab. */
+  hintDelay: number | null;
+};
+
+export const DIFFICULTIES: Difficulty[] = [
+  { id: "leicht", name: "Leicht", summary: "Volle Zeit · 2 Booster je Sorte · Tipps", timeFactor: 1, boosters: 2, hintDelay: 8 },
+  { id: "mittel", name: "Mittel", summary: "80 % Zeit · 1 Booster je Sorte · späte Tipps", timeFactor: 0.8, boosters: 1, hintDelay: 15 },
+  { id: "schwer", name: "Schwer", summary: "65 % Zeit · 1 Booster je Sorte · keine Tipps", timeFactor: 0.65, boosters: 1, hintDelay: null },
+];
+
+export function levelSeconds(level: number, difficulty: Difficulty): number {
+  return Math.round(levelConfig(level).seconds * difficulty.timeFactor);
+}
+
 export function mulberry32(seed: number): Random {
   let state = seed >>> 0;
   return () => {

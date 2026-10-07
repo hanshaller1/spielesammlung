@@ -3,8 +3,8 @@
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { sitePath } from "../site-paths";
 import {
-  GOODS, LEVELS, SLOTS, cloneBoard, createLevel, findHint, hasUsefulMove, isCleared, levelConfig,
-  moveItem, removeTriple, shuffleBoard, type Board, type Move, type Outcome, type Position,
+  DIFFICULTIES, GOODS, SLOTS, cloneBoard, createLevel, findHint, hasUsefulMove, isCleared, levelConfig, levelSeconds,
+  moveItem, removeTriple, shuffleBoard, type Board, type Difficulty, type Move, type Outcome, type Position,
 } from "./engine";
 
 type Phase = "ready" | "playing" | "won" | "lost";
@@ -24,16 +24,32 @@ type Drag = {
 };
 
 const PROGRESS_KEY = "hannas-spiele-waren-sortieren-fortschritt";
+const DIFFICULTY_KEY = "hannas-spiele-waren-sortieren-schwierigkeit";
 const EMPTY_PROGRESS: Progress = { unlocked: 1, stars: {}, best: {} };
-const START_BOOSTERS: Boosters = { wand: 2, shuffle: 2, freeze: 2 };
 const COMBO_WINDOW = 5000;
 const FREEZE_TIME = 10000;
-const HINT_DELAY = 8000;
 const DRAG_THRESHOLD = 8;
 
-function loadProgress(): Progress {
+/** Der Fortschritt wird je Schwierigkeit getrennt gespeichert; "leicht" behält den bisherigen Schlüssel. */
+function progressKey(difficulty: Difficulty): string {
+  return difficulty.id === "leicht" ? PROGRESS_KEY : `${PROGRESS_KEY}-${difficulty.id}`;
+}
+
+function startBoosters(difficulty: Difficulty): Boosters {
+  return { wand: difficulty.boosters, shuffle: difficulty.boosters, freeze: difficulty.boosters };
+}
+
+function loadDifficulty(): number {
   try {
-    const stored = JSON.parse(window.localStorage.getItem(PROGRESS_KEY) ?? "null") as Partial<Progress> | null;
+    return Math.max(0, DIFFICULTIES.findIndex((entry) => entry.id === window.localStorage.getItem(DIFFICULTY_KEY)));
+  } catch {
+    return 0;
+  }
+}
+
+function loadProgress(difficulty: Difficulty): Progress {
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(progressKey(difficulty)) ?? "null") as Partial<Progress> | null;
     const unlocked = Math.floor(Number(stored?.unlocked));
     return {
       unlocked: Number.isFinite(unlocked) && unlocked > 1 ? unlocked : 1,
@@ -56,13 +72,14 @@ function Stars({ count }: { count: number }) {
 export default function WarenSortierenPage() {
   const [phase, setPhase] = useState<Phase>("ready");
   const [level, setLevel] = useState(1);
+  const [difficultyIndex, setDifficultyIndex] = useState(0);
   const [progress, setProgress] = useState<Progress>(EMPTY_PROGRESS);
   const [board, setBoard] = useState<Board | null>(null);
   const [score, setScore] = useState(0);
   const [combo, setCombo] = useState(0);
-  const [seconds, setSeconds] = useState(LEVELS[0].seconds);
+  const [seconds, setSeconds] = useState(() => levelSeconds(1, DIFFICULTIES[0]));
   const [frozen, setFrozen] = useState(false);
-  const [boosters, setBoosters] = useState<Boosters>(START_BOOSTERS);
+  const [boosters, setBoosters] = useState<Boosters>(() => startBoosters(DIFFICULTIES[0]));
   const [selected, setSelected] = useState<Position | null>(null);
   const [hint, setHint] = useState<Move | null>(null);
   const [effects, setEffects] = useState<Effect[]>([]);
@@ -70,8 +87,11 @@ export default function WarenSortierenPage() {
   const [result, setResult] = useState<Result | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
 
+  const difficulty = DIFFICULTIES[difficultyIndex];
+
   const phaseRef = useRef<Phase>("ready");
   const levelRef = useRef(1);
+  const difficultyRef = useRef(DIFFICULTIES[0]);
   const boardRef = useRef<Board | null>(null);
   const progressRef = useRef<Progress>(EMPTY_PROGRESS);
   const scoreRef = useRef(0);
@@ -135,12 +155,16 @@ export default function WarenSortierenPage() {
     let mounted = true;
     queueMicrotask(() => {
       if (!mounted) return;
-      const stored = loadProgress();
+      const index = loadDifficulty();
+      const stored = loadProgress(DIFFICULTIES[index]);
+      difficultyRef.current = DIFFICULTIES[index];
+      setDifficultyIndex(index);
+      setBoosters(startBoosters(DIFFICULTIES[index]));
       progressRef.current = stored;
       setProgress(stored);
       levelRef.current = stored.unlocked;
       setLevel(stored.unlocked);
-      setSeconds(levelConfig(stored.unlocked).seconds);
+      setSeconds(levelSeconds(stored.unlocked, DIFFICULTIES[index]));
     });
     const timeouts = timeoutsRef.current;
     return () => {
@@ -179,7 +203,8 @@ export default function WarenSortierenPage() {
         playNotes([392, 311, 233], 0.4, "triangle");
         return;
       }
-      if (!hintShownRef.current && !dragRef.current && boardRef.current && now - lastActionRef.current > HINT_DELAY) {
+      const { hintDelay } = difficultyRef.current;
+      if (hintDelay !== null && !hintShownRef.current && !dragRef.current && boardRef.current && now - lastActionRef.current > hintDelay * 1000) {
         hintShownRef.current = true;
         setHint(findHint(boardRef.current));
       }
@@ -198,11 +223,12 @@ export default function WarenSortierenPage() {
     setScore(0);
     comboRef.current = { count: 0, until: 0 };
     setCombo(0);
-    remainingRef.current = config.seconds * 1000;
-    setSeconds(config.seconds);
+    const total = levelSeconds(nextLevel, difficultyRef.current);
+    remainingRef.current = total * 1000;
+    setSeconds(total);
     freezeRef.current = 0;
     setFrozen(false);
-    setBoosters(START_BOOSTERS);
+    setBoosters(startBoosters(difficultyRef.current));
     setSelected(null);
     setHint(null);
     setEffects([]);
@@ -217,9 +243,8 @@ export default function WarenSortierenPage() {
 
   const finishLevel = useCallback(() => {
     const finished = levelRef.current;
-    const config = levelConfig(finished);
     const left = Math.max(0, remainingRef.current);
-    const share = left / (config.seconds * 1000);
+    const share = left / (levelSeconds(finished, difficultyRef.current) * 1000);
     const stars = share >= 0.4 ? 3 : share >= 0.15 ? 2 : 1;
     const bonus = Math.ceil(left / 1000) * 5;
     const total = scoreRef.current + bonus;
@@ -232,7 +257,7 @@ export default function WarenSortierenPage() {
     progressRef.current = next;
     setProgress(next);
     try {
-      window.localStorage.setItem(PROGRESS_KEY, JSON.stringify(next));
+      window.localStorage.setItem(progressKey(difficultyRef.current), JSON.stringify(next));
     } catch {
       // Das Spiel bleibt auch ohne verfügbaren Browserspeicher spielbar.
     }
@@ -347,14 +372,32 @@ export default function WarenSortierenPage() {
     setPhase("ready");
     setBoard(null);
     boardRef.current = null;
-    setSeconds(levelConfig(level).seconds);
+    setSeconds(levelSeconds(level, difficulty));
     setScore(0);
   };
 
   const chooseLevel = (nextLevel: number) => {
     levelRef.current = nextLevel;
     setLevel(nextLevel);
-    setSeconds(levelConfig(nextLevel).seconds);
+    setSeconds(levelSeconds(nextLevel, difficulty));
+  };
+
+  const chooseDifficulty = (index: number) => {
+    const next = DIFFICULTIES[index];
+    const stored = loadProgress(next);
+    difficultyRef.current = next;
+    setDifficultyIndex(index);
+    setBoosters(startBoosters(next));
+    progressRef.current = stored;
+    setProgress(stored);
+    levelRef.current = stored.unlocked;
+    setLevel(stored.unlocked);
+    setSeconds(levelSeconds(stored.unlocked, next));
+    try {
+      window.localStorage.setItem(DIFFICULTY_KEY, next.id);
+    } catch {
+      // Ohne Browserspeicher gilt die Auswahl nur für diesen Besuch.
+    }
   };
 
   const findDropTarget = (x: number, y: number, from: Position): { position: Position | null; shelfElement: HTMLElement | null } => {
@@ -464,8 +507,9 @@ export default function WarenSortierenPage() {
   };
 
   const config = levelConfig(level);
+  const totalSeconds = levelSeconds(level, difficulty);
   const playing = phase === "playing";
-  const timeShare = Math.max(0, Math.min(1, seconds / config.seconds));
+  const timeShare = Math.max(0, Math.min(1, seconds / totalSeconds));
   const levelStars = progress.stars[level] ?? 0;
   const status = notice
     || (combo > 1 ? `Combo ×${Math.min(combo, 5)}!` : "")
@@ -486,7 +530,7 @@ export default function WarenSortierenPage() {
         <header>
           <div><p className="eyebrow">SORTIERSPIEL</p><h1 id="waren-title">Waren sortieren</h1></div>
           <div className="stats">
-            <span>Level <b>{level}</b></span>
+            <span>Level <b>{level}</b> · {difficulty.name}</span>
             <span><b>{score}</b> Punkte</span>
             <span className={frozen ? "waren-stat-frozen" : undefined}><b>{seconds}</b> Sek.{frozen ? " ❄️" : ""}</span>
           </div>
@@ -497,7 +541,7 @@ export default function WarenSortierenPage() {
           role="progressbar"
           aria-label="Verbleibende Zeit"
           aria-valuemin={0}
-          aria-valuemax={config.seconds}
+          aria-valuemax={totalSeconds}
           aria-valuenow={seconds}
           data-low={timeShare <= 0.2 || undefined}
           data-frozen={frozen || undefined}
@@ -596,12 +640,18 @@ export default function WarenSortierenPage() {
               <div className="waren-logo" aria-hidden="true">🍎🥛🧸</div>
               <h2>Räume den Laden auf!</h2>
               <p>Stelle drei gleiche Waren nebeneinander in ein Fach, dann verschwinden sie. Dahinter warten schon die nächsten.</p>
+              <div className="waren-difficulty" role="radiogroup" aria-label="Schwierigkeit">
+                {DIFFICULTIES.map((entry, index) => (
+                  <button key={entry.id} role="radio" aria-checked={index === difficultyIndex} onClick={() => chooseDifficulty(index)}>{entry.name}</button>
+                ))}
+              </div>
+              <small className="waren-difficulty-note">{difficulty.summary}</small>
               <div className="waren-level-picker">
                 <button onClick={() => chooseLevel(level - 1)} disabled={level <= 1} aria-label="Vorheriges Level">◀</button>
                 <div aria-live="polite">
                   <strong>Level {level}</strong>
                   <Stars count={levelStars} />
-                  <small>{config.shelves} Regale · {config.triples * SLOTS} Waren · {config.seconds} Sek.</small>
+                  <small>{config.shelves} Regale · {config.triples * SLOTS} Waren · {totalSeconds} Sek.</small>
                 </div>
                 <button onClick={() => chooseLevel(level + 1)} disabled={level >= progress.unlocked} aria-label="Nächstes Level">▶</button>
               </div>
