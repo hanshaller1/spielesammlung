@@ -19,8 +19,7 @@ const games: Array<{
   },
   {
     href: sitePath("/fange-die-tiere"),
-    icon: "🐯🐵🐨🐦",
-    iconClass: "home-animals",
+    image: `${publicBasePath}/startseite/fange-die-tiere.svg`,
     title: "Fange die Tiere",
     description: "Finde im Tierfeld immer das gesuchte Tier.",
     meta: "40 Sekunden",
