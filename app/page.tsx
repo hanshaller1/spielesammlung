@@ -3,12 +3,10 @@ import { publicBasePath, sitePath } from "./site-paths";
 
 const games: Array<{
   href: string;
-  icon?: string;
-  iconClass?: string;
+  image: string;
   title: string;
   description: string;
   meta: string;
-  image?: string;
 }> = [
   {
     href: sitePath("/fang-den-stern"),
@@ -26,8 +24,6 @@ const games: Array<{
   },
   {
     href: sitePath("/zwerge"),
-    icon: "",
-    iconClass: "home-dwarf",
     image: `${publicBasePath}/zwergengold-logo.png`,
     title: "Zwergengold",
     description: "Sammle Gold und lenke den Zwerg sicher durch den Tunnel.",
@@ -77,8 +73,8 @@ export default function Home() {
         <div className="game-grid">
           {games.map((game) => (
             <a className="game-tile" href={game.href} key={game.href}>
-              <div className={`game-tile-icon ${game.iconClass ?? ""}`} aria-hidden="true">
-                {game.image ? <img src={game.image} alt="" width="150" height="150" /> : game.icon}
+              <div className="game-tile-icon" aria-hidden="true">
+                <img src={game.image} alt="" width="150" height="150" />
               </div>
               <div className="game-tile-copy">
                 <h2>{game.title}</h2>
