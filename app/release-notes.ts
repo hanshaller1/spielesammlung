@@ -9,6 +9,16 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.21",
+    title: "Veröffentlichung auf GitHub Pages abgesichert",
+    date: "7. Oktober 2026",
+    changes: [
+      "Nach Version 0.4.20 zeigte die Seite kurzzeitig nur die README: GitHubs eigener Branch-Build hatte den fertigen Export überschrieben.",
+      "Der Deploy-Workflow wartet jetzt, bis dieser Branch-Build abgeschlossen ist, und veröffentlicht die Spiele erst danach.",
+    ],
+    commits: [{ id: "65c546e", description: "Spielesammlung: Pages-Veröffentlichung gegen parallelen Branch-Build absichern" }],
+  },
+  {
     version: "0.4.20",
     title: "Schwierigkeitsgrade, Pause und größeres Loch-Spielfeld",
     date: "7. Oktober 2026",
