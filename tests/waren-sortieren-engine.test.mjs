@@ -153,17 +153,16 @@ test("the wand removes exactly one triple and counts as a match", () => {
   assert.equal(removeTriple({ shelves: [shelf([[null, null, null]])] }), null);
 });
 
-test("easy keeps the original times and helpers, harder grades shorten them", () => {
+test("every grade shortens the level time, harder grades more and with fewer helpers", () => {
   assert.deepEqual(DIFFICULTIES.map((entry) => entry.id), ["leicht", "mittel", "schwer"]);
   const [easy, medium, hard] = DIFFICULTIES;
-  assert.deepEqual({ time: easy.timeFactor, boosters: easy.boosters, hint: easy.hintDelay }, { time: 1, boosters: 2, hint: 8 });
+  assert.deepEqual({ time: easy.timeFactor, boosters: easy.boosters, hint: easy.hintDelay }, { time: 0.9, boosters: 2, hint: 10 });
   assert.ok(medium.boosters <= easy.boosters && hard.boosters <= medium.boosters);
   assert.ok(medium.hintDelay > easy.hintDelay);
   assert.equal(hard.hintDelay, null);
   LEVELS.forEach((config, index) => {
     const seconds = DIFFICULTIES.map((entry) => levelSeconds(index + 1, entry));
-    assert.equal(seconds[0], config.seconds);
-    assert.ok(seconds[0] > seconds[1] && seconds[1] > seconds[2], `level ${index + 1}: ${seconds}`);
+    assert.ok(config.seconds > seconds[0] && seconds[0] > seconds[1] && seconds[1] > seconds[2], `level ${index + 1}: ${seconds}`);
     // Auch auf "schwer" bleibt mehr als eine Sekunde je Ware.
     assert.ok(seconds[2] >= config.triples * SLOTS, `level ${index + 1}: only ${seconds[2]}s`);
   });

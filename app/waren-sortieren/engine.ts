@@ -72,9 +72,9 @@ export type Difficulty = {
 };
 
 export const DIFFICULTIES: Difficulty[] = [
-  { id: "leicht", name: "Leicht", summary: "Volle Zeit · 2 Booster je Sorte · Tipps", timeFactor: 1, boosters: 2, hintDelay: 8 },
-  { id: "mittel", name: "Mittel", summary: "80 % Zeit · 1 Booster je Sorte · späte Tipps", timeFactor: 0.8, boosters: 1, hintDelay: 15 },
-  { id: "schwer", name: "Schwer", summary: "65 % Zeit · 1 Booster je Sorte · keine Tipps", timeFactor: 0.65, boosters: 1, hintDelay: null },
+  { id: "leicht", name: "Leicht", summary: "90 % Zeit · 2 Booster je Sorte · Tipps", timeFactor: 0.9, boosters: 2, hintDelay: 10 },
+  { id: "mittel", name: "Mittel", summary: "72 % Zeit · 1 Booster je Sorte · späte Tipps", timeFactor: 0.72, boosters: 1, hintDelay: 20 },
+  { id: "schwer", name: "Schwer", summary: "58 % Zeit · 1 Booster je Sorte · keine Tipps", timeFactor: 0.58, boosters: 1, hintDelay: null },
 ];
 
 export function levelSeconds(level: number, difficulty: Difficulty): number {
