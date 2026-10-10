@@ -9,6 +9,20 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.30",
+    title: "Bokujin ersetzt Tuscheklinge",
+    date: "10. Oktober 2026",
+    changes: [
+      "Neues Spiel Bokujin: Als letzter Schreiber-Samurai ziehst du Ketten durch die fünf Elemente und bannst gemalte Schatten zurück ins Papier.",
+      "Die Bildrolle von Kagerō führt über sieben Stationen; drei Pfade – Pinsel, Klinge und Shura – bestimmen die Schwierigkeit. Der Klang entsteht live im Browser.",
+      "Tuscheklinge wurde aus der Sammlung entfernt. Bokujin übernimmt dessen Startseitenbild und führt über das Titelbild zurück zur Sammlung.",
+    ],
+    commits: [
+      { id: "1a34135", description: "Bokujin: Neues Pinsel-Kampfspiel ergänzen" },
+      { id: "42450cf", description: "Tuscheklinge: Spiel aus der Sammlung entfernen" },
+    ],
+  },
+  {
     version: "0.4.29",
     title: "Neues Spiel: Tic Tac Toe",
     date: "10. Oktober 2026",
