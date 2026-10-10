@@ -181,12 +181,16 @@
     const G = {
       phase:'intro', round:0, score:0, lives:3, hits:0, streak:0, bestAtStart:0,
       recordTime:'medium', recordMode:'fine',
-      deadline:0, feedbackEnd:0, feedback:null, gunX:0.5, recoil:0,
+      seconds:TIME_MODES.medium.seconds, deadline:0, feedbackEnd:0, feedback:null, gunX:0.5, recoil:0,
       balls:[], target:null, color:COLORS[0], shot:null, particles:[], paused:null, previousHue:null
     };
     const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
     const random = (a,b) => a+Math.random()*(b-a);
-    const roundSeconds = () => TIME_MODES[timeMode].seconds;
+    const SPEEDUP_HITS=5, MIN_SECONDS=0.5;
+    // Every five hits shorten all following rounds by 0.1 seconds, on every difficulty.
+    const secondsAfter = hits => Math.max(MIN_SECONDS,(TIME_MODES[timeMode].seconds*10-Math.floor(hits/SPEEDUP_HITS))/10);
+    // G.seconds is fixed for the running round, so timer, sound and score agree.
+    const roundSeconds = () => G.seconds;
     const SOUND_KEY='farbtreffer.sound.v1';
     let soundOn=true, soundAvailable=!!(window.AudioContext || window.webkitAudioContext);
     let audio=null, riser=null;
@@ -359,7 +363,7 @@
     function showPanel(type) {
       overlay.hidden=false;
       if (type==='intro') {
-        panel.innerHTML='<div class="eyebrow">Die kleine Farbjagd</div><h2 id="panel-title">Ein Farbton.<br>Ein Treffer.</h2><p>Oben steht die Vorlage. <strong>Eine Kugel hat genau diese Farbe.</strong> Die anderen sind heller oder dunkler.</p><div class="rule"><span class="rule-number" id="round-duration">'+roundSeconds()+'</span><span class="rule-copy"><strong>Sekunden pro Runde.</strong><br>Unten ziehen · Loslassen = Schuss.</span></div>'+difficultyMarkup()+'<button class="primary" data-action="start">Spiel starten'+arrow+'</button><p class="fineprint">Drei Leben. Jede Runde eine neue Farbe.</p>';
+        panel.innerHTML='<div class="eyebrow">Die kleine Farbjagd</div><h2 id="panel-title">Ein Farbton.<br>Ein Treffer.</h2><p>Oben steht die Vorlage. <strong>Eine Kugel hat genau diese Farbe.</strong> Die anderen sind heller oder dunkler.</p><div class="rule"><span class="rule-number" id="round-duration">'+roundSeconds()+'</span><span class="rule-copy"><strong>Sekunden pro Runde.</strong><br>Unten ziehen · Loslassen = Schuss.</span></div>'+difficultyMarkup()+'<button class="primary" data-action="start">Spiel starten'+arrow+'</button><p class="fineprint">Drei Leben. Jede Runde eine neue Farbe. Alle 5 Treffer 0,1 Sekunden weniger Zeit.</p>';
       } else if (type==='pause') {
         panel.innerHTML='<div class="eyebrow">Pause</div><h2 id="panel-title">Kurz durchatmen.</h2><p>Die Zeit steht still. Mit „Weiter“ geht es genau an dieser Stelle weiter.</p><button class="primary" data-action="resume">Weiter'+arrow+'</button><button class="secondary" data-action="restart">Von vorn beginnen</button><button class="secondary" data-action="menu">Zum Hauptmenü</button>';
       } else {
@@ -415,7 +419,7 @@
     }
     function returnToMenu() {
       clearInput(); stopAllSounds(); persistRecord();
-      Object.assign(G,{phase:'intro',round:0,score:0,lives:3,hits:0,streak:0,deadline:0,feedbackEnd:0,
+      Object.assign(G,{phase:'intro',round:0,score:0,lives:3,hits:0,streak:0,seconds:TIME_MODES[timeMode].seconds,deadline:0,feedbackEnd:0,
         feedback:null,gunX:0.5,recoil:0,shot:null,particles:[],paused:null,previousHue:null});
       paletteBag=[];
       G.color=COLORS[0]; generateBalls(G.color,true); updateHud(); showPanel('intro');
@@ -425,8 +429,10 @@
     function nextRound(now) {
       clearInput();
       G.round++; G.color=chooseHue(); generateBalls(G.color);
+      const faster=G.hits>0 && secondsAfter(G.hits)<secondsAfter(G.hits-1);
+      G.seconds=secondsAfter(G.hits);
       G.phase='aim'; G.deadline=now+roundSeconds()*1000; G.feedback=null; G.shot=null; G.particles=[]; G.recoil=0;
-      $('hint').textContent='Pistole ziehen · Loslassen = Schuss';
+      $('hint').textContent=faster?'Schneller! Nur noch '+G.seconds.toFixed(1).replace('.',',')+' Sekunden pro Runde.':'Pistole ziehen · Loslassen = Schuss';
       updateHud();
       startRiser((G.deadline-performance.now())/1000);
     }
@@ -694,6 +700,7 @@
       if (!button) return;
       if (button.dataset.timeMode && TIME_MODES[button.dataset.timeMode] && ['intro','over'].includes(G.phase)) {
         timeMode=button.dataset.timeMode;
+        G.seconds=TIME_MODES[timeMode].seconds;
         for (const b of panel.querySelectorAll('[data-time-mode]')) b.setAttribute('aria-pressed',String(b.dataset.timeMode===timeMode));
         const duration=panel.querySelector('#round-duration');
         if (duration) duration.textContent=roundSeconds();
