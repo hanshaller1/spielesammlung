@@ -66,13 +66,6 @@ const games: Array<{
     meta: "3 Versuche",
   },
   {
-    href: sitePath("/tuscheklinge/index.html"),
-    image: `${publicBasePath}/startseite/tuscheklinge.svg`,
-    title: "Tuscheklinge",
-    description: "Ziehe Ketten durch die fünf Wandlungen und bezwinge die Wächter.",
-    meta: "7 Tore",
-  },
-  {
     href: sitePath("/tic-tac-toe/index.html"),
     image: `${publicBasePath}/startseite/tic-tac-toe.svg`,
     title: "Tic Tac Toe",
