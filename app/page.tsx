@@ -57,6 +57,14 @@ const games: Array<{
     description: "Tausche Edelsteine, besiege den Dunklen König und baue dein Reich auf.",
     meta: "12 Level",
   },
+  {
+    // Eigenständige HTML-Seite unter public/, deshalb der vollständige Dateipfad.
+    href: sitePath("/farbtreffer/index.html"),
+    image: `${publicBasePath}/startseite/farbtreffer.svg`,
+    title: "Farbtreffer",
+    description: "Finde die Kugel im gesuchten Farbton und triff sie mit einem Schuss.",
+    meta: "3 Versuche",
+  },
 ];
 
 export default function Home() {
