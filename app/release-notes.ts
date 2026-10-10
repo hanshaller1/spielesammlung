@@ -9,6 +9,17 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.28",
+    title: "Farbtreffer: Kugeln zerplatzen, Fehlschüsse prallen ab",
+    date: "10. Oktober 2026",
+    changes: [
+      "Die richtige Kugel schwillt beim Treffer kurz an und zerplatzt in Tropfen ihres eigenen Farbtons – mit Druckwelle und Funken.",
+      "Eine falsche Kugel bleibt ganz und wackelt kurz; der Schuss prallt am Auftreffpunkt ab und fällt zur Seite weg.",
+      "Wer im System weniger Bewegung eingestellt hat, sieht weiterhin nur die ruhige Markierung.",
+    ],
+    commits: [{ id: "9e89715", description: "Farbtreffer: Richtige Kugel zerplatzen und Fehlschuss abprallen lassen" }],
+  },
+  {
     version: "0.4.27",
     title: "Farbtreffer wird mit jedem fünften Treffer schneller",
     date: "10. Oktober 2026",
