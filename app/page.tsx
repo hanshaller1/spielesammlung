@@ -79,6 +79,13 @@ const games: Array<{
     description: "Setze drei Zeichen in eine Reihe – zu zweit oder gegen den Bot.",
     meta: "1 vs 1 · 1 vs Bot",
   },
+  {
+    href: sitePath("/bokujin/index.html"),
+    image: `${publicBasePath}/startseite/bokujin.svg`,
+    title: "Bokujin",
+    description: "Führe den Pinsel durch die fünf Elemente und banne die Schatten ins Papier.",
+    meta: "7 Stationen",
+  },
 ];
 
 export default function Home() {

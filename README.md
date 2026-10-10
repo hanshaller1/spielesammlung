@@ -1,6 +1,6 @@
 # Spielesammlung
 
-Die gemeinsame Spielesammlung für „Hanna's Spiele“ mit den Spielen „Fang den Stern“, „Fange die Tiere“, „Zwergengold“, „Schatz-Merge“, „Waren sortieren“, „Hungriges Loch“, „Königreich“, „Farbtreffer“, „Tuscheklinge“ und „Tic Tac Toe“.
+Die gemeinsame Spielesammlung für „Hanna's Spiele“ mit den Spielen „Fang den Stern“, „Fange die Tiere“, „Zwergengold“, „Schatz-Merge“, „Waren sortieren“, „Hungriges Loch“, „Königreich“, „Farbtreffer“, „Tuscheklinge“, „Tic Tac Toe“ und „Bokujin“.
 
 ## GitHub Pages
 
