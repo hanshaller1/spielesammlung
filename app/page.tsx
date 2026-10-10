@@ -65,6 +65,13 @@ const games: Array<{
     description: "Finde die Kugel im gesuchten Farbton und triff sie mit einem Schuss.",
     meta: "3 Versuche",
   },
+  {
+    href: sitePath("/tuscheklinge/index.html"),
+    image: `${publicBasePath}/startseite/tuscheklinge.svg`,
+    title: "Tuscheklinge",
+    description: "Ziehe Ketten durch die fünf Wandlungen und bezwinge die Wächter.",
+    meta: "7 Tore",
+  },
 ];
 
 export default function Home() {
