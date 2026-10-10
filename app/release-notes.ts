@@ -9,6 +9,16 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.27",
+    title: "Farbtreffer wird mit jedem fünften Treffer schneller",
+    date: "10. Oktober 2026",
+    changes: [
+      "Auf jeder Schwierigkeitsstufe sinkt die Zeit pro Runde nach je fünf richtigen Treffern um 0,1 Sekunden – bis höchstens auf 0,5 Sekunden.",
+      "Ein Hinweis unter dem Spielfeld meldet jede Verkürzung; Fehlversuche zählen nicht mit. Ein neues Spiel beginnt wieder mit der vollen Zeit.",
+    ],
+    commits: [{ id: "71ff63f", description: "Farbtreffer: Rundenzeit nach je fünf Treffern verkürzen" }],
+  },
+  {
     version: "0.4.26",
     title: "Neue Spiele: Farbtreffer und Tuscheklinge",
     date: "10. Oktober 2026",
