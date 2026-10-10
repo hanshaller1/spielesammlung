@@ -72,6 +72,13 @@ const games: Array<{
     description: "Ziehe Ketten durch die fünf Wandlungen und bezwinge die Wächter.",
     meta: "7 Tore",
   },
+  {
+    href: sitePath("/tic-tac-toe/index.html"),
+    image: `${publicBasePath}/startseite/tic-tac-toe.svg`,
+    title: "Tic Tac Toe",
+    description: "Setze drei Zeichen in eine Reihe – zu zweit oder gegen den Bot.",
+    meta: "1 vs 1 · 1 vs Bot",
+  },
 ];
 
 export default function Home() {
