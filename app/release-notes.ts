@@ -9,6 +9,18 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.29",
+    title: "Neues Spiel: Tic Tac Toe",
+    date: "10. Oktober 2026",
+    changes: [
+      "Tic Tac Toe lässt sich zu zweit an einem Gerät oder gegen den Bot spielen – drei gleiche Zeichen in einer Reihe gewinnen.",
+      "Der Bot hat drei Stärken: Leicht spielt spontan, Mittel denkt voraus, Schwer spielt optimal.",
+      "Der erste Startspieler wird ausgelost, danach beginnt ihr abwechselnd; der Spielstand zählt über alle Runden mit.",
+      "Das Spiel läuft als eigenständige Seite mit Link zurück zur Sammlung und hat ein eigenes Startseitenbild im Stil der übrigen Kacheln.",
+    ],
+    commits: [{ id: "55b86ac", description: "Tic Tac Toe: Neues Spiel für zwei oder gegen den Bot ergänzen" }],
+  },
+  {
     version: "0.4.28",
     title: "Farbtreffer: Kugeln zerplatzen, Fehlschüsse prallen ab",
     date: "10. Oktober 2026",
