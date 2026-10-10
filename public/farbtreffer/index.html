@@ -182,7 +182,7 @@
       phase:'intro', round:0, score:0, lives:3, hits:0, streak:0, bestAtStart:0,
       recordTime:'medium', recordMode:'fine',
       seconds:TIME_MODES.medium.seconds, deadline:0, feedbackEnd:0, feedback:null, gunX:0.5, recoil:0,
-      balls:[], target:null, color:COLORS[0], shot:null, particles:[], paused:null, previousHue:null
+      balls:[], target:null, color:COLORS[0], shot:null, particles:[], pop:null, bounce:null, paused:null, previousHue:null
     };
     const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
     const random = (a,b) => a+Math.random()*(b-a);
@@ -420,7 +420,7 @@
     function returnToMenu() {
       clearInput(); stopAllSounds(); persistRecord();
       Object.assign(G,{phase:'intro',round:0,score:0,lives:3,hits:0,streak:0,seconds:TIME_MODES[timeMode].seconds,deadline:0,feedbackEnd:0,
-        feedback:null,gunX:0.5,recoil:0,shot:null,particles:[],paused:null,previousHue:null});
+        feedback:null,gunX:0.5,recoil:0,shot:null,particles:[],pop:null,bounce:null,paused:null,previousHue:null});
       paletteBag=[];
       G.color=COLORS[0]; generateBalls(G.color,true); updateHud(); showPanel('intro');
       $('hint').textContent='Unten ziehen · Loslassen = Schuss';
@@ -431,7 +431,7 @@
       G.round++; G.color=chooseHue(); generateBalls(G.color);
       const faster=G.hits>0 && secondsAfter(G.hits)<secondsAfter(G.hits-1);
       G.seconds=secondsAfter(G.hits);
-      G.phase='aim'; G.deadline=now+roundSeconds()*1000; G.feedback=null; G.shot=null; G.particles=[]; G.recoil=0;
+      G.phase='aim'; G.deadline=now+roundSeconds()*1000; G.feedback=null; G.shot=null; G.particles=[]; G.pop=null; G.bounce=null; G.recoil=0;
       $('hint').textContent=faster?'Schneller! Nur noch '+G.seconds.toFixed(1).replace('.',',')+' Sekunden pro Runde.':'Pistole ziehen · Loslassen = Schuss';
       updateHud();
       startRiser((G.deadline-performance.now())/1000);
@@ -452,11 +452,34 @@
       $('hint').textContent='Schuss unterwegs …';
       return true;
     }
-    function burst(x,y,color,success) {
-      if (reducedMotion) return;
-      for (let i=0;i<(success?22:12);i++) {
-        const angle=random(0,Math.PI*2), speed=random(40,165);
-        G.particles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed-30,life:random(0.35,0.7),max:0.7,size:random(1.6,4.5),color});
+    // The matching sphere bursts into droplets of its own shade plus a few bright sparks.
+    function popBall(ball) {
+      const p=ballPosition(ball);
+      G.pop={ball,age:0};
+      for (let i=0;i<34;i++) {
+        const angle=random(0,Math.PI*2), speed=random(60,290), start=random(0.15,0.85)*p.r;
+        const light=clamp(ball.lightness+random(-14,16),12,94);
+        G.particles.push({x:p.x+Math.cos(angle)*start,y:p.y+Math.sin(angle)*start,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed-45,
+          life:random(0.4,0.8),max:0.8,size:random(1.8,Math.max(3,p.r*0.2)),gravity:420,color:'hsl('+G.color.h+', '+G.color.s+'%, '+light.toFixed(1)+'%)'});
+      }
+      for (let i=0;i<10;i++) {
+        const angle=random(0,Math.PI*2), speed=random(180,380);
+        G.particles.push({x:p.x,y:p.y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,life:random(0.25,0.5),max:0.5,size:random(1,2.2),gravity:120,color:'#fff6d8'});
+      }
+    }
+    // A wrong sphere stays whole: the shot is reflected at the point of impact.
+    function bounceShot(ball) {
+      const p=ballPosition(ball), x=G.shot.x*W, y=G.shot.y;
+      const nx=(x-p.x)/(p.r+2.5), ny=(y-p.y)/(p.r+2.5);
+      // Reflection of the upward shot (0,-1) on the surface normal.
+      let vx=2*ny*nx, vy=2*ny*ny-1;
+      // A dead-centre hit would fly straight back into the muzzle; send it visibly aside.
+      if (Math.abs(vx)<0.2) vx=(nx<0?-1:nx>0?1:Math.random()<0.5?-1:1)*random(0.2,0.4);
+      const length=Math.hypot(vx,vy);
+      G.bounce={ball,age:0,x,y,vx:vx/length*640,vy:vy/length*640};
+      for (let i=0;i<8;i++) {
+        const angle=Math.atan2(ny,nx)+random(-1,1), speed=random(50,190);
+        G.particles.push({x,y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,life:random(0.15,0.35),max:0.35,size:random(1,2.2),gravity:180,color:'#fff3ca'});
       }
     }
     function finishRound(kind,hit,now) {
@@ -472,10 +495,10 @@
         G.score+=points;
         persistRecord();
       } else { G.lives--; G.streak=0; }
-      if (hit) { const p=ballPosition(hit); burst(p.x,p.y,hit.css,success); }
+      if (hit && !reducedMotion) { if (success) popBall(hit); else bounceShot(hit); }
       G.feedback={kind,hit,points};
       G.phase='feedback'; G.feedbackEnd=now+(success?850:1200); G.shot=null;
-      $('hint').textContent=success?'Genau getroffen! +'+points+' Punkte':kind==='time'?'Zeit abgelaufen. Die markierte Kugel war richtig.':kind==='miss'?'Vorbei. Die markierte Kugel war richtig.':'Diese Nuance war falsch. Die markierte Kugel war richtig.';
+      $('hint').textContent=success?'Genau getroffen! +'+points+' Punkte':kind==='time'?'Zeit abgelaufen. Die markierte Kugel war richtig.':kind==='miss'?'Vorbei. Die markierte Kugel war richtig.':'Abgeprallt – diese Nuance war falsch. Die markierte Kugel war richtig.';
       updateHud();
     }
     function endGame() {
@@ -531,7 +554,9 @@
       }
       if (G.phase!=='paused') {
         G.recoil=Math.max(0,G.recoil-dt*7);
-        for (const p of G.particles) { p.life-=dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=180*dt; }
+        for (const p of G.particles) { p.life-=dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=p.gravity*dt; }
+        if (G.pop) G.pop.age+=dt;
+        if (G.bounce) { const b=G.bounce; b.age+=dt; b.x+=b.vx*dt; b.y+=b.vy*dt; b.vy+=900*dt; }
         G.particles=G.particles.filter(p=>p.life>0);
       }
       draw(now);
@@ -556,6 +581,17 @@
       ctx.fillStyle=shade; ctx.fill();
       ctx.lineWidth=1; ctx.strokeStyle='rgba(255,255,255,0.13)'; ctx.stroke();
       ctx.beginPath(); ctx.ellipse(x-r*0.31,y-r*0.44,r*0.21,r*0.10,-0.5,0,Math.PI*2); ctx.fillStyle='rgba(255,255,255,0.15)'; ctx.fill();
+      ctx.restore();
+    }
+    function drawPop(p,age,color) {
+      ctx.save();
+      const swell=age/0.08, flash=age/0.18, wave=age/0.5;
+      if (swell<1) { ctx.globalAlpha=1-swell*0.5; drawSphere(p.x,p.y,p.r*(1+swell*0.22),color); }
+      if (flash<1) { ctx.globalAlpha=(1-flash)*0.6; ctx.beginPath(); ctx.arc(p.x,p.y,p.r*(0.7+flash*0.6),0,Math.PI*2); ctx.fillStyle='#fff8e6'; ctx.fill(); }
+      if (wave<1) {
+        const ease=1-(1-wave)*(1-wave);
+        ctx.globalAlpha=(1-wave)*0.85; ctx.beginPath(); ctx.arc(p.x,p.y,p.r*(1+ease*1.5),0,Math.PI*2); ctx.strokeStyle=color; ctx.lineWidth=1+4*(1-wave); ctx.stroke();
+      }
       ctx.restore();
     }
     function checkMark(x,y,size,color) {
@@ -622,10 +658,15 @@
         line(gunX-5,L.headerBottom+8,gunX+5,L.headerBottom+8,'#b5c1ac4d');
       }
       for (const ball of G.balls) {
-        const p=ballPosition(ball,L);
-        drawSphere(p.x,p.y,p.r,ball.css);
+        const p=ballPosition(ball,L), popped=G.pop && G.pop.ball===ball;
+        if (popped) drawPop(p,G.pop.age,ball.css);
+        else {
+          // A sphere that deflects the shot shudders briefly.
+          const shake=G.bounce && G.bounce.ball===ball?Math.sin(G.bounce.age*70)*3*Math.max(0,1-G.bounce.age/0.3):0;
+          drawSphere(p.x+shake,p.y,p.r,ball.css);
+        }
         if (G.feedback && ball.correct) {
-          ctx.beginPath(); ctx.arc(p.x,p.y,p.r+6,0,Math.PI*2); ctx.strokeStyle=G.feedback.kind==='correct'?'#d5e8c7':'#f3dab2'; ctx.lineWidth=1.6; ctx.stroke();
+          if (!popped) { ctx.beginPath(); ctx.arc(p.x,p.y,p.r+6,0,Math.PI*2); ctx.strokeStyle=G.feedback.kind==='correct'?'#d5e8c7':'#f3dab2'; ctx.lineWidth=1.6; ctx.stroke(); }
           checkMark(p.x,p.y+p.r+17,9,G.feedback.kind==='correct'?'#d5e8c7':'#f3dab2');
         }
         if (G.feedback && G.feedback.kind==='wrong' && G.feedback.hit===ball) {
@@ -634,7 +675,8 @@
         }
       }
       for(const p of G.particles) {
-        ctx.globalAlpha=clamp(p.life/p.max,0,1); ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill();
+        const left=clamp(p.life/p.max,0,1);
+        ctx.globalAlpha=left; ctx.fillStyle=p.color; ctx.beginPath(); ctx.arc(p.x,p.y,p.size*(0.4+0.6*left),0,Math.PI*2); ctx.fill();
       }
       ctx.globalAlpha=1;
       if (G.shot) {
@@ -649,6 +691,15 @@
       line(23,H-45,23,H-39,'#abb8a540'); line(W-23,H-45,W-23,H-39,'#abb8a540');
       textAt('ZIEHEN',15,H-18,7,'#9aa99b','left');
       textAt('LOSLASSEN = SCHUSS',W-15,H-18,7,'#9aa99b','right');
+      if (G.bounce && G.bounce.age<1) {
+        const b=G.bounce, speed=Math.hypot(b.vx,b.vy), tail=Math.min(22,b.age*speed);
+        const tx=b.x-b.vx/speed*tail, ty=b.y-b.vy/speed*tail;
+        ctx.globalAlpha=clamp((1-b.age)/0.35,0,1);
+        const trail=ctx.createLinearGradient(b.x,b.y,tx,ty); trail.addColorStop(0,'#fff4d5'); trail.addColorStop(1,'#fff4d500');
+        ctx.beginPath(); ctx.moveTo(b.x,b.y); ctx.lineTo(tx,ty); ctx.strokeStyle=trail; ctx.lineWidth=4; ctx.lineCap='round'; ctx.stroke();
+        ctx.beginPath(); ctx.arc(b.x,b.y,2.8,0,Math.PI*2); ctx.fillStyle='#fff3ca'; ctx.fill();
+        ctx.globalAlpha=1;
+      }
       drawGun(gunX,L.gunY,G.recoil);
       if (G.feedback) {
         const correct=G.feedback.kind==='correct';
@@ -659,9 +710,11 @@
     function resize() {
       const rect=canvas.getBoundingClientRect();
       if (rect.width<1 || rect.height<1) return;
-      const oldH=H;
+      const oldW=W, oldH=H;
       W=rect.width; H=rect.height; DPR=Math.min(window.devicePixelRatio||1,2);
       canvas.width=Math.round(W*DPR); canvas.height=Math.round(H*DPR);
+      // Droplets and the ricochet live in canvas pixels; after a new layout they would no longer match their sphere.
+      if (W!==oldW || H!==oldH) { G.particles=[]; G.bounce=null; }
       if (G.shot && oldH>0) { G.shot.y=G.shot.y/oldH*H; G.shot.previousY=G.shot.y; }
       setGun(G.gunX);
       draw(performance.now());
