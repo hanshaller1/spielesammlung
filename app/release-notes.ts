@@ -9,6 +9,21 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.26",
+    title: "Neue Spiele: Farbtreffer und Tuscheklinge",
+    date: "10. Oktober 2026",
+    changes: [
+      "Farbtreffer: Oben steht eine Farbvorlage, darunter fünf Kugeln im selben Farbton – nur eine trifft die Helligkeit genau. Pistole ziehen und loslassen oder mit Pfeiltasten und Leertaste spielen.",
+      "Drei Zeitstufen (4, 3 oder 2 Sekunden) und drei Helligkeitsabstände lassen sich frei kombinieren; Bestwerte zählen je Kombination, drei Versuche pro Partie.",
+      "Tuscheklinge: Im Ketten-Kampfspiel ziehst du Steine der fünf Wandlungen zu Ketten und bezwingst sieben Wächter – mit Geschichte, drei Schwierigkeitsgraden, den Tiefen samt Talenten und einem Endlosmodus.",
+      "Beide Spiele laufen als eigenständige Seiten, führen über einen Zurück-Knopf wieder zur Sammlung und haben eigene Startseitenbilder im Stil der übrigen Kacheln. Spielstände bleiben im Browser gespeichert.",
+    ],
+    commits: [
+      { id: "96e8b45", description: "Farbtreffer: Neues Farbvergleichsspiel ergänzen" },
+      { id: "09ff69f", description: "Tuscheklinge: Neues Ketten-Kampfspiel ergänzen" },
+    ],
+  },
+  {
     version: "0.4.25",
     title: "Hungriges Loch und Waren sortieren etwas schwieriger",
     date: "7. Oktober 2026",
