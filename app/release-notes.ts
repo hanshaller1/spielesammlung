@@ -9,6 +9,19 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.35",
+    title: "Tuscheklinge Duell: neue Helden und ein echtes Finale",
+    date: "14. Oktober 2026",
+    changes: [
+      "Alle zehn Helden sind neu gezeichnet und unterscheiden sich deutlich: eigene Gesichter, Augen, Frisuren und Kopfbedeckungen, eigene Kleidung und Waffen, vom Bogen über Hammer und Keule bis zur Naginata.",
+      "Am Ende eines Duells stürmt der siegreiche Held auf beiden Handys auf den unterlegenen zu und streckt ihn nieder. Der Todesstoß hängt vom Element ab: Dornenpfeil, Flammenschnitt, Bergsturz, Iai-Streich oder Flutwelle. Antippen überspringt die Szene.",
+    ],
+    commits: [
+      { id: "b00326b", description: "Tuscheklinge Duell: Helden neu gezeichnet, jede Figur mit eigener Silhouette" },
+      { id: "432f679", description: "Tuscheklinge Duell: Finale Szene, in der der Sieger den Verlierer niederstreckt" },
+    ],
+  },
+  {
     version: "0.4.34",
     title: "Tuscheklinge Duell: mehr Spektakel, mehr Platz",
     date: "14. Oktober 2026",
