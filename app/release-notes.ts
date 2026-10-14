@@ -9,6 +9,19 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.32",
+    title: "Tuscheklinge Duell: leichte Grafik",
+    date: "14. Oktober 2026",
+    changes: [
+      "Im Android-Browser bleibt oben kein schwarzer Balken mehr über dem Spiel.",
+      "Neuer Schalter „Grafik: voll / leicht“ im Titelmenü. Die leichte Grafik zeichnet mit 30 statt 60 Bildern pro Sekunde, mit weniger Hintergrund-Partikeln, geringerer Auflösung und ohne Leuchtschatten, damit das Duell auf älteren Handys flüssig läuft. Auf schwachen Geräten ist sie von Anfang an eingeschaltet.",
+    ],
+    commits: [
+      { id: "1c3f324", description: "Tuscheklinge Duell: Schwarzen Balken oben im Android-Browser entfernen" },
+      { id: "ab55d2e", description: "Tuscheklinge Duell: Schalter für leichte Grafik auf älteren Handys ergänzen" },
+    ],
+  },
+  {
     version: "0.4.31",
     title: "Neues Spiel: Tuscheklinge Duell",
     date: "14. Oktober 2026",
