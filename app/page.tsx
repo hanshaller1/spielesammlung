@@ -79,6 +79,13 @@ const games: Array<{
     description: "Führe den Pinsel durch die fünf Elemente und banne die Schatten ins Papier.",
     meta: "7 Stationen",
   },
+  {
+    href: sitePath("/tuscheklinge-duell/index.html"),
+    image: `${publicBasePath}/startseite/tuscheklinge-duell.svg`,
+    title: "Tuscheklinge Duell",
+    description: "Zwei Klingen, zwei Handys: Ziehe Ketten, entfessle Heldenkünste und besiege dein Gegenüber im 1 gegen 1.",
+    meta: "1 vs 1 · online",
+  },
 ];
 
 export default function Home() {
