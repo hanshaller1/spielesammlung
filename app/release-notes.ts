@@ -9,6 +9,21 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.31",
+    title: "Neues Spiel: Tuscheklinge Duell",
+    date: "14. Oktober 2026",
+    changes: [
+      "Tuscheklinge Duell: Zwei Spieler treten mit ihren Smartphones gegeneinander an. Ein vierstelliger Raumcode verbindet die Geräte, dann wird abwechselnd gezogen.",
+      "Zur Wahl stehen fünf Helden, einer pro Haltung, jeweils als Heldin oder Held. Jeder Held hat eine eigene Kunst, und der Spielername ist frei wählbar.",
+      "Jeder Spieler wählt seinen Schwierigkeitsgrad selbst: Auf Leicht sind diagonale Züge erlaubt, Mittel und Schwer haben etwas weniger Lebenspunkte und Schaden.",
+      "Die Startseite zeigt das Duell mit eigenem Bild aus zwei gekreuzten Klingen.",
+    ],
+    commits: [
+      { id: "59721c0", description: "Tuscheklinge Duell: Neues 1-gegen-1-Spiel für zwei Smartphones ergänzen" },
+      { id: "434fe6d", description: "Tuscheklinge Duell: Startseitenbild mit gekreuzten Klingen ergänzen" },
+    ],
+  },
+  {
     version: "0.4.30",
     title: "Bokujin ersetzt Tuscheklinge",
     date: "10. Oktober 2026",
