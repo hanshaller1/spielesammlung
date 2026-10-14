@@ -9,6 +9,20 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.34",
+    title: "Tuscheklinge Duell: mehr Spektakel, mehr Platz",
+    date: "14. Oktober 2026",
+    changes: [
+      "Der Kampfbildschirm ist auf dem Handy deutlich kompakter: Die Gegnerleiste ist schmal, die Kunst-Beschreibung erscheint beim Antippen. So passen Brett, Iai, Kunst und Timer auch auf kleine Bildschirme.",
+      "Statt der Element-Zeile zeigt ein Fünf-Wandlungen-Rad den Kreislauf: Holz oben, im Uhrzeigersinn Feuer, Erde, Metall, Wasser. Die doppelte Schwäche ist mit ×2 und rotem Pfeil markiert, das Element der laufenden Kette leuchtet mit.",
+      "Jede Kette blendet ein Band mit Held, Name und Schaden ein. Eine Heldenkunst füllt auf beiden Handys den Bildschirm mit Held, Schriftzeichen und Strahlen.",
+      "Sieg und Niederlage zeigen den eigenen Helden groß: mit Strahlen und Konfetti als Siegerin oder Sieger, bei Niederlage im aufsteigenden Tuschestrom.",
+    ],
+    commits: [
+      { id: "1f846c1", description: "Tuscheklinge Duell: Kompakteres Handy-Layout, Fünf-Wandlungen-Rad und Animationen für Zug, Kunst, Sieg und Niederlage" },
+    ],
+  },
+  {
     version: "0.4.33",
     title: "Tuscheklinge Duell: Musik pausiert im Hintergrund",
     date: "14. Oktober 2026",
