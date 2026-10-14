@@ -731,11 +731,11 @@ const SND = (() => {
   }
 
   function init() {
-    if (ctx) { if (ctx.state === 'suspended') { try { ctx.resume(); } catch (e) { } } return; }
+    if (ctx) { if (ctx.state !== 'running' && ctx.state !== 'closed' && !document.hidden) { try { ctx.resume(); } catch (e) { } } return; }
     if (!AC) return;
     try { ctx = new AC({ latencyHint: 'interactive' }); } catch (e) { try { ctx = new AC(); } catch (e2) { ctx = null; return; } }
     try { build(); } catch (e) { ctx = null; return; }
-    if (ctx.state === 'suspended') { try { ctx.resume(); } catch (e) { } }
+    if (document.hidden) { try { ctx.suspend(); } catch (e) { } } else if (ctx.state === 'suspended') { try { ctx.resume(); } catch (e) { } }
     nextT = ctx.currentTime + 0.1; step = 0;
     if (!timer) timer = setInterval(pump, 25);
   }
@@ -1166,6 +1166,8 @@ const SND = (() => {
 
   const S = {
     init, setMode,
+    pause() { if (ctx && ctx.state !== 'closed' && ctx.state !== 'suspended') { try { ctx.suspend(); } catch (e) { } } },
+    resume() { if (ctx && ctx.state !== 'closed' && ctx.state !== 'running' && !document.hidden) { try { ctx.resume(); } catch (e) { } } },
     setTheme(st) { st = st | 0; if (st < 0 || st > 4) return; wantTheme = st; if (mode === 'menu' || mode === 'off') theme = st; },
     setDanger(v) { danger = !!v; },
     setMuted(v) {
@@ -3548,7 +3550,10 @@ let CODEX_FROM = 'title';
 /* ---------------- Start ---------------- */
 function onResize() { BG.resize(); if (!$('#scr-battle').hidden) layout(); else { const fr = fcv.getBoundingClientRect(); const fd = Math.min(LITE ? 1 : 2, devicePixelRatio || 1); fcv.width = Math.round(fr.width * fd); fcv.height = Math.round(fr.height * fd); FX.dpr = fd; } }
 addEventListener('resize', onResize);
-document.addEventListener('visibilitychange', () => { if (!document.hidden && G.active) keepAwake(); });
+// Musik pausieren, sobald die Seite nicht mehr zu sehen ist (anderer Tab, andere App, Bildschirm aus)
+document.addEventListener('visibilitychange', () => { if (document.hidden) SND.pause(); else { SND.resume(); if (G.active) keepAwake(); } });
+addEventListener('pagehide', () => SND.pause());
+addEventListener('pageshow', () => SND.resume());
 onResize();
 if (document.fonts && document.fonts.load) document.fonts.load(`800 40px "Shippori Mincho B1"`, '木火土金水空').then(() => { if (G.active) buildSprites(); }).catch(() => {});
 requestAnimationFrame(frame);
