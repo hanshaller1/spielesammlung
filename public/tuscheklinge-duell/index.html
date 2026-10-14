@@ -568,6 +568,65 @@ html.lite .cut .lines,html.lite .endstage .rays,html.lite .cut.kunst .rays{anima
 .endtitle{top:3%;z-index:2;}
 .endstage.lost .endtitle b{font-size:clamp(24px,8.6vw,46px);letter-spacing:.08em;}
 .endtitle b{text-shadow:0 2px 0 #000,0 0 22px var(--c),3px 0 0 rgba(94,242,255,.7),-3px 0 0 rgba(255,63,158,.7);}
+
+/* ---- Finale ---- */
+.cut.fin{position:fixed;inset:0;z-index:70;pointer-events:auto;overflow:hidden;animation:finIn .35s both;}
+.cut.fin.out{animation:finOut .38s both;}
+.fin .bg{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 55%,color-mix(in srgb,var(--c) 32%,transparent),transparent 60%),radial-gradient(ellipse at 72% 55%,color-mix(in srgb,var(--l) 22%,transparent),transparent 55%),#05040b;}
+.fin .floor{position:absolute;left:-10%;right:-10%;top:66%;height:2px;background:linear-gradient(90deg,transparent,var(--c),transparent);box-shadow:0 0 18px var(--c);opacity:.7;}
+.fin{--fwW:min(44vw,34vh,300px);--flW:var(--fwW);--fwX:16%;--flX:16%;--fwY:66%;--flY:66%;--lx:calc(68vw - 1.6 * var(--fwW));--ly:-4%;}
+@media (orientation:portrait){.fin{--fwW:min(60vw,40vh,340px);--flW:min(46vw,30vh,260px);--fwX:3%;--flX:3%;--fwY:74%;--flY:47%;--lx:17vw;--ly:-9vh;}.fin .floor{display:none;}.fin .kj{top:24%!important;}}
+.fin .fw,.fin .fl{position:absolute;aspect-ratio:1;transform:translateY(-100%);}
+.fin .fw{left:var(--fwX);top:var(--fwY);width:var(--fwW);z-index:2;animation:fwIn .5s cubic-bezier(.2,.9,.2,1) both,fwLunge .9s .55s cubic-bezier(.6,0,.2,1) both;}
+.fin .fl{right:var(--flX);top:var(--flY);width:var(--flW);animation:flIn .5s cubic-bezier(.2,.9,.2,1) both;}
+.fin .hc{position:absolute;inset:0;width:100%;height:100%;border-radius:50%;}
+.fin .fw .hc{filter:drop-shadow(0 0 22px var(--c));}
+.fin .fl .hc{animation:flHit 2.6s .8s cubic-bezier(.3,.6,.3,1) both;}
+.fin.cutfx .fl .h1{clip-path:polygon(0 0,100% 0,100% 28%,0 72%);animation:half1 2.6s .8s cubic-bezier(.3,.6,.3,1) both;}
+.fin.cutfx .fl .h2{clip-path:polygon(0 72%,100% 28%,100% 100%,0 100%);animation:half2 2.6s .8s cubic-bezier(.3,.6,.3,1) both;}
+.fin .tag{position:absolute;left:0;right:0;top:100%;margin-top:8px;display:flex;flex-direction:column;align-items:center;text-align:center;line-height:1.15;}
+.fin .tag b{font-size:clamp(13px,3.6vw,18px);color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;}
+.fin .tag small{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--c);}
+.fin .fl .tag{animation:fadeOutLate 2.6s .8s both;}
+.fin .fl .tag small{color:var(--l);}
+.fin .impact{position:absolute;z-index:3;right:var(--flX);top:var(--flY);width:var(--flW);aspect-ratio:1;transform:translateY(-100%);pointer-events:none;}
+.fin .impact i{position:absolute;left:50%;top:50%;opacity:0;}
+/* Schnitt */
+.fin.fx-slash .impact i,.fin.fx-split .impact i{width:170%;height:5px;margin-left:-85%;border-radius:50%;background:linear-gradient(90deg,transparent,#fff 40%,var(--c) 60%,transparent);box-shadow:0 0 18px var(--c),0 0 40px var(--c);transform:rotate(-24deg) scaleX(0);animation:slashI .5s .8s cubic-bezier(.2,.9,.2,1) both;}
+.fin.fx-slash .impact i:nth-child(2){transform:rotate(-14deg);height:3px;animation-delay:.9s;}
+.fin.fx-split .impact i:nth-child(2){height:2px;animation-delay:.86s;}
+.fin.fx-slash .impact i:nth-child(3),.fin.fx-split .impact i:nth-child(3){display:none;}
+/* Pfeil */
+.fin.fx-arrow .impact i{width:40%;height:3px;margin-top:calc(-2px + var(--o,0px));background:linear-gradient(90deg,transparent,var(--c),#fff);box-shadow:0 0 14px var(--c);animation:arrowI .32s .62s cubic-bezier(.5,0,.9,.6) both;}
+.fin.fx-arrow .impact i:nth-child(2){--o:-26px;animation-delay:.68s;}
+.fin.fx-arrow .impact i:nth-child(3){--o:22px;animation-delay:.74s;}
+/* Beben */
+.fin.fx-quake .impact i{width:30%;aspect-ratio:1;margin:-15% 0 0 -15%;border-radius:50%;border:4px solid var(--c);box-shadow:0 0 30px var(--c),inset 0 0 20px var(--c);animation:ringI .9s .8s cubic-bezier(.2,.8,.2,1) both;}
+.fin.fx-quake .impact i:nth-child(2){animation-delay:.92s;}
+.fin.fx-quake .impact i:nth-child(3){width:36%;height:70%;margin:0 0 0 -18%;top:-70%;border:none;border-radius:6px;aspect-ratio:auto;background:linear-gradient(var(--c),color-mix(in srgb,var(--c) 30%,#000));clip-path:polygon(18% 0,82% 6%,100% 60%,74% 100%,20% 94%,0 44%);animation:rockI .32s .5s cubic-bezier(.6,0,1,.6) both,fadeOutLate 1.2s .82s both;}
+/* Welle */
+.fin.fx-wave .impact i{width:150%;height:55%;left:-120%;top:30%;border-radius:50% 50% 0 0;background:linear-gradient(color-mix(in srgb,var(--c) 70%,#fff),color-mix(in srgb,var(--c) 40%,transparent));box-shadow:0 0 40px var(--c);animation:waveI 1.1s .6s cubic-bezier(.3,.6,.3,1) both;}
+.fin.fx-wave .impact i:nth-child(2){top:50%;height:45%;opacity:.6;animation-delay:.72s;}
+.fin.fx-wave .impact i:nth-child(3){display:none;}
+.fin .kj{position:absolute;left:50%;top:36%;transform:translate(-50%,-50%);font-family:var(--f-kanji);font-size:min(60vw,44vh);line-height:1;color:var(--c);text-shadow:0 0 40px var(--c);mix-blend-mode:screen;animation:kStamp 2.4s 1s cubic-bezier(.2,.9,.2,1) both;pointer-events:none;}
+.fin .ftxt{position:absolute;z-index:4;left:0;right:0;bottom:max(7%,24px);display:flex;flex-direction:column;align-items:center;gap:4px;padding:0 16px;text-align:center;animation:fadeUp .6s 1.25s both;}
+.fin .ftxt b{font-family:var(--f-display);font-weight:400;font-size:clamp(26px,8.5vw,52px);letter-spacing:.08em;color:#fff;text-shadow:0 0 22px var(--c),3px 0 0 rgba(94,242,255,.6),-3px 0 0 rgba(255,63,158,.6);}
+.fin .ftxt span{font-size:14px;color:var(--muted);}
+@keyframes finIn{from{opacity:0}}
+@keyframes finOut{to{opacity:0}}
+@keyframes fwIn{from{transform:translate(-120%,-100%)}}
+@keyframes flIn{from{transform:translate(120%,-100%)}}
+@keyframes fwLunge{0%{translate:0 0}22%{translate:-4% 2%}45%{translate:var(--lx) var(--ly)}62%{translate:calc(var(--lx) * .85) calc(var(--ly) * .85)}100%{translate:4% 0}}
+@keyframes flHit{0%{transform:none;filter:brightness(3)}6%{transform:translateX(6%) rotate(4deg)}12%{transform:translateX(-3%)}100%{transform:translate(14%,22%) rotate(62deg);opacity:.35;filter:grayscale(1) brightness(.6)}}
+@keyframes half1{0%{transform:none;filter:brightness(3)}10%{transform:none;filter:none}100%{transform:translate(26%,-8%) rotate(18deg);opacity:.3;filter:grayscale(1)}}
+@keyframes half2{0%{transform:none;filter:brightness(3)}10%{transform:none;filter:none}100%{transform:translate(-8%,30%) rotate(-12deg);opacity:.3;filter:grayscale(1)}}
+@keyframes slashI{0%{opacity:1;transform:rotate(-24deg) scaleX(0)}40%{opacity:1;transform:rotate(-24deg) scaleX(1)}100%{opacity:0;transform:rotate(-24deg) scaleX(1.1)}}
+@keyframes arrowI{0%{opacity:0;transform:translateX(-260%)}20%{opacity:1}90%{opacity:1;transform:translateX(-30%)}100%{opacity:0;transform:translateX(-20%)}}
+@keyframes ringI{0%{opacity:1;transform:scale(.2)}100%{opacity:0;transform:scale(3.6,1.4)}}
+@keyframes rockI{0%{opacity:1;transform:translateY(-120%)}100%{opacity:1;transform:translateY(100%)}}
+@keyframes waveI{0%{opacity:0;transform:translateX(0) skewX(-20deg)}20%{opacity:.95}100%{opacity:0;transform:translateX(150%) skewX(-20deg)}}
+@keyframes fadeOutLate{0%,40%{opacity:1}100%{opacity:0}}
+html.lite .fin .fw .hc{filter:none;}
 </style>
 </head>
 <body>
@@ -3540,22 +3599,20 @@ async function victory() {
   if (G.over) return;
   G.over = true; G.state = 'over'; G.myTurn = false; G.timerMax = 0; G.opp.hp = Math.min(0, G.opp.hp);
   updateHUD(); updateTimerUI();
-  SND.win(); shake(18); flash(0.6);
-  const pc = portraitCenter();
-  for (let k = 0; k < 4; k++) burst(pc.x, pc.y, EL[HEROES[G.opp.hero].el].c, 30, 380, 4);
-  for (let k = 0; k <= 30; k++) { await sleep(16); G.opp.dead = k / 30; }
-  banner('SIEG', `${G.opp.name.toUpperCase()} FÄLLT`, '#62f5a5', '勝');
-  await sleep(1400);
+  SND.win(); shake(10); flash(0.4);
+  await sleep(450);
+  await finishScene(G.me, G.opp);
+  G.opp.dead = 1;
   endModal(true);
 }
 async function defeat() {
   if (G.over) return;
   G.over = true; G.state = 'over'; G.myTurn = false; G.timerMax = 0; G.me.hp = Math.min(0, G.me.hp);
   updateHUD(); updateTimerUI();
-  SND.lose(); glitch(); shake(20);
-  banner('NIEDERLAGE', `${G.opp.name.toUpperCase()} GEWINNT`, '#ff3a5c', '敗');
-  for (let k = 0; k <= 30; k++) { await sleep(16); G.me.dead = k / 30; }
-  await sleep(1300);
+  SND.lose(); glitch(); shake(12);
+  await sleep(450);
+  await finishScene(G.opp, G.me);
+  G.me.dead = 1;
   endModal(false);
 }
 function endModal(won) {
@@ -4045,6 +4102,57 @@ function mountEndHeroes(won) {
   if (s1) s1.appendChild(a); if (s2) s2.appendChild(b);
 }
 function clearCuts() { document.querySelectorAll('.cut').forEach(e => e.remove()); CUT.list = []; }
+
+/* ---- Finale: der Sieger streckt den Verlierer nieder (auf beiden Geräten gleich) ---- */
+const FINISH = [
+  { n: 'Dornenpfeil', k: '貫', v: 'durchbohrt', fx: 'arrow' },
+  { n: 'Flammenschnitt', k: '斬', v: 'zerschneidet', fx: 'slash' },
+  { n: 'Bergsturz', k: '砕', v: 'zermalmt', fx: 'quake' },
+  { n: 'Iai-Streich', k: '斬', v: 'teilt', fx: 'split' },
+  { n: 'Flutwelle', k: '濤', v: 'verschlingt', fx: 'wave' },
+];
+function finishScene(win, lose) {
+  return new Promise(res => {
+    const wel = HEROES[win.hero].el, F = FINISH[wel], col = EL[wel].c, lcol = EL[HEROES[lose.hero].el].c;
+    const cut = F.fx === 'slash' || F.fx === 'split';
+    const el = document.createElement('div');
+    el.className = `cut fin fx-${F.fx}${cut ? ' cutfx' : ''}`;
+    el.style.setProperty('--c', col); el.style.setProperty('--l', lcol);
+    el.innerHTML = `<div class="bg"></div><div class="floor"></div>
+      <div class="fw"><div class="tag"><b>${esc(win.name)}</b><small>${esc(heroName(win))}</small></div></div>
+      <div class="fl"><div class="tag"><b>${esc(lose.name)}</b><small>${esc(heroName(lose))}</small></div></div>
+      <div class="impact"><i></i><i></i><i></i></div><div class="kj">${F.k}</div>
+      <div class="ftxt"><b>${esc(F.n)}</b><span>${esc(win.name)} ${F.v} ${esc(lose.name)}</span></div>`;
+    const sz = LITE ? 200 : 300;
+    const a = heroCanvas(win, sz); a.className = 'hc';
+    el.querySelector('.fw').prepend(a);
+    const fl = el.querySelector('.fl');
+    const lp = { dead: 0, hit: 0 };
+    const mk = cls => { const c = heroCanvas(lose, sz); c.className = 'hc ' + cls; CUT.list[CUT.list.length - 1].p = Object.assign(CUT.list[CUT.list.length - 1].p, lp); return c; };
+    const b1 = mk('h1'); fl.prepend(b1);
+    const items = [CUT.list[CUT.list.length - 1]];
+    if (cut) { const b2 = mk('h2'); b1.after(b2); items.push(CUT.list[CUT.list.length - 1]); }
+    $('#app').appendChild(el);
+    let done = false;
+    const finish = () => { if (done) return; done = true; el.classList.add('out'); setTimeout(() => el.remove(), 380); res(); };
+    el.addEventListener('pointerdown', finish);
+    const at = (ms, f) => setTimeout(() => { if (!done && el.isConnected) f(); }, ms);
+    at(820, () => {
+      SND.iai(); flash(0.55); shake(16);
+      const r = fl.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height * 0.45;
+      for (let i = 0; i < (LITE ? 1 : 3); i++) burst(x, y, col, 26, 420, 4);
+      burst(x, y, lcol, LITE ? 14 : 30, 300, 3);
+      for (const it of items) it.p.hit = 1;
+    });
+    at(1000, () => {
+      SND.hurt();
+      const t0 = performance.now();
+      const step = () => { if (done) return; const q = Math.min(1, (performance.now() - t0) / 1100); for (const it of items) { it.p.dead = q * 0.55; it.p.hit = Math.max(0, 1 - q * 3); } if (q < 1) requestAnimationFrame(step); };
+      step();
+    });
+    at(3600, finish);
+  });
+}
 
 const TR = { cv: $('#titleRing'), t: 0 };
 function drawTitleRing(dt) {
