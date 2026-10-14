@@ -9,6 +9,17 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.33",
+    title: "Tuscheklinge Duell: Musik pausiert im Hintergrund",
+    date: "14. Oktober 2026",
+    changes: [
+      "Die Spielmusik verstummt, sobald du den Browser verlässt, den Tab wechselst oder den Bildschirm ausschaltest, und setzt erst wieder ein, wenn das Spiel wieder zu sehen ist. Sie startet damit auch nicht mehr, während du zum Beispiel Spotify hörst.",
+    ],
+    commits: [
+      { id: "49d2ed2", description: "Tuscheklinge Duell: Musik im Hintergrund und bei anderer Musik pausieren" },
+    ],
+  },
+  {
     version: "0.4.32",
     title: "Tuscheklinge Duell: leichte Grafik",
     date: "14. Oktober 2026",
