@@ -416,6 +416,13 @@ input{font:inherit;color:inherit;}
 }
 @media (max-width:420px){.heroes{gap:4px}.hcard .hn{font-size:10px}.hdetail{grid-template-columns:96px 1fr}.hdetail canvas{width:96px;height:96px}}
 @media (max-height:700px) and (max-width:959px){#mePortrait{width:36px;height:36px}#turnbar{padding:3px 8px}}
+
+/* Sparmodus (Grafik: sparsam) */
+html.lite .tf,html.lite #modal{backdrop-filter:none;}
+html.lite .btn.big,html.lite .tickin,html.lite #btnKunst.ready,html.lite #btnIai.ready,html.lite .pill.kready,html.lite #turnbar .dot{animation:none;}
+html.lite .hcard{transition:none;}
+.tsmall{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);width:min(calc(100vw - 32px),420px);}
+.tsmall .btn{white-space:nowrap;text-decoration:none;padding:8px 6px;letter-spacing:.04em;overflow:hidden;text-overflow:ellipsis;}
 </style>
 </head>
 <body>
@@ -435,7 +442,7 @@ input{font:inherit;color:inherit;}
       <p class="tagline">Zwei Klingen. Zwei Bretter. Fünf Wandlungen.</p>
       <div class="tmenu">
         <button class="btn big" id="btnStart">Zum Duell</button>
-        <div class="tsmall"><button class="btn ghost" id="tCodex">Regeln</button><button class="btn ghost" id="tSound">Ton: an</button><a class="btn ghost" href="../">← Hanna's Spiele</a></div>
+        <div class="tsmall"><button class="btn ghost" id="tCodex">Regeln</button><button class="btn ghost" id="tSound">Ton: an</button><button class="btn ghost" id="tLite" title="Weniger Effekte für ältere Handys">Grafik: voll</button><a class="btn ghost" href="../">← Alle Spiele</a></div>
       </div>
       <div class="boot" id="boot">Zwei Smartphones, ein Raumcode · Kopfhörer empfohlen</div>
     </div>
@@ -572,7 +579,8 @@ const N = 7, J = 5;
 const rnd = n => Math.floor(Math.random() * n);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const PREF_REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let REDUCED = PREF_REDUCED, LITE = false;   // LITE: Sparmodus für schwache Geräte
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 const EL = [
@@ -613,6 +621,10 @@ const RULE = { iai: 24, kunst: 6, ensoDmg: 12, ensoHeal: 8, inkPer: 4, wispDmg: 
 const SAVE_KEY = 'tuscheklinge.duell.v1';
 let save = { muted: false, name: '', hero: 0, gender: 'f', diff: 'normal' };
 try { const s = JSON.parse(localStorage.getItem(SAVE_KEY) || 'null'); if (s && typeof s === 'object') save = Object.assign(save, s); } catch (e) {}
+// Sparmodus: gespeicherte Wahl, sonst bei schwacher Hardware automatisch an
+LITE = typeof save.lite === 'boolean' ? save.lite : ((navigator.deviceMemory || 8) <= 2 || (navigator.hardwareConcurrency || 8) <= 4);
+REDUCED = PREF_REDUCED || LITE;
+document.documentElement.classList.toggle('lite', LITE);
 function writeSave() { try { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); } catch (e) {} }
 
 /* gemeinsame Zeichen-Helfer (vom Grafikpaket benutzt) */
@@ -1373,11 +1385,11 @@ const BG = (() => {
   const BANDS = 4, BA = [1, 0.6, 0.32, 0.13];   // Haarlinien: im Software-Rendering viel schneller als breite Striche
 
   function resize() {
-    const r = cv.getBoundingClientRect(); dpr = Math.min(1.5, devicePixelRatio || 1);
+    const r = cv.getBoundingClientRect(); dpr = Math.min(LITE ? 1 : 1.5, devicePixelRatio || 1);
     W = r.width || innerWidth; H = r.height || innerHeight;
     cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
     cx = W / 2; cy = H * 0.5; S = Math.min(W, H);
-    const n = Math.round(Math.min(1000, W * H / 2200) * (REDUCED ? 0.35 : 1));
+    const n = Math.round(Math.min(1000, W * H / 2200) * (LITE ? 0.18 : REDUCED ? 0.35 : 1));
     parts = Array.from({ length: n }, () => { const p = spawn({ h: new Float32Array(HN * 2) }); p.life = Math.random() * p.max; return p; });
     // Vorlauf, damit die Spuren beim Start schon fließen
     for (let i = 0; i < HN; i++) { t += HS; for (const p of parts) stepParticle(p, HS); }
@@ -2380,14 +2392,14 @@ function layout() {
   const wrap = $('#boardWrap').getBoundingClientRect();
   const desk = matchMedia('(min-width:960px) and (min-height:560px)').matches;
   const size = Math.max(160, Math.floor(Math.min(wrap.width, wrap.height - (desk ? 34 : 0))));
-  L.dpr = Math.min(2.5, devicePixelRatio || 1);
+  L.dpr = Math.min(LITE ? 1.5 : 2.5, devicePixelRatio || 1);
   L.size = size; bcv.style.width = bcv.style.height = size + 'px';
   const off = (wrap.height - size) / 2, pv = $('#preview');
   if (off > 50) { pv.style.top = (off - 46) + 'px'; pv.style.transform = 'translateX(-50%)'; } else { pv.style.top = ''; pv.style.transform = ''; }
   bcv.width = bcv.height = Math.round(size * L.dpr);
   const pad = size * 0.03; L.S = (size - pad * 2) / N; L.ox = pad; L.oy = pad;
   buildSprites();
-  const fr = fcv.getBoundingClientRect(); const fd = Math.min(2, devicePixelRatio || 1);
+  const fr = fcv.getBoundingClientRect(); const fd = Math.min(LITE ? 1 : 2, devicePixelRatio || 1);
   fcv.width = Math.round(fr.width * fd); fcv.height = Math.round(fr.height * fd); FX.dpr = fd;
 }
 function cellCenterClient(x, y) {
@@ -2466,7 +2478,7 @@ function drawBoard() {
     g.globalAlpha = 1;
     if (c.wisp) drawWisp(g, cx, cy, S, c);
     if (mine && !G.dragging && G.state === 'idle' && G.hover && G.hover.x === x && G.hover.y === y && isFree(c)) { g.lineWidth = 2; g.strokeStyle = 'rgba(255,255,255,.75)'; rr(g, px + S * 0.05, py + S * 0.05, S * 0.9, S * 0.9, S * 0.21); g.stroke(); }
-    if (inCh) { g.lineWidth = 2.5; g.strokeStyle = mine ? '#fff' : '#ffb3d8'; g.shadowColor = g.strokeStyle; g.shadowBlur = 12; rr(g, px + S * 0.08, py + S * 0.08, S * 0.84, S * 0.84, S * 0.2); g.stroke(); g.shadowBlur = 0; }
+    if (inCh) { g.lineWidth = 2.5; g.strokeStyle = mine ? '#fff' : '#ffb3d8'; g.shadowColor = g.strokeStyle; g.shadowBlur = LITE ? 0 : 12; rr(g, px + S * 0.08, py + S * 0.08, S * 0.84, S * 0.84, S * 0.2); g.stroke(); g.shadowBlur = 0; }
     else if (valid.has(y * 7 + x)) { g.lineWidth = 2; g.strokeStyle = `rgba(255,255,255,${0.45 + 0.4 * Math.sin(T * 8)})`; rr(g, px + S * 0.06, py + S * 0.06, S * 0.88, S * 0.88, S * 0.2); g.stroke(); }
     if (hintSet && hintSet.has(y * 7 + x) && !G.dragging) { g.lineWidth = 2; g.setLineDash([5, 4]); g.lineDashOffset = -T * 20; g.strokeStyle = '#ffd166'; rr(g, px + S * 0.04, py + S * 0.04, S * 0.92, S * 0.92, S * 0.22); g.stroke(); g.setLineDash([]); }
     if (c.flash > 0) { g.globalCompositeOperation = 'lighter'; g.globalAlpha = c.flash; g.fillStyle = '#fff'; rr(g, px + S * 0.1, py + S * 0.1, S * 0.8, S * 0.8, S * 0.2); g.fill(); g.globalAlpha = 1; g.globalCompositeOperation = 'source-over'; }
@@ -2478,7 +2490,7 @@ function drawBoard() {
   if (chain.length) {
     const pts = chain.map(p => [L.ox + (p.x + 0.5) * S, L.oy + (p.y + 0.5) * S]);
     g.lineCap = 'round'; g.lineJoin = 'round';
-    g.shadowColor = mine ? '#fff' : '#ff3f9e'; g.shadowBlur = 18; g.strokeStyle = mine ? 'rgba(255,255,255,.9)' : 'rgba(255,170,215,.9)'; g.lineWidth = S * 0.13;
+    g.shadowColor = mine ? '#fff' : '#ff3f9e'; g.shadowBlur = LITE ? 0 : 18; g.strokeStyle = mine ? 'rgba(255,255,255,.9)' : 'rgba(255,170,215,.9)'; g.lineWidth = S * 0.13;
     g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); g.stroke(); g.shadowBlur = 0;
     const R = chainCalc(chain), target = mine ? G.opp : G.me;
     const types = chain.map(p => G.grid[p.y][p.x] ? G.grid[p.y][p.x].t : 0);
@@ -2567,7 +2579,7 @@ function drawFx(dt) {
     const s = FX.slashes[i]; s.t += dt; if (s.t > 0.7) { FX.slashes.splice(i, 1); continue; }
     const p = Math.min(1, s.t / 0.12), fade = 1 - Math.max(0, (s.t - 0.12) / 0.58);
     const x1 = s.x0 + (s.x1 - s.x0) * p;
-    g.globalAlpha = fade; g.strokeStyle = '#fff'; g.lineWidth = 3 + 10 * fade; g.shadowColor = '#ff3f9e'; g.shadowBlur = 30;
+    g.globalAlpha = fade; g.strokeStyle = '#fff'; g.lineWidth = 3 + 10 * fade; g.shadowColor = '#ff3f9e'; g.shadowBlur = LITE ? 0 : 30;
     g.beginPath(); g.moveTo(s.x0, s.y - 3); g.lineTo(x1, s.y + 3); g.stroke(); g.shadowBlur = 0;
     g.strokeStyle = '#ff3f9e'; g.lineWidth = 22 * fade; g.globalAlpha = fade * 0.3; g.beginPath(); g.moveTo(s.x0, s.y); g.lineTo(x1, s.y); g.stroke();
   }
@@ -3241,10 +3253,12 @@ async function duelMenu() {
    SCHLEIFE
    ===================================================================== */
 let lastNow = performance.now(), frameN = 0;
+let liteSkip = 0;
 function frame(now) {
   requestAnimationFrame(frame);
+  if (LITE && (++liteSkip & 1)) return;   // Sparmodus: 30 statt 60 Bilder pro Sekunde
   const dt = Math.min(0.05, (now - lastNow) / 1000); lastNow = now; T += dt; frameN++;
-  BG.draw(dt);
+  if (!LITE || !(frameN & 1)) BG.draw(LITE ? dt * 2 : dt);   // Hintergrund im Sparmodus mit 15 Bildern
   const battle = !$('#scr-battle').hidden;
   if (battle && G.grid && G.me) {
     for (const r of G.grid) for (const c of r) {
@@ -3278,8 +3292,7 @@ function frame(now) {
     if (G.shake > 0) { const s = G.shake; $('#scr-battle').style.transform = `translate(${(Math.random() - 0.5) * s}px,${(Math.random() - 0.5) * s}px)`; G.shake = Math.max(0, G.shake - dt * 40); if (G.shake === 0) $('#scr-battle').style.transform = ''; }
     G.opp.hit = Math.max(0, G.opp.hit - dt * 2.5); G.me.hit = Math.max(0, G.me.hit - dt * 2.5);
     G.me.low = G.me.hp < G.me.maxhp * 0.3;
-    drawHero(pctx, pcv.width, G.opp, T);
-    drawHero(mctx, mcv.width, G.me, T);
+    if (!LITE || !(frameN & 1)) { drawHero(pctx, pcv.width, G.opp, T); drawHero(mctx, mcv.width, G.me, T); }
     drawBoard();
   }
   G.tPrev = now;
@@ -3312,6 +3325,12 @@ function modal(html) {
   });
 }
 function hideModal() { $('#modal').hidden = true; if (modalRes) { const r = modalRes; modalRes = null; r('closed'); } }
+function setLite(on) {
+  LITE = on; REDUCED = PREF_REDUCED || on; save.lite = on; writeSave();
+  document.documentElement.classList.toggle('lite', on);
+  $('#tLite').textContent = 'Grafik: ' + (on ? 'leicht' : 'voll');
+  onResize();
+}
 function toggleSound() { save.muted = !save.muted; writeSave(); SND.setMuted(save.muted); $('#tSound').textContent = 'Ton: ' + (save.muted ? 'aus' : 'an'); }
 
 /* ---- VS-Einblendung ---- */
@@ -3454,7 +3473,7 @@ $('#btnLobbyCopy').addEventListener('click', ev => {
 const TR = { cv: $('#titleRing'), t: 0 };
 function drawTitleRing(dt) {
   const cv = TR.cv, r = cv.getBoundingClientRect(); if (!r.width) return;
-  const d = Math.min(2, devicePixelRatio || 1), W = Math.round(r.width * d);
+  const d = Math.min(LITE ? 1 : 2, devicePixelRatio || 1), W = Math.round(r.width * d);
   if (cv.width !== W) { cv.width = cv.height = W; }
   const g = cv.getContext('2d'); TR.t += dt; const t = TR.t;
   g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, W, W);
@@ -3512,6 +3531,8 @@ function drawTitleRing(dt) {
   const h = $('#tLogo'); const txt = h.textContent; h.textContent = '';
   [...txt].forEach((ch, i) => { const sp = document.createElement('span'); sp.textContent = ch; sp.style.animationDelay = (0.25 + i * 0.07) + 's'; h.appendChild(sp); });
   $('#tSound').textContent = 'Ton: ' + (save.muted ? 'aus' : 'an');
+  $('#tLite').textContent = 'Grafik: ' + (LITE ? 'leicht' : 'voll');
+  $('#tLite').addEventListener('click', () => { SND.init(); setLite(!LITE); SND.ui(); });
   $('#tSound').addEventListener('click', () => { SND.init(); toggleSound(); SND.ui(); });
   $('#tCodex').addEventListener('click', () => { SND.init(); SND.ui(); CODEX_FROM = $('#scr-setup').hidden ? 'title' : 'setup'; showScreen('codex'); $('#scr-codex').scrollTop = 0; });
   $('#btnCodexBack').addEventListener('click', () => { SND.ui(); if (CODEX_FROM === 'setup') showSetup(); else showScreen('title'); });
@@ -3525,7 +3546,7 @@ function drawTitleRing(dt) {
 let CODEX_FROM = 'title';
 
 /* ---------------- Start ---------------- */
-function onResize() { BG.resize(); if (!$('#scr-battle').hidden) layout(); else { const fr = fcv.getBoundingClientRect(); const fd = Math.min(2, devicePixelRatio || 1); fcv.width = Math.round(fr.width * fd); fcv.height = Math.round(fr.height * fd); FX.dpr = fd; } }
+function onResize() { BG.resize(); if (!$('#scr-battle').hidden) layout(); else { const fr = fcv.getBoundingClientRect(); const fd = Math.min(LITE ? 1 : 2, devicePixelRatio || 1); fcv.width = Math.round(fr.width * fd); fcv.height = Math.round(fr.height * fd); FX.dpr = fd; } }
 addEventListener('resize', onResize);
 document.addEventListener('visibilitychange', () => { if (!document.hidden && G.active) keepAwake(); });
 onResize();
