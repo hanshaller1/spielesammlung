@@ -423,6 +423,151 @@ html.lite .btn.big,html.lite .tickin,html.lite #btnKunst.ready,html.lite #btnIai
 html.lite .hcard{transition:none;}
 .tsmall{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);width:min(calc(100vw - 32px),420px);}
 .tsmall .btn{white-space:nowrap;text-decoration:none;padding:8px 6px;letter-spacing:.04em;overflow:hidden;text-overflow:ellipsis;}
+
+/* ---- Kampf: Rad statt Element-Zeile, kompakt für kleine Handys ---- */
+#wheel{display:block;width:96px;height:96px;flex:none;align-self:center;}
+.pmain{display:flex;flex-direction:column;gap:6px;min-width:0;}
+.enemy{cursor:pointer;}
+@media (max-width:959px),(max-height:559px){
+  #scr-battle{padding:6px 10px 8px;}
+  .bwrap{gap:6px;}
+  .enemy{gap:8px;padding:6px 8px;align-items:center;}
+  #portrait{width:52px;height:52px;}
+  .einfo{gap:4px;}
+  .ename{flex-wrap:nowrap;min-width:0;gap:6px;}
+  .ename span{font-size:14px;white-space:nowrap;}
+  .ename small{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+  .bar{height:12px;}
+  .erow{flex-wrap:nowrap;overflow:hidden;font-size:11px;gap:4px;}
+  .erow .pill{padding:1px 6px;}
+  .erow .pill .k{font-size:13px;}
+  .ability{display:none;}
+  .enemy.open .ability{display:block;grid-column:1 / -1;font-size:12px;}
+  #btnPause{width:34px;height:34px;align-self:center;}
+  #turnbar{padding:3px 8px;font-size:11px;}
+  .player{display:grid;grid-template-columns:auto minmax(0,1fr);gap:6px 10px;padding:6px 8px;align-items:center;}
+  #mePortrait{width:30px;height:30px;}
+  .mehead{gap:8px;}
+  .mename b{font-size:13px;}
+  .mename small{font-size:10px;}
+  .pmain{gap:5px;}
+  .prow label{display:none;}
+  .actbtn{padding:4px 8px;column-gap:6px;}
+  .actbtn .k{font-size:19px;}
+  #timer{width:42px;height:42px;}
+}
+@media (max-width:480px){
+  .actbtn{grid-template-columns:auto 1fr;grid-template-rows:auto;}
+  .actbtn .k{grid-row:auto;}
+  .actbtn small{display:none;}
+  .actbtn .bar{height:10px;}
+  .erow .pdiff{display:none;}
+}
+@media (max-width:959px) and (max-height:620px),(max-height:559px){
+  #portrait{width:44px;height:44px;}
+  #turnbar{padding:2px 8px;}
+  .mename small{display:none;}
+}
+@media (min-width:960px) and (min-height:560px){
+  #boardWrap{grid-row:1 / 3;}
+  .player{display:flex;flex-direction:column;}
+  #wheel{width:min(190px,22vh);height:min(190px,22vh);order:2;}
+  .pmain{order:1;gap:14px;}
+  .side-extra{order:3;}
+}
+
+/* ---- Zug-Einblendung ---- */
+.cut{position:absolute;pointer-events:none;z-index:47;}
+.cut.strike{left:0;right:0;top:34%;height:clamp(96px,19vh,150px);}
+.cut.strike .band{position:absolute;inset:0;display:flex;align-items:center;gap:12px;padding:0 6%;overflow:hidden;
+  background:linear-gradient(90deg,rgba(6,5,12,.0),rgba(6,5,12,.88) 12%,rgba(6,5,12,.88) 88%,rgba(6,5,12,0));
+  border-top:2px solid var(--c);border-bottom:2px solid var(--c);box-shadow:0 0 30px -6px var(--c),inset 0 0 40px -10px var(--c);
+  transform:skewY(-6deg);animation:bandIn 1.2s cubic-bezier(.2,.9,.2,1) forwards;}
+.cut.strike.theirs .band{animation-name:bandInR;border-color:var(--opp);}
+.cut.strike .lines{position:absolute;inset:0;opacity:.35;background:repeating-linear-gradient(90deg,transparent 0 22px,var(--c) 22px 24px,transparent 24px 60px);animation:lines .35s linear infinite;}
+.cut.strike.theirs .lines{animation-direction:reverse;}
+.cut.strike .hero{position:relative;height:118%;aspect-ratio:1;flex:none;transform:skewY(6deg);filter:drop-shadow(0 0 14px var(--c));animation:heroPop 1.2s cubic-bezier(.2,.9,.2,1) both;}
+.cut.strike .who{position:relative;display:flex;flex-direction:column;gap:2px;transform:skewY(6deg);min-width:0;}
+.cut.strike .who b{font-family:var(--f-display);font-weight:400;font-size:clamp(16px,5vw,26px);letter-spacing:.06em;color:#fff;text-shadow:0 0 12px var(--c);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cut.strike .who small{font-size:12px;color:var(--c);letter-spacing:.12em;text-transform:uppercase;}
+.cut.strike .num{position:relative;margin-left:auto;display:flex;flex-direction:column;align-items:flex-end;transform:skewY(6deg);}
+.cut.strike .num span{font-family:var(--f-display);font-size:clamp(38px,13vw,72px);line-height:1;color:#fff;text-shadow:0 0 20px var(--c),3px 0 0 rgba(94,242,255,.6),-3px 0 0 rgba(255,63,158,.6);animation:numIn .5s .15s cubic-bezier(.2,.9,.2,1.4) both;}
+.cut.strike .num span::before{content:"−";}
+.cut.strike .num small{font-size:11px;letter-spacing:.16em;color:var(--muted);text-transform:uppercase;}
+.cut.strike.theirs .band{flex-direction:row-reverse;}
+.cut.strike.theirs .num{margin-left:0;margin-right:auto;align-items:flex-start;}
+.cut.strike.theirs .who{align-items:flex-end;text-align:right;}
+@keyframes bandIn{0%{transform:skewY(-6deg) translateX(-110%)}16%{transform:skewY(-6deg) translateX(0)}78%{transform:skewY(-6deg) translateX(3%);opacity:1}100%{transform:skewY(-6deg) translateX(110%);opacity:0}}
+@keyframes bandInR{0%{transform:skewY(-6deg) translateX(110%)}16%{transform:skewY(-6deg) translateX(0)}78%{transform:skewY(-6deg) translateX(-3%);opacity:1}100%{transform:skewY(-6deg) translateX(-110%);opacity:0}}
+@keyframes lines{to{background-position:60px 0}}
+@keyframes heroPop{0%{transform:skewY(6deg) scale(.6)}25%{transform:skewY(6deg) scale(1.08)}40%{transform:skewY(6deg) scale(1)}}
+@keyframes numIn{from{transform:scale(2.4);opacity:0}}
+
+/* ---- Kunst-Einblendung ---- */
+.cut.kunst{inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;overflow:hidden;
+  background:radial-gradient(ellipse at 50% 42%,color-mix(in srgb,var(--c) 35%,rgba(6,5,12,.7)),rgba(6,5,12,.96) 70%);animation:kFade 2.3s ease forwards;}
+.cut.kunst .rays{position:absolute;left:50%;top:42%;width:240vmax;height:240vmax;transform:translate(-50%,-50%);opacity:.35;
+  background:repeating-conic-gradient(from 0deg,var(--c) 0deg 4deg,transparent 4deg 18deg);animation:raysSpin 2.3s linear forwards;
+  -webkit-mask:radial-gradient(circle,#000 0,transparent 45%);mask:radial-gradient(circle,#000 0,transparent 45%);}
+.cut.kunst .ring{position:absolute;left:50%;top:42%;width:min(70vw,46vh);aspect-ratio:1;border-radius:50%;transform:translate(-50%,-50%);border:3px solid var(--c);box-shadow:0 0 40px var(--c),inset 0 0 40px var(--c);animation:ringOut 1.4s .2s cubic-bezier(.2,.8,.2,1) both;}
+.cut.kunst .hero{position:relative;width:min(58vw,36vh,320px);aspect-ratio:1;filter:drop-shadow(0 0 26px var(--c));animation:kHero 2.3s cubic-bezier(.2,.9,.2,1) both;}
+.cut.kunst .kj{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);font-family:var(--f-kanji);font-size:min(62vw,40vh);line-height:1;color:var(--c);opacity:.0;text-shadow:0 0 40px var(--c);animation:kStamp 2.3s cubic-bezier(.2,.9,.2,1) both;mix-blend-mode:screen;}
+.cut.kunst .txt{position:relative;display:flex;flex-direction:column;align-items:center;gap:2px;text-align:center;padding:0 16px;animation:fadeUp .6s .35s both;}
+.cut.kunst .txt small{font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:var(--c);}
+.cut.kunst .txt b{font-family:var(--f-display);font-weight:400;font-size:clamp(26px,9vw,52px);letter-spacing:.08em;color:#fff;text-shadow:0 0 22px var(--c),3px 0 0 rgba(94,242,255,.6),-3px 0 0 rgba(255,63,158,.6);}
+.cut.kunst .txt span{font-size:13px;color:var(--muted);}
+@keyframes kFade{0%{opacity:0}8%{opacity:1}80%{opacity:1}100%{opacity:0}}
+@keyframes raysSpin{from{transform:translate(-50%,-50%) rotate(0)}to{transform:translate(-50%,-50%) rotate(40deg)}}
+@keyframes ringOut{from{transform:translate(-50%,-50%) scale(.2);opacity:1}to{transform:translate(-50%,-50%) scale(1.8);opacity:0}}
+@keyframes kHero{0%{transform:translateY(40px) scale(.7);opacity:0}18%{transform:none;opacity:1}85%{transform:scale(1.04);opacity:1}100%{transform:scale(1.15);opacity:0}}
+@keyframes kStamp{0%{transform:translate(-50%,-50%) scale(3);opacity:0}22%{transform:translate(-50%,-50%) scale(1);opacity:.55}80%{opacity:.4}100%{transform:translate(-50%,-50%) scale(1.1);opacity:0}}
+
+/* ---- Sieg und Niederlage ---- */
+.mbox.endbox{padding:0 0 18px;gap:10px;overflow-x:hidden;}
+.mbox.endbox > :not(.endstage){margin-left:18px;margin-right:18px;}
+.endstage{position:relative;height:min(46vh,330px);overflow:hidden;border-bottom:1px solid var(--line);
+  background:radial-gradient(ellipse at 50% 60%,color-mix(in srgb,var(--c) 30%,transparent),transparent 70%);}
+.endstage.lost{background:radial-gradient(ellipse at 50% 60%,rgba(255,58,92,.22),transparent 70%);}
+.endstage .rays{position:absolute;left:50%;top:58%;width:200%;aspect-ratio:1;transform:translate(-50%,-50%);opacity:.3;
+  background:repeating-conic-gradient(from 0deg,var(--c) 0deg 5deg,transparent 5deg 20deg);animation:endSpin 24s linear infinite;
+  -webkit-mask:radial-gradient(circle,#000 0,transparent 50%);mask:radial-gradient(circle,#000 0,transparent 50%);}
+.endstage.lost .rays{background:repeating-conic-gradient(from 0deg,#ff3a5c 0deg 2deg,transparent 2deg 24deg);opacity:.18;}
+.endhero{position:absolute;left:50%;bottom:-4%;width:min(78%,300px);aspect-ratio:1;transform:translateX(-50%);animation:endRise 1.1s cubic-bezier(.2,.9,.2,1) both;}
+.endhero canvas,.endfallen canvas{width:100%;height:100%;display:block;}
+.endstage.won .endhero canvas{filter:drop-shadow(0 0 24px var(--c));}
+.endfallen{position:absolute;right:4%;bottom:4%;width:min(24%,96px);aspect-ratio:1;filter:grayscale(.85) brightness(.7);opacity:.85;animation:endFall 1.2s .5s ease both;}
+.endstage.won .endfallen{left:4%;right:auto;}
+.endtitle{position:absolute;left:0;right:0;top:6%;display:flex;flex-direction:column;align-items:center;}
+.endtitle small{font-family:var(--f-kanji);font-size:clamp(30px,10vw,52px);line-height:1;color:var(--c);text-shadow:0 0 20px var(--c);animation:fadeUp .8s .2s both;}
+.endstage.lost .endtitle small{color:#ff3a5c;text-shadow:0 0 20px #ff3a5c;}
+.endtitle b{font-family:var(--f-display);font-weight:400;font-size:clamp(30px,10vw,54px);letter-spacing:.14em;color:#fff;text-shadow:0 0 22px var(--c),3px 0 0 rgba(94,242,255,.7),-3px 0 0 rgba(255,63,158,.7);animation:vsPop .7s .35s both;}
+.endstage.lost .endtitle b{text-shadow:0 0 22px #ff3a5c,3px 0 0 rgba(94,242,255,.5),-3px 0 0 rgba(255,63,158,.7);}
+.endstage .fall i{position:absolute;top:-8%;width:7px;height:12px;border-radius:2px;opacity:0;animation:petal 3s linear infinite;}
+.endstage.lost .fall i{width:3px;height:26px;border-radius:2px;background:linear-gradient(transparent,#05030a 30%,#000)!important;animation-name:inkdrop;}
+.endname{margin:0;font-size:15px;letter-spacing:.06em;}
+.endname b{font-family:var(--f-display);font-weight:400;color:var(--c,#fff);}
+@keyframes endSpin{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes endRise{from{transform:translateX(-50%) translateY(30%) scale(.8);opacity:0}}
+@keyframes endFall{from{transform:translateY(-30px) rotate(-12deg);opacity:0}}
+@keyframes petal{0%{transform:translateY(0) rotate(0);opacity:0}10%{opacity:.9}100%{transform:translateY(46vh) translateX(30px) rotate(540deg);opacity:0}}
+@keyframes inkdrop{0%{transform:translateY(0);opacity:0}10%{opacity:.8}100%{transform:translateY(48vh);opacity:.6}}
+.mbox.endbox .stats{grid-template-columns:auto auto auto auto;gap:4px 12px;font-size:12px;margin-top:0;margin-bottom:0;}
+html.lite .cut .lines,html.lite .endstage .rays,html.lite .cut.kunst .rays{animation:none;}
+@media (prefers-reduced-motion:reduce){.cut.strike .band{animation-duration:1.6s}.endstage .rays{animation:none}}
+.actbtn .bar{width:100%;min-width:24px;}
+.cut.kunst .hero{border-radius:50%;}
+.cut.kunst .rays{opacity:.22;}
+.cut.strike .lines{opacity:.18;}
+.actbtn .k{white-space:nowrap;}
+.endhero{width:min(64%,250px);bottom:3%;}
+.endhero canvas{border-radius:50%;box-shadow:0 0 0 2px var(--c),0 0 40px -6px var(--c);}
+.endstage.lost .endhero canvas{box-shadow:0 0 0 2px #ff3a5c,0 0 40px -8px #ff3a5c;filter:grayscale(.5);}
+.endfallen{width:min(22%,84px);filter:none;opacity:1;}
+.endfallen canvas{border-radius:50%;box-shadow:0 0 0 1px var(--line);}
+.endstage.won .endfallen{filter:grayscale(.8) brightness(.85);}
+.endtitle{top:3%;z-index:2;}
+.endstage.lost .endtitle b{font-size:clamp(24px,8.6vw,46px);letter-spacing:.08em;}
+.endtitle b{text-shadow:0 2px 0 #000,0 0 22px var(--c),3px 0 0 rgba(94,242,255,.7),-3px 0 0 rgba(255,63,158,.7);}
 </style>
 </head>
 <body>
@@ -536,14 +681,16 @@ html.lite .hcard{transition:none;}
         <div id="preview"></div>
         <div id="viewTag"></div>
       </div>
-      <div id="legend" aria-label="Elemente"></div>
       <footer class="player">
+        <canvas id="wheel" role="img" aria-label="Kreislauf der fünf Wandlungen: Holz, Feuer, Erde, Metall, Wasser"></canvas>
+        <div class="pmain">
         <div class="mehead"><canvas id="mePortrait" width="160" height="160"></canvas><div class="mename"><b id="meName"></b><small id="meTitle"></small></div><div id="meChips"></div></div>
         <div class="prow"><label>LP</label><div class="bar php" id="pHpBar"><i class="ghost" id="pHpGhost"></i><i class="fill" id="pHpFill"></i><b id="pHpTxt"></b></div></div>
         <div class="prow acts">
           <button id="btnIai" class="actbtn" disabled><span class="k">居合</span><div class="bar iaibar"><i id="iaiFill"></i></div><small id="iaiTxt"></small></button>
           <button id="btnKunst" class="actbtn" disabled><span class="k" id="kunstK">泉</span><div class="bar kbar"><i id="kunstFill"></i></div><small id="kunstTxt"></small></button>
           <div id="timer"><svg viewBox="0 0 44 44"><circle class="tbg" cx="22" cy="22" r="19"></circle><circle class="tfg" id="timerRing" cx="22" cy="22" r="19" stroke-dasharray="119.4" stroke-dashoffset="0"></circle></svg><b id="timerTxt">∞</b></div>
+        </div>
         </div>
         <div class="side-extra">
           <h4>KAMPFPROTOKOLL</h4>
@@ -2403,6 +2550,7 @@ function layout() {
   buildSprites();
   const fr = fcv.getBoundingClientRect(); const fd = Math.min(LITE ? 1 : 2, devicePixelRatio || 1);
   fcv.width = Math.round(fr.width * fd); fcv.height = Math.round(fr.height * fd); FX.dpr = fd;
+  sizeWheel();
 }
 function cellCenterClient(x, y) {
   const r = bcv.getBoundingClientRect(), ar = $('#app').getBoundingClientRect();
@@ -2616,16 +2764,14 @@ function updateHUD() {
   const ep = clamp(op.hp, 0, op.maxhp) / op.maxhp * 100;
   $('#eHpFill').style.width = ep + '%'; $('#eHpGhost').style.width = ep + '%';
   $('#eHpTxt').textContent = `${Math.max(0, op.hp)} / ${op.maxhp}`;
-  let row = `<span class="pill" title="Haltung"><span class="k" style="color:${EL[ost].c}">${EL[ost].k}</span>Haltung ${EL[ost].n}</span>`;
+  let row = `<span class="pill" title="Haltung"><span class="k" style="color:${EL[ost].c}">${EL[ost].k}</span>${EL[ost].n}</span>`;
   row += `<span class="pill" title="Schwäche, trifft doppelt"><span class="k" style="color:${EL[wk].c}">${EL[wk].k}</span>×2</span>`;
   row += `<span class="pill ${op.kunst >= RULE.kunst ? 'kready' : ''}" title="Kunst-Leiste"><span class="k" style="color:var(--gold)">${oh.kunst.k}</span>${op.kunst >= RULE.kunst ? 'Kunst bereit' : `Kunst ${op.kunst}/${RULE.kunst}`}</span>`;
-  row += `<span class="pill" title="Schwierigkeit">${DIFFS[op.diff].n}</span>`;
+  row += `<span class="pill pdiff" title="Schwierigkeit">${DIFFS[op.diff].n}</span>`;
   if (op.parade > 0) row += `<span class="pill good" title="Seine Ketten unter 5 Steinen machen halben Schaden">pariert · ${op.parade}</span>`;
   if (op.fog) row += `<span class="pill good" title="Sein Brett liegt im Nebel">im Nebel · ${op.fog.n}</span>`;
   $('#eRow').innerHTML = row;
   $('#eAbility').innerHTML = `<b>${esc(oh.kunst.n)}:</b> ${esc(oh.kunst.d)}`;
-  $('#legend').innerHTML = `<div class="lrow">${EL.map((x, i) => `<span class="le ${i === ost ? 'stance' : ''} ${i === wk ? 'weak' : ''}"><span class="k" style="color:${x.c}">${x.k}</span>${x.n}${i === ost ? '<span class="tag">GEGNER</span>' : ''}${i === wk ? '<span class="tag">×2</span>' : ''}</span>`).join('<span class="ar">→</span>')}<span class="ar">→</span><span class="le"><span class="k" style="color:${EL[0].c}">${EL[0].k}</span></span></div>
-    <div class="lrow">Kette: gleicher Typ oder nächster nach rechts · <span class="k" style="font-family:var(--f-kanji);color:${JK.c}">空</span> Joker passt überall · pro 4 Steine eine Tusche zum Gegner</div>`;
   // ich
   const mh = HEROES[me.hero];
   $('#meName').textContent = me.name; $('#meTitle').textContent = `${heroName(me)} · ${EL[mh.el].n} · ${DIFFS[me.diff].n}`;
@@ -2710,7 +2856,7 @@ let wakeLock = null;
 async function keepAwake() { try { if (navigator.wakeLock && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) {} }
 
 async function startDuel(game, first) {
-  hideModal();
+  hideModal(); clearCuts(); G.cueSeen = false;
   G.game = game; G.over = false; G.turn = 0; G.pendingFx = []; G.again = { me: false, opp: false };
   G.me = makePlayer(myInfo()); G.opp = makePlayer(G.oppInfo);
   G.dirs = DIFFS[G.me.diff].dirs;
@@ -2798,6 +2944,7 @@ async function commitChain() {
   await sleep(300);
   op.hp -= R.total; op.hit = 1; G.stats.dmg += R.total;
   SND.hit(R.total); shake(Math.min(14, 3 + R.total / 6));
+  strikeCut(me, true, R.total, `Kette ×${cells.length}${R.weakHits ? ' · Schwäche' : ''}`);
   const ink = Math.floor(cells.length / RULE.inkPer) + R.enso;
   addLog(`Kette aus ${cells.length}: ${R.total} Schaden${R.weakHits ? ` (${R.weakHits}× Schwäche)` : ''}${R.parade ? ', pariert' : ''}${ink ? `, ${ink} Tusche geworfen` : ''}`, 'good');
   floatText(`−${R.total}`, pc.x, pc.y + 10, R.total >= 40 ? 'dmg big' : 'dmg');
@@ -2936,8 +3083,9 @@ async function useKunst() {
   if (!G.myTurn || G.state !== 'idle' || G.dragging || me.kunst < RULE.kunst || G.over) return;
   const h = HEROES[me.hero], k = h.kunst;
   G.state = 'anim'; me.kunst = 0; G.stats.kunst++; updateHUD();
-  banner(k.n.toUpperCase(), heroName(me), EL[h.el].c, k.k);
-  SND.enso(); flash(0.3);
+  send({ t: 'kunstcue' });
+  SND.enso(); flash(0.4); shake(10);
+  await kunstCut(me, true);
   const fx = {};
   const pc = portraitCenter(), pb = playerBarPoint();
   if (k.id === 'quelle') {
@@ -3007,6 +3155,7 @@ async function handleMsg(m) {
   }
   if (m.g !== G.game || !G.opp || G.state === 'off') return;
   const me = G.me, op = G.opp;
+  if (m.t === 'kunstcue') { G.cueSeen = true; SND.attack(); flash(0.3); kunstCut(op, false); return; }
   if (m.t === 'begin') {
     G.oppGrid = decBoard(m.board); G.oppChain = []; G.oppRow = -1;
     readSnap(m.st);
@@ -3050,6 +3199,7 @@ async function handleMsg(m) {
     readSnap(m.st);
     me.hp -= dmg; me.hit = 1;
     SND.hurt(); shake(Math.min(16, 4 + dmg / 5)); glitch(); if (dmg >= 25) flash(0.2);
+    strikeCut(op, false, dmg, m.t === 'iai' ? 'Iai' : `Kette ×${Array.isArray(m.cells) ? m.cells.length : '?'}`);
     floatText(`−${dmg}`, pb.x, pb.y, dmg >= 40 ? 'hurt big' : 'hurt');
     if (m.t === 'chain') {
       const ink = clamp(m.ink | 0, 0, 20), enso = clamp(m.enso | 0, 0, 9);
@@ -3064,8 +3214,8 @@ async function handleMsg(m) {
   }
   if (m.t === 'kunst') {
     const k = HEROES[op.hero].kunst, fx = m.fx && typeof m.fx === 'object' ? m.fx : {};
-    banner(k.n.toUpperCase(), op.name.toUpperCase(), EL[HEROES[op.hero].el].c, k.k);
-    SND.attack(); flash(0.25);
+    if (!G.cueSeen) { SND.attack(); flash(0.3); await kunstCut(op, false); }
+    G.cueSeen = false;
     if (G.view === 'opp') overwriteBoard(G.oppGrid, m.board); else G.oppGrid = decBoard(m.board);
     const before = op.hp; readSnap(m.st);
     const add = {};
@@ -3121,20 +3271,13 @@ async function defeat() {
   endModal(false);
 }
 function endModal(won) {
-  const html = `<h2 style="color:${won ? 'var(--ok)' : 'var(--blood)'}">${won ? 'Sieg' : 'Niederlage'}</h2>
-    <div class="vsmini"><canvas id="endMe" width="168" height="168"></canvas><span class="x">VS</span><canvas id="endOpp" width="168" height="168"></canvas></div>
-    <p class="lead">${won ? `Du hast ${esc(G.opp.name)} besiegt.` : `${esc(G.opp.name)} hat gewonnen.`}</p>
+  const html = `${endScene(won)}
     ${statsHtml()}
     <p class="waitnote" id="againNote">${G.again.opp ? `${esc(G.opp.name)} will eine Revanche.` : ''}</p>
     <div class="row"><button class="btn" data-r="again" data-keep="1" id="btnAgain">Revanche</button><button class="btn ghost" data-r="leave">Duell verlassen</button></div>`;
   modal(html).then(r => { if (r === 'leave') leaveDuel(true); });
-  const draw = () => {
-    if ($('#modal').hidden || !$('#endMe')) return;
-    drawHero($('#endMe').getContext('2d'), 168, { hero: G.me.hero, gender: G.me.gender, dead: won ? 0 : 0.55 }, T);
-    drawHero($('#endOpp').getContext('2d'), 168, { hero: G.opp.hero, gender: G.opp.gender, dead: won ? 0.55 : 0 }, T);
-    requestAnimationFrame(draw);
-  };
-  draw();
+  $('#mbox').classList.add('endbox');
+  mountEndHeroes(won);
   $('#btnAgain').addEventListener('click', () => {
     if (G.again.me) return;
     G.again.me = true; send({ t: 'again' });
@@ -3149,6 +3292,7 @@ function rematchCheck() {
   if (NET.role === 'host') { const g = G.game + 1, first = Math.random() < 0.5; NET.send({ t: 'start', g, first: first ? 'host' : 'guest' }); startDuel(g, first); }
 }
 function leaveDuel(tell) {
+  clearCuts();
   if (tell) { try { NET.send({ t: 'bye' }); } catch (e) {} }
   const close = () => { NET.close(); announceOpen(null); };
   if (tell) setTimeout(close, 900); else close();
@@ -3296,7 +3440,9 @@ function frame(now) {
     G.me.low = G.me.hp < G.me.maxhp * 0.3;
     if (!LITE || !(frameN & 1)) { drawHero(pctx, pcv.width, G.opp, T); drawHero(mctx, mcv.width, G.me, T); }
     drawBoard();
+    if (!LITE || !(frameN & 1)) drawWheel(T);
   }
+  drawCuts();
   G.tPrev = now;
   if (!$('#scr-title').hidden) drawTitleRing(dt);
   if (!$('#scr-setup').hidden) drawSetup(frameN);
@@ -3315,7 +3461,7 @@ function showScreen(id) {
 let modalRes = null;
 function modal(html) {
   return new Promise(res => {
-    const m = $('#modal'); $('#mbox').innerHTML = html; m.hidden = false;
+    const m = $('#modal'); $('#mbox').className = 'mbox'; $('#mbox').innerHTML = html; m.hidden = false;
     if (modalRes) { const r0 = modalRes; modalRes = null; r0('replaced'); }
     modalRes = res;
     const btns = m.querySelectorAll('[data-r]');
@@ -3472,6 +3618,146 @@ $('#btnLobbyCopy').addEventListener('click', ev => {
   try { navigator.clipboard.writeText(code).then(() => { ev.target.textContent = 'Kopiert'; }, () => { ev.target.textContent = 'Code: ' + code; }); } catch (e) { ev.target.textContent = 'Code: ' + code; }
 });
 
+
+/* =====================================================================
+   SCHAU · Fünf-Wandlungen-Rad, Zug- und Kunst-Einblendungen, Sieg/Niederlage
+   ===================================================================== */
+
+/* ---- Rad der fünf Wandlungen (ersetzt die Element-Zeile) ---- */
+const wcv = $('#wheel'), wctx = wcv.getContext('2d');
+function sizeWheel() {
+  const w = wcv.clientWidth || 96, d = Math.min(LITE ? 1.5 : 2, devicePixelRatio || 1);
+  const px = Math.round(w * d); if (wcv.width !== px) { wcv.width = wcv.height = px; }
+}
+function wheelCurrent() {
+  const ch = viewChain(); if (!ch.length) return -1;
+  if (G.view === 'me' && !G.dragging) return -1;
+  const R = chainCalc(ch); return R ? R.assigned[R.assigned.length - 1] : -1;
+}
+function drawWheel(t) {
+  const W = wcv.width; if (!W || !G.me || !G.opp) return;
+  const { hex2rgb, rgba, mix, WHITE } = TKV;
+  const g = wctx; g.setTransform(W / 200, 0, 0, W / 200, 0, 0); g.clearRect(0, 0, 200, 200);
+  const target = G.view === 'me' ? G.opp : G.me;
+  const st = HEROES[target.hero].el, wk = weakOf(st), cur = wheelCurrent();
+  const cx = 100, cy = 103, R = 68, nr = 26;
+  const ang = i => -Math.PI / 2 + i * Math.PI * 2 / 5;
+  const pos = i => [cx + Math.cos(ang(i)) * R, cy + Math.sin(ang(i)) * R];
+  // schwacher Stern im Inneren
+  g.strokeStyle = 'rgba(157,150,196,.16)'; g.lineWidth = 1.2; g.beginPath();
+  for (let i = 0; i < 5; i++) { const [x1, y1] = pos(i), [x2, y2] = pos((i + 2) % 5); g.moveTo(x1, y1); g.lineTo(x2, y2); }
+  g.stroke();
+  g.font = `800 20px ${KFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillStyle = 'rgba(200,195,235,.28)'; g.fillText('五行', cx, cy + 2);
+  // roter Pfeil: Schwäche trifft die Haltung doppelt
+  {
+    const [x1, y1] = pos(wk), [x2, y2] = pos(st), d = Math.hypot(x2 - x1, y2 - y1), ux = (x2 - x1) / d, uy = (y2 - y1) / d;
+    const ax = x1 + ux * (nr + 3), ay = y1 + uy * (nr + 3), bx = x2 - ux * (nr + 6), by = y2 - uy * (nr + 6);
+    g.strokeStyle = `rgba(255,70,80,${0.7 + 0.25 * Math.sin(t * 3)})`; g.lineWidth = 2.6; g.beginPath(); g.moveTo(ax, ay); g.lineTo(bx, by); g.stroke();
+    g.fillStyle = g.strokeStyle; g.beginPath(); g.moveTo(bx + ux * 5, by + uy * 5); g.lineTo(bx - ux * 6 - uy * 5.5, by - uy * 6 + ux * 5.5); g.lineTo(bx - ux * 6 + uy * 5.5, by - uy * 6 - ux * 5.5); g.closePath(); g.fill();
+  }
+  // Kreislauf-Pfeile im Uhrzeigersinn
+  const gap = (nr + 5) / R;
+  for (let i = 0; i < 5; i++) {
+    const a0 = ang(i) + gap, a1 = ang(i + 1) - gap, hot = i === cur;
+    g.strokeStyle = hot ? '#ffffff' : 'rgba(157,150,196,.6)'; g.lineWidth = hot ? 3 : 1.7;
+    g.beginPath(); g.arc(cx, cy, R, a0, a1); g.stroke();
+    const ex = cx + Math.cos(a1) * R, ey = cy + Math.sin(a1) * R, tx = -Math.sin(a1), ty = Math.cos(a1), nx = Math.cos(a1), ny = Math.sin(a1);
+    g.fillStyle = g.strokeStyle; g.beginPath(); g.moveTo(ex + tx * 5, ey + ty * 5); g.lineTo(ex - tx * 3 + nx * 4.5, ey - ty * 3 + ny * 4.5); g.lineTo(ex - tx * 3 - nx * 4.5, ey - ty * 3 - ny * 4.5); g.closePath(); g.fill();
+  }
+  // Kugeln
+  for (let i = 0; i < 5; i++) {
+    const [x, y] = pos(i), E = EL[i], c = hex2rgb(E.c), d = hex2rgb(E.d);
+    const gr = g.createRadialGradient(x - nr * 0.35, y - nr * 0.4, 2, x, y, nr);
+    gr.addColorStop(0, rgba(mix(c, WHITE, 0.55), 1)); gr.addColorStop(0.5, rgba(c, 1)); gr.addColorStop(1, rgba(d, 1));
+    g.fillStyle = gr; g.beginPath(); g.arc(x, y, nr, 0, Math.PI * 2); g.fill();
+    g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 1; g.stroke();
+    if (i === st) { g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = 1.6; g.setLineDash([4, 3]); g.beginPath(); g.arc(x, y, nr + 3.5, 0, Math.PI * 2); g.stroke(); g.setLineDash([]); }
+    if (i === wk) { g.strokeStyle = 'rgba(255,70,80,.95)'; g.lineWidth = 2.4; g.beginPath(); g.arc(x, y, nr + 2.5, 0, Math.PI * 2); g.stroke(); }
+    if (i === cur) { g.strokeStyle = '#ffffff'; g.lineWidth = 2.6; g.beginPath(); g.arc(x, y, nr + 4 + Math.sin(t * 8), 0, Math.PI * 2); g.stroke(); }
+    g.font = `800 ${Math.round(nr * 1.1)}px ${KFONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.lineWidth = 3; g.strokeStyle = 'rgba(0,0,0,.45)'; g.strokeText(E.k, x, y + 1.5); g.fillStyle = '#fff'; g.fillText(E.k, x, y + 1.5);
+  }
+  // ×2 an der Schwäche
+  const [wx, wy] = pos(wk), ox = (wx - cx) / R, oy = (wy - cy) / R;
+  const lx = clamp(wx + ox * (nr + 12), 12, 188), ly = clamp(wy + oy * (nr + 10), 10, 192);
+  g.font = '700 15px "Chakra Petch",sans-serif'; g.lineWidth = 3.5; g.strokeStyle = 'rgba(6,5,12,.92)'; g.strokeText('×2', lx, ly); g.fillStyle = '#ff8a8f'; g.fillText('×2', lx, ly);
+}
+
+/* ---- Einblendungen ---- */
+const CUT = { list: [] };
+function heroCanvas(p, size, extra) {
+  const cv = document.createElement('canvas'); cv.width = cv.height = size;
+  const item = { cv, p: Object.assign({ hero: p.hero, gender: p.gender }, extra || {}) };
+  drawHero(cv.getContext('2d'), size, item.p, T);
+  CUT.list.push(item);
+  return cv;
+}
+function dropCut(el) { el.remove(); }
+function drawCuts() {
+  if (!CUT.list.length) return;
+  CUT.list = CUT.list.filter(it => it.cv.isConnected);
+  if (LITE && (frameN & 1)) return;
+  for (const it of CUT.list) drawHero(it.cv.getContext('2d'), it.cv.width, it.p, T);
+}
+// Zug-Einblendung: diagonales Band mit Held, Name und Schaden
+function strikeCut(p, mine, dmg, label) {
+  const el = document.createElement('div');
+  const col = EL[HEROES[p.hero].el].c;
+  el.className = 'cut strike ' + (mine ? 'mine' : 'theirs');
+  el.style.setProperty('--c', col);
+  el.innerHTML = `<div class="band"><div class="lines"></div><div class="who"><b>${esc(p.name)}</b><small>${esc(heroName(p))}</small></div><div class="num"><span>${dmg}</span><small>${esc(label)}</small></div></div>`;
+  const cv = heroCanvas(p, LITE ? 160 : 240); cv.className = 'hero';
+  el.querySelector('.band').prepend(cv);
+  $('#app').appendChild(el);
+  setTimeout(() => dropCut(el), 1250);
+}
+// Kunst-Einblendung: Vollbild, Held, riesiges Schriftzeichen, Strahlen
+function kunstCut(p, mine) {
+  return new Promise(res => {
+    const h = HEROES[p.hero], k = h.kunst, col = EL[h.el].c;
+    const el = document.createElement('div');
+    el.className = 'cut kunst ' + (mine ? 'mine' : 'theirs');
+    el.style.setProperty('--c', col);
+    el.innerHTML = `<div class="rays"></div><div class="ring"></div><div class="kj">${k.k}</div><div class="txt"><small>${mine ? 'Deine Kunst' : esc(p.name) + ' entfesselt'}</small><b>${esc(k.n)}</b><span>${esc(heroName(p))}, ${esc(heroTitle(p))}</span></div>`;
+    const cv = heroCanvas(p, LITE ? 220 : 360); cv.className = 'hero';
+    el.insertBefore(cv, el.querySelector('.kj'));
+    $('#app').appendChild(el);
+    const pc = { x: innerWidth / 2, y: innerHeight * 0.42 };
+    setTimeout(() => { for (let i = 0; i < (LITE ? 1 : 3); i++) burst(pc.x, pc.y, col, 26, 420, 4); }, 450);
+    setTimeout(res, 1500);
+    setTimeout(() => dropCut(el), 2300);
+  });
+}
+
+/* ---- Sieg und Niederlage: der eigene Held steht im Mittelpunkt ---- */
+function endScene(won) {
+  const me = G.me, op = G.opp;
+  const col = EL[HEROES[me.hero].el].c;
+  const name = won ? `<b>${esc(me.name)}</b> · ${me.gender === 'f' ? 'Siegerin' : 'Sieger'}` : `<b>${esc(me.name)}</b> ist gefallen`;
+  const line = won
+    ? `${esc(heroName(me))}, ${esc(heroTitle(me))}, bezwingt ${esc(op.name)} (${esc(heroName(op))}).`
+    : `${esc(op.name)} siegt mit ${esc(heroName(op))}, ${esc(heroTitle(op))}.`;
+  const bits = [], n = LITE ? 10 : 22;
+  for (let i = 0; i < n; i++) {
+    const x = Math.round(Math.random() * 100), d = (Math.random() * 2.4).toFixed(2), du = ((won ? 2.6 : 2.2) + Math.random() * 2).toFixed(2);
+    bits.push(`<i style="left:${x}%;animation-delay:${d}s;animation-duration:${du}s;background:${won ? EL[(i + me.hero) % 5].c : '#05030a'}"></i>`);
+  }
+  return `<div class="endstage ${won ? 'won' : 'lost'}" style="--c:${col}">
+      <div class="rays"></div><div class="fall">${bits.join('')}</div>
+      <div class="endhero" id="endHeroSlot"></div>
+      <div class="endfallen" id="endFallenSlot"></div>
+      <div class="endtitle"><small>${won ? '勝' : '敗'}</small><b>${won ? 'SIEG' : 'NIEDERLAGE'}</b></div>
+    </div>
+    <p class="endname" style="--c:${col}">${name}</p>
+    <p class="lead">${line}</p>`;
+}
+function mountEndHeroes(won) {
+  const a = heroCanvas(G.me, LITE ? 220 : 320, won ? {} : { dead: 0.32 }), b = heroCanvas(G.opp, LITE ? 120 : 160, won ? { dead: 0.32 } : {});
+  const s1 = $('#endHeroSlot'), s2 = $('#endFallenSlot');
+  if (s1) s1.appendChild(a); if (s2) s2.appendChild(b);
+}
+function clearCuts() { document.querySelectorAll('.cut').forEach(e => e.remove()); CUT.list = []; }
+
 const TR = { cv: $('#titleRing'), t: 0 };
 function drawTitleRing(dt) {
   const cv = TR.cv, r = cv.getBoundingClientRect(); if (!r.width) return;
@@ -3535,6 +3821,8 @@ function drawTitleRing(dt) {
   $('#tSound').textContent = 'Ton: ' + (save.muted ? 'aus' : 'an');
   $('#tLite').textContent = 'Grafik: ' + (LITE ? 'leicht' : 'voll');
   $('#tLite').addEventListener('click', () => { SND.init(); setLite(!LITE); SND.ui(); });
+  // Gegnerleiste antippen: Kunst-Beschreibung ein- und ausblenden (Handy)
+  $('.enemy').addEventListener('click', e => { if (!e.target.closest('#btnPause')) $('.enemy').classList.toggle('open'); });
   $('#tSound').addEventListener('click', () => { SND.init(); toggleSound(); SND.ui(); });
   $('#tCodex').addEventListener('click', () => { SND.init(); SND.ui(); CODEX_FROM = $('#scr-setup').hidden ? 'title' : 'setup'; showScreen('codex'); $('#scr-codex').scrollTop = 0; });
   $('#btnCodexBack').addEventListener('click', () => { SND.ui(); if (CODEX_FROM === 'setup') showSetup(); else showScreen('title'); });
