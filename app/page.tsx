@@ -1,6 +1,7 @@
 import { LEVELS as kingdomLevels } from "./koenigreich/engine";
 import { ReleaseNotesDialog } from "./release-notes-dialog";
 import { publicBasePath, sitePath } from "./site-paths";
+import { LEVELS as sortingLevels } from "./waren-sortieren/engine";
 
 const games: Array<{
   href: string;
@@ -42,7 +43,7 @@ const games: Array<{
     image: `${publicBasePath}/startseite/waren-sortieren.svg`,
     title: "Waren sortieren",
     description: "Stelle drei gleiche Waren in ein Fach und räume den Laden auf.",
-    meta: "12 Level",
+    meta: `${sortingLevels.length} Level`,
   },
   {
     href: sitePath("/hungriges-loch"),

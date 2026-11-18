@@ -15,6 +15,7 @@ const shelf = (layers, lock = 0) => ({ lock, layers: layers.map((layer) => layer
 const goodsOf = (board) => board.shelves.flatMap((entry) => entry.layers.flat()).filter(Boolean).map((entry) => entry.good).sort((a, b) => a - b);
 
 test("every level starts solvable, unsorted and with free space", () => {
+  assert.equal(LEVELS.length, 30);
   LEVELS.forEach((config, index) => {
     for (let seed = 1; seed <= 25; seed++) {
       const board = createLevel(config, mulberry32(index * 1000 + seed));
