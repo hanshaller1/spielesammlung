@@ -111,6 +111,78 @@ export const LEVELS: LevelConfig[] = [
     map: ["#......#", "........", ".v.vv.v.", "........", "........", ".v.vv.v.", "........", "#......#"],
     colors: 5, moves: 32, boss: { hp: 360, every: 3, strength: 3 },
   },
+  {
+    map: ["........", ".v....v.", "..v..v..", "...hh...", "........", "..c..c..", ".c....c.", "........"],
+    colors: 5, moves: 22, clear: ["owl", "vine"], collect: [[0, 22]],
+  },
+  {
+    map: ["###..###", "##....##", "#......#", "...cc...", "...CC...", "#......#", "##....##", "###..###"],
+    colors: 5, moves: 25, clear: ["crate"], collect: [[3, 30]],
+  },
+  {
+    map: ["........", ".vv..vv.", ".v....v.", "........", "........", ".v....v.", ".vv..vv.", "........"],
+    colors: 6, moves: 32, clear: ["vine"], collect: [[5, 24]],
+  },
+  {
+    map: ["........", "..c..c..", ".c....c.", "C......C", "C......C", ".c....c.", "..c..c..", "........"],
+    colors: 5, moves: 32, boss: { hp: 365, every: 4, strength: 3 },
+  },
+  {
+    map: ["#......#", "..h..h..", "........", "cc....cc", "CC....CC", "........", "..h..h..", "#......#"],
+    colors: 5, moves: 26, clear: ["owl", "crate"],
+  },
+  {
+    map: ["...##...", "..v..v..", ".v....v.", "v......v", "v......v", ".v....v.", "..v..v..", "...##..."],
+    colors: 5, moves: 27, clear: ["vine"], collect: [[1, 26], [2, 26]],
+  },
+  {
+    map: ["........", ".cc.....", ".CCcc...", "...CCcc.", ".....CC.", "........", "..h..h..", "........"],
+    colors: 6, moves: 30, clear: ["crate", "owl"], collect: [[5, 18]],
+  },
+  {
+    map: ["##....##", "........", "vv....vv", "...CC...", "........", "vv....vv", "........", "##....##"],
+    colors: 5, moves: 34, clear: ["vine"], boss: { hp: 370, every: 3, strength: 3 },
+  },
+  {
+    map: ["........", ".h....h.", "..#..#..", "...hh...", "........", "..#..#..", ".h....h.", "........"],
+    colors: 5, moves: 29, clear: ["owl"], collect: [[4, 32]],
+  },
+  {
+    map: ["..#..#..", "..c..c..", "..C..C..", "........", "........", "..C..C..", "..c..c..", "..#..#.."],
+    colors: 6, moves: 30, clear: ["crate"], collect: [[0, 24], [5, 24]],
+  },
+  {
+    map: ["........", "..vCCv..", ".v....v.", ".C.hh.C.", ".C....C.", ".v....v.", "..vCCv..", "........"],
+    colors: 5, moves: 29, clear: ["vine", "crate", "owl"],
+  },
+  {
+    map: ["#......#", ".C....C.", "...vv...", "........", "........", "...vv...", ".C....C.", "#......#"],
+    colors: 5, moves: 35, collect: [[1, 26]], boss: { hp: 390, every: 3, strength: 3 },
+  },
+  {
+    map: ["...vv...", ".h....h.", "........", "##....##", "##....##", "........", ".h....h.", "...vv..."],
+    colors: 6, moves: 32, clear: ["owl", "vine"], collect: [[5, 26]],
+  },
+  {
+    map: ["........", ".cC..Cc.", "..cCCc..", "...CC...", "........", "..C..C..", ".C....C.", "........"],
+    colors: 5, moves: 28, clear: ["crate"], collect: [[3, 35], [4, 24]],
+  },
+  {
+    map: ["#..vv..#", "..v..v..", ".v.hh.v.", "........", "...CC...", "..C..C..", ".C....C.", "#......#"],
+    colors: 6, moves: 33, clear: ["vine", "owl", "crate"],
+  },
+  {
+    map: ["........", ".h....h.", "...cc...", "..c..c..", "..c..c..", "...cc...", ".h....h.", "........"],
+    colors: 5, moves: 36, clear: ["owl"], boss: { hp: 410, every: 3, strength: 3 },
+  },
+  {
+    map: ["##....##", "#.v..v.#", "..C..C..", ".h....h.", "...vv...", "..C..C..", "#.v..v.#", "##....##"],
+    colors: 6, moves: 35, clear: ["crate", "vine", "owl"], collect: [[5, 30]],
+  },
+  {
+    map: ["#......#", ".C....C.", ".vh..hv.", "..C..C..", "........", "..v..v..", ".C....C.", "#......#"],
+    colors: 5, moves: 39, clear: ["owl", "vine"], boss: { hp: 450, every: 3, strength: 4 },
+  },
 ];
 
 /** Nach dem letzten Level wiederholt sich die zweite Hälfte der Level mit neuen Brettern. */

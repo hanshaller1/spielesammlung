@@ -1,3 +1,4 @@
+import { LEVELS as kingdomLevels } from "./koenigreich/engine";
 import { ReleaseNotesDialog } from "./release-notes-dialog";
 import { publicBasePath, sitePath } from "./site-paths";
 
@@ -55,7 +56,7 @@ const games: Array<{
     image: `${publicBasePath}/startseite/koenigreich.svg`,
     title: "Königreich",
     description: "Tausche Edelsteine, besiege den Dunklen König und baue dein Reich auf.",
-    meta: "12 Level",
+    meta: `${kingdomLevels.length} Level`,
   },
   {
     // Eigenständige HTML-Seite unter public/, deshalb der vollständige Dateipfad.

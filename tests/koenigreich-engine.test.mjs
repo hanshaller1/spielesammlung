@@ -93,11 +93,22 @@ test("every level starts without matches, with moves and goals that fit the map"
   });
 });
 
-test("levels beyond the table repeat the second half", () => {
+test("levels 13 to 30 have new maps and levels 16 to 30 repeat from level 31", () => {
+  assert.equal(LEVELS.length, 30);
+  const maps = new Set(LEVELS.slice(0, 12).map((config) => config.map.join("\n")));
+  for (let level = 13; level <= 30; level++) {
+    const config = levelConfig(level);
+    assert.equal(config, LEVELS[level - 1]);
+    assert.equal(config.map.length, 8);
+    for (const row of config.map) assert.match(row, /^[.#cCvh]{8}$/);
+    const map = config.map.join("\n");
+    assert.ok(!maps.has(map), `level ${level} reuses an earlier map`);
+    maps.add(map);
+  }
+  for (let level = 31; level <= 60; level++) {
+    assert.equal(levelConfig(level), levelConfig(16 + (level - 31) % 15));
+  }
   assert.equal(levelConfig(0), LEVELS[0]);
-  assert.equal(levelConfig(LEVELS.length), LEVELS.at(-1));
-  assert.equal(levelConfig(LEVELS.length + 1), LEVELS[LEVELS.length / 2]);
-  assert.equal(levelConfig(LEVELS.length * 2), LEVELS.at(-1));
   assert.equal(levelMoves(1, DIFFICULTIES[0]), LEVELS[0].moves);
   assert.ok(levelMoves(1, DIFFICULTIES[2]) < LEVELS[0].moves);
 });
