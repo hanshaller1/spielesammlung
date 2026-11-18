@@ -2,7 +2,7 @@
 
 Zwergengold besitzt drei voneinander getrennte, wiederverwendbare Leveltypen:
 
-- `normal`: scrollender Minentunnel, Hindernisse, Sammelobjekte und Bodenklappe
+- `normal`: scrollender Minentunnel oder Waldpfad mit Brücken, Hindernisse, Sammelobjekte und Bodenklappe
 - `bonus`: breiter Süßigkeitentunnel mit Truhe und Leiter-Ausgang
 - `boss`: statische Arena mit Gegner-KI, Angriffen und Siegesbelohnung
 
@@ -10,12 +10,14 @@ Die Konfigurationen liegen in `app/zwerge/level-templates.ts`. Jede Spielwelt be
 
 ## Aktuelle Abfolge
 
-- Welt 1 startet mit Normal 1, Bonus 1 und Boss 1.
-- Nach dem Sieg über Boss 1 beginnt automatisch Normal 2.
-- In Welt 2 führen geöffnete Klappen in Bonus 2; nach zwei Minuten Normal 2 folgt Boss 2.
-- Nach Boss 2 bleibt das Spiel in Welt 2 und setzt Normal 2 fort.
+| Welt | Weg | Bonus | Endgegner |
+| --- | --- | --- | --- |
+| 1 | Die tiefe Mine | Süßigkeitenhöhle | Grimmzahn |
+| 2 | Die glühende Kristallmine | Kristallzuckerhöhle | Kristallgrimmzahn |
+| 3 | Am Erlenbach | Honigkeller | Erlenwart |
+| 4 | Mondscheinforst | Mondzuckergrotte | Mondhirsch |
 
-Welt 2 hat eine eigene Kristallmine, eine blau leuchtende Kristallzucker-Bonushöhle und den stärkeren Kristallgrimmzahn. Die gemeinsame Mechanik bleibt dieselbe, die Unterschiede liegen in den Templates.
+Nach zwei Minuten auf dem normalen Weg erscheint der Zugang zur Arena. Zeit im Bonusgang und Pausen zählen dafür nicht mit. Ein Boss-Sieg öffnet die nächste Welt. Mit dem Sieg über den Mondhirsch endet das Abenteuer.
 
 ## Eine weitere Welt ergänzen
 

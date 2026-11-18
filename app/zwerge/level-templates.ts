@@ -68,6 +68,7 @@ export type NormalLevelTemplate = LevelTemplateBase & {
 
 export type BonusLevelTemplate = LevelTemplateBase & {
   type: "bonus";
+  treats: "sweets" | "bakery";
   durationMs: number;
   tunnel: { width: number; speed: number; exitWidth: number; taperLength: number };
   exit: { wallY: number; approachTimeMs: number; waitingTimeMs: number; climbTimeMs: number; ladderReach: number };
@@ -113,7 +114,7 @@ const secretHatch = {
   nextDelayMinMs: 54_000, nextDelayRangeMs: 24_000, retryDelayMs: 1800,
 };
 
-export const LEVEL_TEMPLATES = {
+const mineTemplates = {
   normal: [
     {
       id: "normal-level1",
@@ -170,6 +171,7 @@ export const LEVEL_TEMPLATES = {
       world: 1,
       type: "bonus",
       name: "Süßigkeitenhöhle",
+      treats: "sweets",
       theme: {
         cavern: ["#4b235d", "#21132e", "#090812"],
         wall: ["#25152f", "#36203f", "#47294f", "#58345f", "#68406e"],
@@ -189,6 +191,7 @@ export const LEVEL_TEMPLATES = {
       world: 2,
       type: "bonus",
       name: "Die Kristallzuckerhöhle",
+      treats: "bakery",
       theme: {
         cavern: ["#243b63", "#10192f", "#060812"],
         wall: ["#172644", "#24406b", "#31568a", "#4673aa", "#5c8ac0"],
@@ -259,6 +262,59 @@ export type LevelSet = {
   bonus: BonusLevelTemplate;
   boss: BossLevelTemplate;
 };
+
+const erlenTheme: LevelTheme = {
+  cavern: ["#609779", "#264f42", "#112e2c"],
+  wall: ["#112d29", "#1d4536", "#326146", "#57845a", "#8aa467"],
+  floor: ["#52492d", "#8c794b", "#c2a574", "#8a7b52", "#4c5134"],
+  edgeRock: ["#345442", "#648064", "#a8a879"], accent: "#ffe3a0",
+};
+const moonTheme: LevelTheme = {
+  cavern: ["#385b72", "#233849", "#101c31"],
+  wall: ["#132339", "#22334b", "#2e4856", "#41666a", "#6c8983"],
+  floor: ["#293b48", "#435762", "#738384", "#475f67", "#2b414b"],
+  edgeRock: ["#314759", "#587080", "#94aca5"], accent: "#bde7ff",
+};
+
+function forestLevels(world: 3 | 4): LevelSet {
+  const moonlit = world === 4;
+  const theme = moonlit ? moonTheme : erlenTheme;
+  const normal = mineTemplates.normal[1];
+  const boss = mineTemplates.boss[1];
+  const bonus = mineTemplates.bonus[moonlit ? 1 : 0];
+  const name = moonlit ? "Mondhirsch" : "Erlenwart";
+  const rewardName = moonlit ? "Mondkrone" : "Bernsteinkrone";
+  return {
+    normal: {
+      ...normal, id: `normal-level${world}`, world, theme, name: moonlit ? "Mondscheinforst" : "Am Erlenbach",
+      movement: { ...normal.movement, baseSpeed: moonlit ? 87 : 84 },
+      music: { ...mineMusic, notes: moonlit ? [293.66, 349.23, 440, 523.25, 440, 392, 349.23, 261.63] : [293.66, 369.99, 440, 493.88, 440, 369.99, 329.63, 246.94], intervalMs: moonlit ? 1080 : 990 },
+      content: { obstacles: ["Bretter", "Findlinge", "Truhen"], collectibles: ["Gold", "Schild", "Herz", "5er-Gold"] },
+    },
+    bonus: { ...bonus, id: `bonus-level${world}`, world, name: moonlit ? "Mondzuckergrotte" : "Honigkeller" },
+    boss: {
+      ...boss, id: `boss-level${world}`, world, theme, name: moonlit ? "Die Sternenlichtung" : "Die alte Furt",
+      music: { ...bossMusic, notes: moonlit ? [146.83, 174.61, 146.83, 220, 130.81, 164.81, 110, 130.81] : [123.47, 146.83, 164.81, 110, 146.83, 123.47, 98, 110] },
+      enemy: { ...boss.enemy, name, maximumHealth: moonlit ? 14 : 12, enrageAtHealth: moonlit ? 7 : 6,
+        normalSpeed: moonlit ? 79 : 61, enragedSpeed: moonlit ? 110 : 84,
+        attackDelayNormalMs: moonlit ? 1380 : 1580, attackDelayEnragedMs: moonlit ? 1060 : 1200 },
+      victory: { durationMs: 4300, gold: moonlit ? 75 : 55, rewardName },
+      content: { enemy: name, attacks: moonlit ? ["Mondsichel", "Sternenregen"] : ["Eichelwurf", "Zapfenregen"], reward: rewardName },
+    },
+  };
+}
+
+const forests = [forestLevels(3), forestLevels(4)];
+export const LEVEL_TEMPLATES = {
+  normal: [...mineTemplates.normal, ...forests.map((set) => set.normal)],
+  bonus: [...mineTemplates.bonus, ...forests.map((set) => set.bonus)],
+  boss: [...mineTemplates.boss, ...forests.map((set) => set.boss)],
+};
+
+export function nextWorld(world: number) {
+  const index = LEVEL_TEMPLATES.normal.findIndex((level) => level.world === world);
+  return index < 0 ? undefined : LEVEL_TEMPLATES.normal[index + 1]?.world;
+}
 
 export function createLevelSet(world: number): LevelSet {
   const normal = LEVEL_TEMPLATES.normal.find((level) => level.world === world);
