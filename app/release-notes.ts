@@ -9,6 +9,29 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.38",
+    title: "Zwergengold führt in den Wald",
+    date: "18. November 2026",
+    changes: [
+      "Nach den Minen folgen der Erlenbach und der Mondscheinforst mit fließenden Bächen und Holzbrücken. Erlenwart wirft Eicheln, der Mondhirsch schickt geschwungene Mondsicheln.",
+      "Das neue Startpanorama, funkelnde Erzadern, lebendige Fackeln und Laub auf den Waldwegen begleiten die Reise. Aus der Bonusgrotte steigt der Zwerg ins Licht. Vor dem Boss öffnet sich ein leuchtendes Tor.",
+      "Jeder vollständig zerstörte Stein, jede Truhe und jedes Brett zählt einmal für die Hacke. Am Wurfknopf siehst du den Fortschritt. Geheime Bonusklappen erscheinen seltener.",
+      "Die sechs Spieleffekte sind auf eine gemeinsame Lautheit abgestimmt. In den Entwickleroptionen lassen sich jede Welt, die Bonusklappe, die Leiter, das Bosstor und der Kampf direkt starten.",
+    ],
+    commits: [
+      { id: "297a6ee", description: "Zwergengold: Zerstörte Hindernisse einmal für die Hacke werten" },
+      { id: "88ac8f8", description: "Zwergengold: Geheime Bonuszugänge seltener erscheinen lassen" },
+      { id: "b096a99", description: "Zwergengold: Lautheit der Spieleffekte angleichen und Klangspitzen begrenzen" },
+      { id: "6771d63", description: "Zwergengold: Erlenbach und Mondscheinforst mit eigenen Endgegnern ergänzen" },
+      { id: "5023f85", description: "Zwergengold: Leiteraufstieg und Arenator als durchgehende Übergänge inszenieren" },
+      { id: "3327053", description: "Zwergengold: Entwicklerstarts für vier Welten und ihre Übergänge anbieten" },
+      { id: "f1c7fae", description: "Zwergengold: Abenteuerpanorama und bewegte Lichtdetails gestalten" },
+      { id: "63a0b42", description: "Zwergengold: Fortschritt zum nächsten Hackenlevel beim Wurfknopf zeigen" },
+      { id: "85cad94", description: "Zwergengold: Waldpfade schattieren und Bossnamen lesbarer zeichnen" },
+      { id: "2b159b6", description: "Zwergengold: Vier Welten auf der Spielekarte ankündigen" },
+    ],
+  },
+  {
     version: "0.4.37",
     title: "30 Level für Waren sortieren und Hungriges Loch",
     date: "18. November 2026",
