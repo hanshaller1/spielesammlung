@@ -164,6 +164,19 @@ export function drawForestGround(c: Brush, segments: readonly TrailSegment[], wo
       if (x < 45 || x > 355) continue;
       tree(c, x + side * (74 + seed * 10), s.y + 12, 1 + seed * .23, p, night);
     }
+    // Low-contrast leaf litter and pools of light track the ground as it scrolls.
+    const glade = left + (.18 + seed * .64) * s.width;
+    if (i % 3 === 0) {
+      c.save(); c.translate(glade, s.y); c.rotate(-.42); c.scale(1, .28);
+      const light = c.createRadialGradient(0, 0, 2, 0, 0, 42);
+      light.addColorStop(0, night ? "#b9daff26" : "#ffe7a458"); light.addColorStop(1, "#fff7bf00");
+      c.fillStyle = light; c.fillRect(-42, -42, 84, 84); c.restore();
+    }
+    for (let leaf = 0; leaf < 3; leaf++) {
+      const phase = (seed * 19 + leaf * .37) % 1;
+      const x = leaf % 2 ? right - 4 - phase * 15 : left + 4 + phase * 15;
+      ellipse(c, x, s.y + phase * 22 - 11, 4.8, 1.7, night ? "#666978" : "#ad894a", phase * 2 - 1);
+    }
     const pebble = left + (.08 + seed * .72) * s.width;
     ellipse(c, pebble, s.y + 2, 2.8, 1.4, p.path);
     ellipse(c, pebble + 5, s.y - 1, 1.5, .9, p.path);

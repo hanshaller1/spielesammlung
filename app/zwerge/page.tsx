@@ -815,7 +815,10 @@ function drawBossArena(
   else drawMineArena(context);
 
   context.fillStyle = "#1c090c"; context.fillRect(60, 22, WIDTH - 120, 17); context.fillStyle = bossHealth <= 3 ? "#ff3828" : "#c93638"; context.fillRect(63, 25, (WIDTH - 126) * Math.max(0, bossHealth) / BOSS_MAX_HEALTH, 11);
-  context.fillStyle = "#fff1dc"; context.font = "900 13px Arial"; context.textAlign = "center"; context.fillText(`${BOSS_LEVEL.enemy.name.toUpperCase()}  ${Math.max(0, bossHealth)}/${BOSS_MAX_HEALTH}`, WIDTH / 2, 17);
+  const healthLabel = `${BOSS_LEVEL.enemy.name.toUpperCase()}  ${Math.max(0, bossHealth)}/${BOSS_MAX_HEALTH}`;
+  context.font = "900 13px Arial"; context.textAlign = "center";
+  context.strokeStyle = "#1d2220"; context.lineWidth = 3; context.strokeText(healthLabel, WIDTH / 2, 17);
+  context.fillStyle = "#fff1dc"; context.fillText(healthLabel, WIDTH / 2, 17);
   if (bossPhase !== "completed") {
     if (BOSS_LEVEL.world >= 3) drawForestBoss(context, bossX, 115, BOSS_LEVEL.world, now, bossHealth <= BOSS_LEVEL.enemy.enrageAtHealth);
     else if (BOSS_LEVEL.world === 2) drawEvilBoss(context, bossX, 128, now, bossHealth);
