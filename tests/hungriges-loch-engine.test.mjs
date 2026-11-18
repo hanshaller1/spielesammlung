@@ -58,6 +58,7 @@ test("the size table lets size n swallow exactly up to tier n", () => {
 });
 
 test("every level places all goods inside the map without overlap and away from the start", () => {
+  assert.equal(LEVELS.length, 30);
   LEVELS.forEach((config, index) => {
     for (let seed = 1; seed <= 15; seed++) {
       const game = new HoleEngine(config, mulberry32(index * 100 + seed));

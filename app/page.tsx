@@ -2,6 +2,7 @@ import { LEVELS as kingdomLevels } from "./koenigreich/engine";
 import { ReleaseNotesDialog } from "./release-notes-dialog";
 import { publicBasePath, sitePath } from "./site-paths";
 import { LEVELS as sortingLevels } from "./waren-sortieren/engine";
+import { LEVELS as holeLevels } from "./hungriges-loch/engine";
 
 const games: Array<{
   href: string;
@@ -50,7 +51,7 @@ const games: Array<{
     image: `${publicBasePath}/startseite/hungriges-loch.svg`,
     title: "Hungriges Loch",
     description: "Verschlucke alles, werde größer und schnapp dir die Ziele.",
-    meta: "10 Level",
+    meta: `${holeLevels.length} Level`,
   },
   {
     href: sitePath("/koenigreich"),
