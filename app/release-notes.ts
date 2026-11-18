@@ -9,6 +9,18 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.36",
+    title: "Königreich wächst auf 30 Level",
+    date: "18. November 2026",
+    changes: [
+      "Die Level 13 bis 30 haben eigene Spielbretter und Ziele. In Level 15 sammelst du zum ersten Mal Bernstein, in Level 30 trittst du gegen den Dunklen König an.",
+      "Nach Level 30 wiederholen sich die Level 16 bis 30 mit frisch gemischten Edelsteinen.",
+    ],
+    commits: [
+      { id: "29fc21d", description: "Königreich: 18 eigene Spielbretter bis Level 30 ergänzen" },
+    ],
+  },
+  {
     version: "0.4.35",
     title: "Tuscheklinge Duell: neue Helden und ein echtes Finale",
     date: "14. Oktober 2026",
