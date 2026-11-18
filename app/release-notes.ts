@@ -9,6 +9,19 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.37",
+    title: "30 Level für Waren sortieren und Hungriges Loch",
+    date: "18. November 2026",
+    changes: [
+      "Waren sortieren bekommt 18 neue Level. In den späten Runden räumst du bis zu fünf Reihen pro Regal frei und öffnest bis zu vier Kettenregale.",
+      "Hungriges Loch bekommt 20 neue Karten mit wechselnden Sammelzielen. In Level 30 verschluckst du zehn Autos, fünf Häuser, fünf Busse und vier Riesenräder.",
+    ],
+    commits: [
+      { id: "1fbce0a", description: "Waren sortieren: 18 neue Regalrätsel bis Level 30 ergänzen" },
+      { id: "915b5ac", description: "Hungriges Loch: 20 neue Sammelkarten bis Level 30 ergänzen" },
+    ],
+  },
+  {
     version: "0.4.36",
     title: "Königreich wächst auf 30 Level",
     date: "18. November 2026",
