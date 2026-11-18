@@ -96,3 +96,24 @@ body.dwarf-viewport-active { height:100%; overflow:hidden; overscroll-behavior:n
   .dwarf-game-shell .start-actions { grid-column:2; grid-row:4; }
   .dwarf-game-shell .dwarf-pause-panel .pause-mark { display:none; }
 }
+
+/* Keep the tools reachable at reading size on a phone. Only the settings list scrolls. */
+.dwarf-game-shell .developer-dialog {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  max-height: calc(100dvh - 36px);
+}
+.dwarf-game-shell .developer-dialog fieldset {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+.dwarf-game-shell .developer-dialog-actions { flex-wrap: wrap; justify-content: space-between; gap: 6px; }
+.dwarf-game-shell .developer-dialog-actions button { min-width: 0; }
+@media (max-height: 480px) {
+  .dwarf-game-shell .developer-dialog-header { padding: 4px 12px; align-items: center; }
+  .dwarf-game-shell .developer-dialog-header span, .dwarf-game-shell .developer-master-option small { display: none; }
+  .dwarf-game-shell .developer-master-option { margin: 3px 10px; padding: 5px; }
+  .dwarf-game-shell .developer-dialog-actions { padding: 4px 10px; }
+}

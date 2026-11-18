@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { sitePath } from "../site-paths";
-import { ACTIVE_LEVEL_SET, createLevelSet, nextWorld, type LevelSet } from "./level-templates";
+import { ACTIVE_LEVEL_SET, LEVEL_TEMPLATES, createLevelSet, nextWorld, type LevelSet } from "./level-templates";
 import { DwarfViewport, DwarfViewportPanel } from "./viewport";
 import { drawBossGate, drawIris, easeTravel } from "./passage-art";
 import { drawForestGround, drawForestBoss, drawForestArena, drawForestProjectile } from "./forest-art";
@@ -91,10 +91,12 @@ const HIGHSCORE_KEYS: Record<Difficulty, string> = {
 };
 type ForcedObstacle = "random" | "wood" | "rock" | "chest";
 type RockTestState = "none" | "whole" | "cracked" | "fractured";
-type DeveloperStartLevel = "normal1" | "normal2" | "bonus1" | "bonus2" | "boss1" | "boss2";
+type DeveloperStartLevel = "normal" | "hatch" | "bonus" | "ladder" | "gate" | "boss";
 type DeveloperSettings = {
   enabled: boolean;
   startLevel: DeveloperStartLevel;
+  world: number;
+  spawnPlank: boolean;
   axeLevel: number;
   destroyedObstacles: number;
   unlimitedLives: boolean;
@@ -158,7 +160,9 @@ const HAT_PALETTES: Record<HatColor, { light: string; mid: string; dark: string;
 
 const DEFAULT_DEVELOPER_SETTINGS: DeveloperSettings = {
   enabled: false,
-  startLevel: "normal1",
+  startLevel: "normal",
+  world: 1,
+  spawnPlank: false,
   axeLevel: 3,
   destroyedObstacles: 30,
   unlimitedLives: false,
@@ -2056,10 +2060,12 @@ export default function DwarfsGame() {
   const start = () => {
     if (animationRef.current !== null) window.cancelAnimationFrame(animationRef.current);
     if (shotCooldownRef.current !== null) window.clearTimeout(shotCooldownRef.current);
+    if (musicTimerRef.current !== null) window.clearInterval(musicTimerRef.current);
+    musicTimerRef.current = null;
     const developer = developerSettingsRef.current;
-    const requestedStart = developer.enabled ? developer.startLevel : "normal1";
+    const requestedStart = developer.enabled ? developer.startLevel : "normal";
     arrivalUntilRef.current = 0;
-    const startWorld = requestedStart.endsWith("2") ? 2 : 1;
+    const startWorld = developer.enabled ? developer.world : 1;
     worldRef.current = startWorld;
     activateLevelSet(startWorld);
     highscoreEligibleRef.current = !developer.enabled;
@@ -2090,6 +2096,10 @@ export default function DwarfsGame() {
     };
     if (developer.enabled && developer.spawnGold) addTestCollectible("gold");
     if (developer.enabled && developer.spawnShield) addTestCollectible("shield");
+    if (developer.enabled && developer.spawnPlank) {
+      const y = nextTestY();
+      obstaclesRef.current.push(wood(tunnelAt(tunnelRef.current, y).center, y, 65, 2));
+    }
     if (developer.enabled && developer.spawnChest) {
       const y = nextTestY(); const opening = tunnelAt(tunnelRef.current, y);
       obstaclesRef.current.push({ kind: "chest", x: opening.center, y, width: 46, height: 34, angle: 0, hits: 2 });
@@ -2100,19 +2110,36 @@ export default function DwarfsGame() {
       obstaclesRef.current.push({ kind: "rock", x: opening.center, y, width: 36, height: 36, angle: 0, hits });
     }
     protectedUntilRef.current = 0; impactUntilRef.current = 0; handEmptyUntilRef.current = 0; startedAtRef.current = performance.now(); lastFrameRef.current = startedAtRef.current;
-    if (developer.enabled && requestedStart.startsWith("bonus")) {
+    if (requestedStart === "bonus" || requestedStart === "ladder") {
       bonusPhaseRef.current = "active";
-        setBonusPhase("active"); void restartMusic();
+      setBonusPhase("active");
       setBonusSeconds(BONUS_DURATION / 1000);
+      const duration = requestedStart === "ladder" ? 1300 : BONUS_DURATION;
       bonusStartedAtRef.current = startedAtRef.current;
-      bonusEndsAtRef.current = startedAtRef.current + BONUS_DURATION;
+      bonusEndsAtRef.current = startedAtRef.current + duration;
       bonusNextCandyAtRef.current = startedAtRef.current + 300;
       bonusChestAtRef.current = startedAtRef.current + BONUS_LEVEL.candy.chestFirstMinMs + gameRandom() * BONUS_LEVEL.candy.chestFirstRangeMs;
       tunnelRef.current = createBonusTunnel();
       dwarfXRef.current = tunnelAt(tunnelRef.current, DWARF_Y).center;
       obstaclesRef.current = []; hatchesRef.current = []; projectilesRef.current = []; collectiblesRef.current = BONUS_LEVEL.treats === "bakery" ? createInitialBonusToys(tunnelRef.current) : createInitialBonusCandies(tunnelRef.current); particlesRef.current = []; feedbackRef.current = [{ x: dwarfXRef.current, y: DWARF_Y - 55, text: BONUS_LEVEL.name.toUpperCase(), color: "#ff9ddd", life: 1.6 }];
-    } else if (developer.enabled && requestedStart.startsWith("boss")) {
-      bossPhaseRef.current = "fight"; setBossPhase("fight"); void restartMusic(); bossPhaseStartedAtRef.current = startedAtRef.current;
+      if (requestedStart === "ladder") {
+        dwarfXRef.current = BONUS_LADDER_X;
+        collectiblesRef.current = [];
+        feedbackRef.current = [];
+        setBonusSeconds(2);
+      }
+    } else if (requestedStart === "gate") {
+      bossPhaseRef.current = "approach"; setBossPhase("approach");
+      bossPhaseStartedAtRef.current = startedAtRef.current;
+      bossGateYRef.current = -90;
+      dwarfXRef.current = WIDTH / 2;
+      obstaclesRef.current = []; collectiblesRef.current = [];
+    } else if (requestedStart === "hatch") {
+      const y = DWARF_Y - 98;
+      dwarfXRef.current = tunnelAt(tunnelRef.current, y).center;
+      hatchesRef.current = [{ x: dwarfXRef.current, y, width: 72, height: 34, hits: 0, open: true }];
+    } else if (requestedStart === "boss") {
+      bossPhaseRef.current = "fight"; setBossPhase("fight"); bossPhaseStartedAtRef.current = startedAtRef.current;
       bossXRef.current = WIDTH / 2; bossDirectionRef.current = 1; bossHealthRef.current = BOSS_MAX_HEALTH; setBossHealth(BOSS_MAX_HEALTH);
       bossNextAttackAtRef.current = startedAtRef.current + (difficultyRef.current === "easy" ? 1600 : 900); bossNextSpecialAtRef.current = startedAtRef.current + BOSS_LEVEL.enemy.specialFirstDelayMs;
       bossAttacksRef.current = []; bossWarningXsRef.current = []; bossWarningUntilRef.current = 0;
@@ -2273,7 +2300,12 @@ export default function DwarfsGame() {
     const audio = getAudio();
     try { await audio.resume(); } catch { return; }
     if (kind === "music") {
-      playMysticNote(220, 1.8, 0.14); playMysticNote(293.66, 1.4, 0.1);
+      const settings = developerSettingsRef.current;
+      const selected = createLevelSet(settings.world);
+      const scene = settings.startLevel;
+      const music = (scene === "gate" || scene === "boss" ? selected.boss : scene === "bonus" || scene === "ladder" ? selected.bonus : selected.normal).music;
+      playMysticNote(music.notes[0], music.leadDuration, music.leadVolume);
+      playMysticNote(music.notes[0] / 2, music.bassDuration, music.bassVolume);
     } else playEffect(kind);
   };
 
@@ -2421,7 +2453,14 @@ export default function DwarfsGame() {
                 <section className="developer-section">
                   <h3>Spielstart</h3>
                   <div className="developer-grid">
-                    <label>Startlevel<select value={developerSettings.startLevel} onChange={(event) => updateDeveloperSetting("startLevel", event.target.value as DeveloperStartLevel)}><option value="normal1">Normal 1</option><option value="normal2">Normal 2</option><option value="bonus1">Bonus 1</option><option value="bonus2">Bonus 2</option><option value="boss1">Boss 1</option><option value="boss2">Boss 2</option></select></label>
+                    <label>Startwelt<select value={developerSettings.world} onChange={(event) => updateDeveloperSetting("world", Number(event.target.value))}>
+                      {LEVEL_TEMPLATES.normal.map(({ world, name }) => <option key={world} value={world}>{world} · {name}</option>)}
+                    </select></label>
+                    <label>Startszene<select value={developerSettings.startLevel} onChange={(event) => updateDeveloperSetting("startLevel", event.target.value as DeveloperStartLevel)}>
+                      <option value="normal">Normaler Spielstart</option><option value="hatch">Offene Bonusklappe</option>
+                      <option value="bonus">Bonus · {createLevelSet(developerSettings.world).bonus.name}</option><option value="ladder">Kurz vor der Bonusleiter</option>
+                      <option value="gate">Ankunft am Bosstor</option><option value="boss">Kampf · {createLevelSet(developerSettings.world).boss.enemy.name}</option>
+                    </select></label>
                     <label>Hackenlevel <input type="number" min="1" max="10" value={developerSettings.axeLevel} onChange={(event) => updateDeveloperSetting("axeLevel", Number(event.target.value))} /></label>
                     <label>Zerstörte Hindernisse <input type="number" min="0" max="999" value={developerSettings.destroyedObstacles} onChange={(event) => updateDeveloperSetting("destroyedObstacles", Number(event.target.value))} /></label>
                     <label>Goldstand <input type="number" min="0" max="9999" value={developerSettings.startGold} onChange={(event) => updateDeveloperSetting("startGold", Number(event.target.value))} /></label>
@@ -2433,10 +2472,10 @@ export default function DwarfsGame() {
                 </section>
 
                 <section className="developer-section">
-                  <h3>Mine und Zufall</h3>
+                  <h3>Weg und Zufall</h3>
                   <label className="developer-range"><span>Spielgeschwindigkeit <output>{developerSettings.speed}</output></span><input type="range" min="40" max="180" step="2" value={developerSettings.speed} onChange={(event) => updateDeveloperSetting("speed", Number(event.target.value))} /></label>
                   <label className="developer-range"><span>Hindernisabstand <output>{developerSettings.obstacleInterval.toFixed(1)} s</output></span><input type="range" min="0.5" max="6" step="0.1" value={developerSettings.obstacleInterval} onChange={(event) => updateDeveloperSetting("obstacleInterval", Number(event.target.value))} /></label>
-                  <label className="developer-range"><span>Tunnelbreite <output>{developerSettings.tunnelWidth}</output></span><input type="range" min="110" max="280" step="5" value={developerSettings.tunnelWidth} onChange={(event) => updateDeveloperSetting("tunnelWidth", Number(event.target.value))} /></label>
+                  <label className="developer-range"><span>Wegbreite <output>{developerSettings.tunnelWidth}</output></span><input type="range" min="110" max="280" step="5" value={developerSettings.tunnelWidth} onChange={(event) => updateDeveloperSetting("tunnelWidth", Number(event.target.value))} /></label>
                   <div className="developer-grid">
                     <label>Hindernisse<select value={developerSettings.forcedObstacle} onChange={(event) => updateDeveloperSetting("forcedObstacle", event.target.value as ForcedObstacle)}><option value="random">Zufällig</option><option value="wood">Nur Holz</option><option value="rock">Nur Steine</option><option value="chest">Nur Schatztruhen</option></select></label>
                     <label>Zufallsstartwert<input type="text" value={developerSettings.randomSeed} onChange={(event) => updateDeveloperSetting("randomSeed", event.target.value)} placeholder="leer = zufällig" /></label>
@@ -2450,6 +2489,7 @@ export default function DwarfsGame() {
                     <label><input type="checkbox" checked={developerSettings.spawnGold} onChange={(event) => updateDeveloperSetting("spawnGold", event.target.checked)} /> Gold</label>
                     <label><input type="checkbox" checked={developerSettings.spawnShield} onChange={(event) => updateDeveloperSetting("spawnShield", event.target.checked)} /> Schild</label>
                     <label><input type="checkbox" checked={developerSettings.spawnChest} onChange={(event) => updateDeveloperSetting("spawnChest", event.target.checked)} /> Schatztruhe</label>
+                    <label><input type="checkbox" checked={developerSettings.spawnPlank} onChange={(event) => updateDeveloperSetting("spawnPlank", event.target.checked)} /> Doppeltes Brett</label>
                   </div>
                   <label className="developer-select-row">Stein-Schadensstufe<select value={developerSettings.rockTestState} onChange={(event) => updateDeveloperSetting("rockTestState", event.target.value as RockTestState)}><option value="none">Kein Teststein</option><option value="whole">Unbeschädigt</option><option value="cracked">Ein Riss</option><option value="fractured">Mehrere Risse</option></select></label>
                   <div className="developer-loot-settings">
@@ -2467,12 +2507,12 @@ export default function DwarfsGame() {
                     <label><input type="checkbox" checked={developerSettings.showFairness} onChange={(event) => updateDeveloperSetting("showFairness", event.target.checked)} /> Fairness-Prüfung anzeigen</label>
                   </div>
                   <div className="developer-values" aria-label="Aktuelle Spielwerte">
-                    <span>Gold <b>{gold}</b></span><span>Edelsteine <b>{gems}</b></span><span>Leben <b>{lives}</b></span><span>Schild <b>{shield}</b></span><span>Hackenlevel <b>{axeLevel}</b></span><span>Zerstört <b>{destroyed}</b></span><span>Spielstufe <b>{level}</b></span><span>Hindernisse <b>{obstaclesRef.current.length}</b></span><span>Hacken unterwegs <b>{projectilesRef.current.length}</b></span>
+                    <span>Gold <b>{gold}</b></span><span>Edelsteine <b>{gems}</b></span><span>Leben <b>{lives}</b></span><span>Schild <b>{shield}</b></span><span>Hackenlevel <b>{axeLevel}</b></span><span>Zerstört <b>{destroyed}</b></span><span>Nächster Aufstieg <b>{axeLevel * (difficulty === "easy" ? 4 : 15)}</b></span><span>Spielstufe <b>{level}</b></span><span>Hindernisse <b>{obstaclesRef.current.length}</b></span><span>Hacken unterwegs <b>{projectilesRef.current.length}</b></span>
                   </div>
                 </section>
 
                 <section className="developer-section">
-                  <h3>Ton testen</h3>
+                  <h3>Musik und Effektlautstärke testen</h3>
                   <div className="developer-sound-grid">
                     <button type="button" onClick={() => void testAudio("music")}>Musik</button>
                     {(["throw", "hit", "break", "gold", "shield", "damage"] as const).map((sound) => <button type="button" key={sound} onClick={() => void testAudio(sound)}>{sound === "throw" ? "Wurf" : sound === "hit" ? "Treffer" : sound === "break" ? "Bruch" : sound === "gold" ? "Gold" : sound === "shield" ? "Schild" : "Schaden"}</button>)}
@@ -2480,6 +2520,7 @@ export default function DwarfsGame() {
                 </section>
               </fieldset>
               <div className="developer-dialog-actions">
+                <button className="developer-close" type="button" disabled={!developerSettings.enabled} onClick={start}>Test starten</button>
                 <button className="developer-reset" type="button" onClick={resetDeveloperSettings}>Einstellungen zurücksetzen</button>
                 <button className="developer-close" type="button" onClick={() => setDeveloperDialogOpen(false)}>Fertig</button>
               </div>
