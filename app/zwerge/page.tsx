@@ -91,7 +91,7 @@ type DeveloperSettings = {
   enabled: boolean;
   startLevel: DeveloperStartLevel;
   axeLevel: number;
-  destroyedWood: number;
+  destroyedObstacles: number;
   unlimitedLives: boolean;
   invulnerable: boolean;
   speed: number;
@@ -154,7 +154,7 @@ const DEFAULT_DEVELOPER_SETTINGS: DeveloperSettings = {
   enabled: false,
   startLevel: "normal1",
   axeLevel: 3,
-  destroyedWood: 30,
+  destroyedObstacles: 30,
   unlimitedLives: false,
   invulnerable: false,
   speed: NORMAL_LEVEL.movement.baseSpeed,
@@ -1313,6 +1313,7 @@ export default function DwarfsGame() {
   const pausedAtRef = useRef(0);
   const handEmptyUntilRef = useRef(0);
   const shotCooldownRef = useRef<number | null>(null);
+  const destroyedRef = useRef(0);
   const axeLevelRef = useRef(1);
   const nextSpreadSideRef = useRef<-1 | 1>(-1);
   const selectedHatRef = useRef<HatColor>("blue");
@@ -1470,6 +1471,17 @@ export default function DwarfsGame() {
     }
   }, []);
   const addGem = useCallback(() => { gemsRef.current += 1; setGems(gemsRef.current); playEffect("gold"); }, [playEffect]);
+
+  const countDestroyedObstacle = useCallback(() => {
+    const count = ++destroyedRef.current;
+    setDestroyed(count);
+    const perLevel = difficultyRef.current === "easy" ? 4 : 15;
+    const nextLevel = 1 + Math.floor(count / perLevel);
+    if (nextLevel <= axeLevelRef.current) return;
+    axeLevelRef.current = nextLevel;
+    setAxeLevel(nextLevel);
+    feedbackRef.current.push({ x: WIDTH / 2, y: 210, text: `HACKE LEVEL ${nextLevel}!`, color: "#7cecff", life: 1.4 });
+  }, []);
 
   const animate = useCallback(function animateFrame(now: number) {
     if (!playingRef.current) return;
@@ -1776,6 +1788,7 @@ export default function DwarfsGame() {
           navigator.vibrate?.(destroyedRock ? [28, 18, 42] : 24);
           if (destroyedRock) {
             obstaclesRef.current.splice(rockIndex, 1);
+            countDestroyedObstacle();
             const heartChance = Math.max(0, Math.min(100, developer.enabled ? developer.rockHeartChance : 15)) / 100;
             const goldChance = Math.max(0, Math.min(100, developer.enabled ? developer.rockGoldChance : 25)) / 100;
             const canDropHeart = livesRef.current < 3;
@@ -1813,15 +1826,6 @@ export default function DwarfsGame() {
       } else if (hitIndex >= 0) {
         const hit = obstaclesRef.current[hitIndex];
         hit.hits -= 1;
-        if (hit.kind === "wood") {
-          setDestroyed((current) => {
-            const next = current + 1;
-            const woodPerAxeLevel = difficultyRef.current === "easy" ? 4 : 15;
-            const nextAxeLevel = Math.max(developer.enabled ? developer.axeLevel : 1, 1 + Math.floor(next / woodPerAxeLevel));
-            if (nextAxeLevel !== axeLevelRef.current) feedbackRef.current.push({ x: WIDTH / 2, y: 210, text: `HACKE LEVEL ${nextAxeLevel}!`, color: "#7cecff", life: 1.4 });
-            axeLevelRef.current = nextAxeLevel; setAxeLevel(nextAxeLevel); return next;
-          });
-        }
         if (hit.kind === "wood" && hit.hits === 1) hit.height = 24;
         impactUntilRef.current = now + 150;
         addBurst(particlesRef.current, projectile.x, projectile.y, hit.kind === "candyChest"
@@ -1832,6 +1836,7 @@ export default function DwarfsGame() {
         navigator.vibrate?.(hit.hits > 0 ? 22 : [25, 20, 35]);
         if (hit.hits <= 0) {
           obstaclesRef.current.splice(hitIndex, 1);
+          countDestroyedObstacle();
           if (hit.kind === "candyChest") {
             const originalCandyCount = 5 + Math.floor(gameRandom() * 4);
             const candyCount = Math.round(originalCandyCount * BONUS_LEVEL.candy.chestMultiplier);
@@ -1990,7 +1995,7 @@ export default function DwarfsGame() {
     }
     renderCurrentScene(now);
     if (playingRef.current) animationRef.current = window.requestAnimationFrame(animateFrame);
-  }, [addGold, playEffect, renderCurrentScene, restartMusic, stopMusic]);
+  }, [addGold, addGem, countDestroyedObstacle, playEffect, renderCurrentScene, restartMusic, stopMusic]);
 
   useEffect(() => {
     gameRandom = Math.random; tunnelRef.current = createTunnel(); dwarfXRef.current = tunnelAt(tunnelRef.current, DWARF_Y).center; renderCurrentScene();
@@ -2040,10 +2045,11 @@ export default function DwarfsGame() {
     dwarfXRef.current = tunnelAt(tunnelRef.current, DWARF_Y).center;
     obstaclesRef.current = []; hatchesRef.current = []; projectilesRef.current = []; collectiblesRef.current = []; particlesRef.current = []; feedbackRef.current = [];
     const initialGold = developer.enabled ? Math.max(0, Math.floor(developer.startGold)) : 0;
-    const initialDestroyed = developer.enabled ? Math.max(0, Math.floor(developer.destroyedWood)) : 0;
-    const initialAxeLevel = developer.enabled ? Math.max(1, Math.floor(developer.axeLevel)) : 1;
+    const initialDestroyed = developer.enabled ? Math.max(0, Math.floor(developer.destroyedObstacles)) : 0;
+    const initialAxeLevel = Math.max(developer.enabled ? Math.floor(developer.axeLevel) : 1, 1 + Math.floor(initialDestroyed / (difficultyRef.current === "easy" ? 4 : 15)));
     livesRef.current = 3; shieldRef.current = 0; goldRef.current = initialGold; gemsRef.current = 0; setGems(0); generatedSegmentsRef.current = 0;
     nextCornerAtRef.current = developer.enabled && developer.instantCorner ? 2 : 15 + Math.floor(gameRandom() * 5);
+    destroyedRef.current = initialDestroyed;
     axeLevelRef.current = initialAxeLevel;
     let testY = 82;
     const nextTestY = () => { const y = testY; testY += 66; return y; };
@@ -2384,7 +2390,7 @@ export default function DwarfsGame() {
                   <div className="developer-grid">
                     <label>Startlevel<select value={developerSettings.startLevel} onChange={(event) => updateDeveloperSetting("startLevel", event.target.value as DeveloperStartLevel)}><option value="normal1">Normal 1</option><option value="normal2">Normal 2</option><option value="bonus1">Bonus 1</option><option value="bonus2">Bonus 2</option><option value="boss1">Boss 1</option><option value="boss2">Boss 2</option></select></label>
                     <label>Hackenlevel <input type="number" min="1" max="10" value={developerSettings.axeLevel} onChange={(event) => updateDeveloperSetting("axeLevel", Number(event.target.value))} /></label>
-                    <label>Zerstörtes Holz <input type="number" min="0" max="999" value={developerSettings.destroyedWood} onChange={(event) => updateDeveloperSetting("destroyedWood", Number(event.target.value))} /></label>
+                    <label>Zerstörte Hindernisse <input type="number" min="0" max="999" value={developerSettings.destroyedObstacles} onChange={(event) => updateDeveloperSetting("destroyedObstacles", Number(event.target.value))} /></label>
                     <label>Goldstand <input type="number" min="0" max="9999" value={developerSettings.startGold} onChange={(event) => updateDeveloperSetting("startGold", Number(event.target.value))} /></label>
                   </div>
                   <div className="developer-checks">
@@ -2428,7 +2434,7 @@ export default function DwarfsGame() {
                     <label><input type="checkbox" checked={developerSettings.showFairness} onChange={(event) => updateDeveloperSetting("showFairness", event.target.checked)} /> Fairness-Prüfung anzeigen</label>
                   </div>
                   <div className="developer-values" aria-label="Aktuelle Spielwerte">
-                    <span>Gold <b>{gold}</b></span><span>Edelsteine <b>{gems}</b></span><span>Leben <b>{lives}</b></span><span>Schild <b>{shield}</b></span><span>Hackenlevel <b>{axeLevel}</b></span><span>Holz <b>{destroyed}</b></span><span>Spielstufe <b>{level}</b></span><span>Hindernisse <b>{obstaclesRef.current.length}</b></span><span>Hacken unterwegs <b>{projectilesRef.current.length}</b></span>
+                    <span>Gold <b>{gold}</b></span><span>Edelsteine <b>{gems}</b></span><span>Leben <b>{lives}</b></span><span>Schild <b>{shield}</b></span><span>Hackenlevel <b>{axeLevel}</b></span><span>Zerstört <b>{destroyed}</b></span><span>Spielstufe <b>{level}</b></span><span>Hindernisse <b>{obstaclesRef.current.length}</b></span><span>Hacken unterwegs <b>{projectilesRef.current.length}</b></span>
                   </div>
                 </section>
 
