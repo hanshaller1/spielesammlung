@@ -9,6 +9,7 @@ export const dynamic = "error";
 export const metadata: Metadata = {
   title: "Hanna's Spiele",
   description: "Hannas kleine Spielesammlung für Browser und Smartphone.",
+  other: process.env.GITHUB_PAGES === "true" ? undefined : { "codex-preview": "development" },
   icons: {
     icon: sitePath("/favicon.svg"),
     shortcut: sitePath("/favicon.svg"),
