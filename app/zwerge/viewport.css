@@ -131,3 +131,5 @@ body.dwarf-viewport-active { height:100%; overflow:hidden; overscroll-behavior:n
 }
 .dwarf-game-shell .dwarf-start-panel h2 { color: #ffeab3; text-shadow: 0 2px 5px #142018; }
 .dwarf-game-shell .dwarf-board { border-color: #46514b; box-shadow: 0 0 0 2px #192823, 0 0 0 5px #957843, 0 12px 36px #071412aa; }
+
+.dwarf-game-shell .axe-progress { color: #fff2c9; font: 700 .68rem/1.1 Arial, sans-serif; font-variant-numeric: tabular-nums; }
