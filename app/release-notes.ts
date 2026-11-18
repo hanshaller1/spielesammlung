@@ -9,6 +9,21 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.39",
+    title: "Korrekturen an Vorschau und Oberflächenstilen",
+    date: "18. November 2026",
+    changes: [
+      "Die Entwicklungsvorschau trägt ihre Kennzeichnung jetzt im HTML-Seitenkopf.",
+      "Dialoge verwenden die vorgesehenen Ein- und Ausblendanimationen. Die Scroll- und Schimmereffekte der gemeinsamen UI-Komponenten sind im Stylesheet enthalten.",
+      "Der Nachrichtenverlauf zeigt eine schmale Scrollleiste und blendet sie beim automatischen Scrollen aus. Auch Anhangslisten können ohne sichtbare Leiste gescrollt werden.",
+    ],
+    commits: [
+      { id: "9f66e1c", description: "Spielesammlung: Vorschau-Metadaten im HTML ausgeben" },
+      { id: "aff7f00", description: "Spielesammlung: Animations- und Scrollstile der UI-Komponenten einbinden" },
+      { id: "a1fee8d", description: "Spielesammlung: Scrollleistenklassen an die verwendete Tailwind-Version anpassen" },
+    ],
+  },
+  {
     version: "0.4.38",
     title: "Zwergengold führt in den Wald",
     date: "18. November 2026",
