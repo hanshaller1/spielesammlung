@@ -29,8 +29,8 @@ const games: Array<{
     href: sitePath("/zwerge"),
     image: `${publicBasePath}/zwergengold-logo.png`,
     title: "Zwergengold",
-    description: "Sammle Gold und lenke den Zwerg sicher durch den Tunnel.",
-    meta: "Gold sammeln",
+    description: "Sammle Gold in zwei Minen und zwei Wäldern. Hinter jedem Tor wartet ein Endgegner.",
+    meta: "4 Welten",
   },
   {
     href: sitePath("/schatz-merge"),
