@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { sitePath } from "../site-paths";
 import { ACTIVE_LEVEL_SET, createLevelSet, nextWorld, type LevelSet } from "./level-templates";
 import { DwarfViewport, DwarfViewportPanel } from "./viewport";
+import { drawBossGate, drawIris, easeTravel } from "./passage-art";
 import { drawForestGround, drawForestBoss, drawForestArena, drawForestProjectile } from "./forest-art";
 import { createGameMix, type EffectKind } from "./sound";
 import "./viewport.css";
@@ -23,6 +24,8 @@ const GAP = 34;
 const MOVE_STEP = 18;
 const PICKAXE_SPEED = 310;
 const SHOT_COOLDOWN = 900;
+const ARRIVAL_TIME = 700;
+const MISSED_LADDER_TIME = 650;
 const BOSS_COMPLETION_TIME = 9000;
 const TRIUMPH_MUSIC = { notes: [261.63, 329.63, 392, 523.25, 659.25, 783.99, 1046.5, 783.99], intervalMs: 360, leadDuration: 1.8, leadVolume: 0.2, bassDuration: 2.8, bassVolume: 0.12 };
 let BONUS_DURATION = BONUS_LEVEL.durationMs;
@@ -131,7 +134,7 @@ type Obstacle = { kind: "wood" | "rock" | "chest" | "candyChest"; x: number; y: 
 type Hatch = { x: number; y: number; width: number; height: number; hits: number; open: boolean };
 type CandyKind = "candy" | "lollipop" | "chocolate";
 type ToyKind = "cake" | "slice" | "icecream";
-type BonusPhase = "none" | "active" | "exit" | "climbing";
+type BonusPhase = "none" | "active" | "exit" | "climbing" | "falling";
 type BossPhase = "none" | "approach" | "entering" | "fight" | "victory" | "completed";
 type Collectible = {
   kind: "gold" | "gold5" | "heart" | "shield" | CandyKind | ToyKind | "gem-white" | "gem-green" | "gem-red" | "gem-purple";
@@ -722,32 +725,6 @@ function drawLoosePickaxe(context: CanvasRenderingContext2D, x: number, y: numbe
   context.restore();
 }
 
-function drawBossEntrance(context: CanvasRenderingContext2D, gateY: number, enteringProgress: number) {
-  context.save();
-  const wallGradient = context.createLinearGradient(0, gateY - 42, 0, gateY + 74);
-  wallGradient.addColorStop(0, "#11191d"); wallGradient.addColorStop(1, "#2f3c40");
-  context.fillStyle = wallGradient; context.fillRect(0, gateY - 38, WIDTH, 116);
-  for (let row = 0; row < 3; row += 1) {
-    for (let column = -1; column < 11; column += 1) {
-      const x = column * 43 + (row % 2) * 20;
-      const y = gateY - 28 + row * 35 + (((column * 7 + row * 5) % 9) - 4);
-      if (Math.abs(x + 20 - WIDTH / 2) < 50 && row > 0) continue;
-      context.fillStyle = (column + row) % 3 === 0 ? "#526066" : (column + row) % 3 === 1 ? "#39474c" : "#263339";
-      context.strokeStyle = "#0b1216"; context.lineWidth = 2;
-      context.beginPath(); context.moveTo(x - 4, y + 8); context.lineTo(x + 7, y - 14); context.lineTo(x + 31, y - 17); context.lineTo(x + 44, y + 3); context.lineTo(x + 34, y + 27); context.lineTo(x + 8, y + 29); context.closePath(); context.fill(); context.stroke();
-    }
-  }
-  const doorway = context.createRadialGradient(WIDTH / 2, gateY + 38, 4, WIDTH / 2, gateY + 38, 54);
-  doorway.addColorStop(0, "#000"); doorway.addColorStop(0.7, "#050407"); doorway.addColorStop(1, "#2a1115");
-  context.fillStyle = doorway; context.strokeStyle = "#7a302b"; context.lineWidth = 5;
-  context.beginPath(); context.roundRect(WIDTH / 2 - 43, gateY - 14, 86, 98, [43, 43, 8, 8]); context.fill(); context.stroke();
-  context.fillStyle = "#ff7b4433"; context.beginPath(); context.ellipse(WIDTH / 2, gateY + 67, 28, 8, 0, 0, Math.PI * 2); context.fill();
-  if (enteringProgress > 0) {
-    context.fillStyle = `rgba(0,0,0,${Math.min(1, enteringProgress)})`; context.fillRect(0, 0, WIDTH, HEIGHT);
-  }
-  context.restore();
-}
-
 function drawEvilBoss(context: CanvasRenderingContext2D, x: number, y: number, now: number, health: number) {
   const pulse = Math.sin(now / 145) * 2;
   context.save(); context.translate(x, y + pulse); context.scale(1.38, 1.38);
@@ -1021,7 +998,7 @@ function drawTunnel(
   obstacles: Obstacle[], hatches: Hatch[], projectiles: Projectile[], collectibles: Collectible[],
   particles: Particle[], feedback: Feedback[], shield: number, impactUntil: number,
   hatColor: HatColor, handEmptyUntil: number, bonusPhase: BonusPhase, ladderProgress: number, bonusExitWallY: number,
-  showHitboxes = false, showFairness = false,
+  showHitboxes = false, showFairness = false, enteringGate = false,
 ) {
   context.clearRect(0, 0, WIDTH, HEIGHT);
   const shake = now < impactUntil ? Math.sin(now * 0.09) * 5 : 0;
@@ -1232,7 +1209,7 @@ function drawTunnel(
     context.strokeStyle = "#78efff"; context.lineWidth = 4; context.shadowColor = "#69efff"; context.shadowBlur = 16;
     context.beginPath(); context.arc(dwarfX, DWARF_Y - 5, 28 + Math.sin(now / 150) * 2, 0, Math.PI * 2); context.stroke(); context.shadowBlur = 0;
   }
-  if (bonusPhase === "active" || bonusPhase === "exit" || bonusPhase === "climbing") {
+  if (inBonus) {
     const wallY = bonusExitWallY;
     const exitEdgeY = (x: number) => {
       const sideBlend = Math.max(0, (Math.abs(x - WIDTH / 2) - 54) / 118) * 24;
@@ -1278,7 +1255,16 @@ function drawTunnel(
     // leads into the exit instead of ending beside or behind it.
     context.fillStyle = "#050609"; context.strokeStyle = levelTheme.edgeRock[2]; context.lineWidth = 6;
     context.beginPath(); context.roundRect(BONUS_LADDER_X - 31, wallY - 82, 62, 76, [31, 31, 8, 8]); context.fill(); context.stroke();
-    context.fillStyle = `${levelTheme.accent}33`; context.beginPath(); context.ellipse(BONUS_LADDER_X, wallY - 8, 21, 8, 0, 0, Math.PI * 2); context.fill();
+    const light = context.createRadialGradient(BONUS_LADDER_X, wallY - 44, 1, BONUS_LADDER_X, wallY - 44, 61);
+    light.addColorStop(0, "#fff2c9dd"); light.addColorStop(.38, NORMAL_LEVEL.theme.accent + "88"); light.addColorStop(1, "#ffdf8a00");
+    context.fillStyle = light; context.fillRect(BONUS_LADDER_X - 61, wallY - 105, 122, 122);
+    for (let spark = 0; spark < 9; spark++) {
+      const t = (now / 1300 + spark / 9) % 1;
+      context.globalAlpha = Math.sin(t * Math.PI) * .85;
+      context.fillStyle = "#fff3cb";
+      context.fillRect(BONUS_LADDER_X + Math.sin(spark * 8 + t * 2) * (11 + t * 22), wallY - 15 - 82 * t, 2, 3);
+    }
+    context.globalAlpha = 1;
     context.strokeStyle = "#d29a59"; context.lineWidth = 3; context.beginPath(); context.moveTo(BONUS_LADDER_X - 29, wallY - 77); context.lineTo(BONUS_LADDER_X - 39, wallY - 63); context.moveTo(BONUS_LADDER_X + 29, wallY - 77); context.lineTo(BONUS_LADDER_X + 39, wallY - 63); context.stroke();
     const ladderBottom = Math.min(HEIGHT + 20, wallY + 185);
     context.strokeStyle = "#c8914b"; context.lineWidth = 7; context.lineCap = "round";
@@ -1287,8 +1273,16 @@ function drawTunnel(
     for (let y = wallY - 36; y < ladderBottom; y += 27) { context.beginPath(); context.moveTo(BONUS_LADDER_X - 18, y); context.lineTo(BONUS_LADDER_X + 18, y); context.stroke(); }
     context.restore();
   }
-  const dwarfY = bonusPhase === "climbing" ? DWARF_Y - ladderProgress * 130 : DWARF_Y;
-  drawDwarf(context, dwarfX, dwarfY, now, now < protectedUntil, hatColor, now >= handEmptyUntil);
+  if (!enteringGate) {
+    const climb = bonusPhase === "climbing" ? easeTravel(ladderProgress) : 0;
+    const drop = bonusPhase === "falling" ? ladderProgress * ladderProgress : 0;
+    const x = dwarfX + Math.sin(climb * Math.PI * 8) * 2;
+    const y = DWARF_Y - climb * 132 + drop * 64;
+    context.save(); context.translate(x, y); context.scale(1 - climb * .45, 1 - climb * .45);
+    drawDwarf(context, 0, 0, now, now < protectedUntil, hatColor, now >= handEmptyUntil);
+    context.restore();
+    if (climb || drop) drawIris(context, x, y - 20, 1 - Math.max(0, (climb - .58) / .42, drop), NORMAL_LEVEL.theme.accent);
+  }
   context.restore();
   if (now < impactUntil) { context.fillStyle = "#ff493522"; context.fillRect(0, 0, WIDTH, HEIGHT); }
 }
@@ -1311,6 +1305,7 @@ export default function DwarfsGame() {
   const bonusStartedAtRef = useRef(0);
   const bonusEndsAtRef = useRef(0);
   const bonusLadderEndsAtRef = useRef(0);
+  const arrivalUntilRef = useRef(0);
   const bonusNextCandyAtRef = useRef(0);
   const bonusChestAtRef = useRef(0);
   const bossPhaseRef = useRef<BossPhase>("none");
@@ -1443,11 +1438,12 @@ export default function DwarfsGame() {
         handEmptyUntilRef.current, projectilesRef.current, bossAttacksRef.current, bossWarningXsRef.current,
         bossWarningUntilRef.current, bossHealthRef.current, bossPhaseRef.current, particlesRef.current,
         feedbackRef.current, shieldRef.current, impactUntilRef.current, bossPhaseStartedAtRef.current);
+      if (now < arrivalUntilRef.current) drawIris(context, WIDTH / 2, 122, 1 - (arrivalUntilRef.current - now) / ARRIVAL_TIME, BOSS_LEVEL.theme.accent);
       return;
     }
     const ladderProgress = bonusPhaseRef.current === "climbing"
       ? Math.max(0, Math.min(1, 1 - (bonusLadderEndsAtRef.current - now) / BONUS_CLIMB_TIME))
-      : 0;
+      : bonusPhaseRef.current === "falling" ? easeTravel(1 - (bonusLadderEndsAtRef.current - now) / MISSED_LADDER_TIME) : 0;
     const bonusExitWallY = bonusPhaseRef.current === "active"
       ? BONUS_EXIT_WALL_Y - Math.max(0, bonusEndsAtRef.current - now) * BONUS_SPEED / 1000
       : BONUS_EXIT_WALL_Y;
@@ -1455,13 +1451,24 @@ export default function DwarfsGame() {
       projectilesRef.current, collectiblesRef.current, particlesRef.current, feedbackRef.current, shieldRef.current, impactUntilRef.current,
       selectedHatRef.current, handEmptyUntilRef.current, bonusPhaseRef.current, ladderProgress, bonusExitWallY,
       developerSettingsRef.current.enabled && developerSettingsRef.current.showHitboxes,
-      developerSettingsRef.current.enabled && developerSettingsRef.current.showFairness);
+      developerSettingsRef.current.enabled && developerSettingsRef.current.showFairness, bossPhaseRef.current === "entering");
     if (bossPhaseRef.current === "approach" || bossPhaseRef.current === "entering") {
       const enteringProgress = bossPhaseRef.current === "entering"
         ? Math.max(0, Math.min(1, (now - bossPhaseStartedAtRef.current) / BOSS_ENTER_TIME))
         : 0;
-      drawBossEntrance(context, bossGateYRef.current, enteringProgress);
+      const gateY = bossGateYRef.current;
+      drawBossGate(context, gateY, now, enteringProgress, BOSS_LEVEL.theme.accent, BOSS_LEVEL.world >= 3, BOSS_LEVEL.enemy.name, gateY >= 359);
+      if (bossPhaseRef.current === "entering") {
+        const p = easeTravel(enteringProgress);
+        const x = dwarfXRef.current + (WIDTH / 2 - dwarfXRef.current) * p;
+        const y = DWARF_Y + (gateY + 48 - DWARF_Y) * p;
+        context.save(); context.translate(x, y); context.scale(1 - p * .52, 1 - p * .52);
+        drawDwarf(context, 0, 0, now, false, selectedHatRef.current, false);
+        context.restore();
+        drawIris(context, x, y - 21, 1 - Math.max(0, (p - .45) / .55), BOSS_LEVEL.theme.accent);
+      }
     }
+    if (now < arrivalUntilRef.current) drawIris(context, dwarfXRef.current, DWARF_Y - 22, 1 - (arrivalUntilRef.current - now) / ARRIVAL_TIME, NORMAL_LEVEL.theme.accent);
   }, []);
 
   const addGold = useCallback((amount: number) => {
@@ -1496,6 +1503,7 @@ export default function DwarfsGame() {
     lastFrameRef.current = now;
     const developer = developerSettingsRef.current;
     const beginBossFight = () => {
+      arrivalUntilRef.current = now + ARRIVAL_TIME;
       bossPhaseRef.current = "fight"; setBossPhase("fight");
       void restartMusic();
       bossPhaseStartedAtRef.current = now; bossXRef.current = WIDTH / 2; bossDirectionRef.current = gameRandom() < .5 ? -1 : 1;
@@ -1613,7 +1621,10 @@ export default function DwarfsGame() {
     if (bossPhaseRef.current === "entering" && now - bossPhaseStartedAtRef.current >= BOSS_ENTER_TIME) {
       beginBossFight(); renderCurrentScene(now); animationRef.current = window.requestAnimationFrame(animateFrame); return;
     }
-    const returnToMine = (message: string, color: string) => {
+    const returnFromBonus = (message: string, color: string) => {
+      arrivalUntilRef.current = now + ARRIVAL_TIME;
+      protectedUntilRef.current = Math.max(protectedUntilRef.current, now + ARRIVAL_TIME);
+      particlesRef.current = [];
       startedAtRef.current += now - bonusStartedAtRef.current;
       bonusPhaseRef.current = "none";
       setBonusPhase("none");
@@ -1660,31 +1671,35 @@ export default function DwarfsGame() {
           setPlaying(false);
           window.setTimeout(stopMusic, 420);
         } else {
-          returnToMine(protectedByDeveloper ? "LEITER VERPASST!" : "LEITER VERPASST! −1 LEBEN", "#ff8b74");
+          bonusPhaseRef.current = "falling";
+          setBonusPhase("falling");
+          bonusLadderEndsAtRef.current = now + MISSED_LADDER_TIME;
         }
       }
     } else if (bonusPhaseRef.current === "climbing" && now >= bonusLadderEndsAtRef.current) {
-      returnToMine("WIEDER IN DER MINE!", "#8ff5ff");
+      returnFromBonus(NORMAL_LEVEL.name.toUpperCase(), NORMAL_LEVEL.theme.accent);
+    } else if (bonusPhaseRef.current === "falling" && now >= bonusLadderEndsAtRef.current) {
+      returnFromBonus(developer.enabled && (developer.invulnerable || developer.unlimitedLives) ? "LEITER VERPASST!" : "LEITER VERPASST! −1 LEBEN", "#ff8b74");
     }
     if (bonusPhaseRef.current === "none" && bossPhaseRef.current === "none" && !bossDefeatedRef.current
-      && now - startedAtRef.current >= BOSS_TRIGGER_TIME) {
+      && now >= arrivalUntilRef.current && now - startedAtRef.current >= BOSS_TRIGGER_TIME) {
       bossPhaseRef.current = "approach"; setBossPhase("approach"); bossPhaseStartedAtRef.current = now; bossGateYRef.current = -90;
       obstaclesRef.current = []; hatchesRef.current = []; projectilesRef.current = []; collectiblesRef.current = [];
-      feedbackRef.current = [{ x: WIDTH / 2, y: 205, text: "ETWAS GROSSES WARTET …", color: "#ff9a67", life: 2 }];
+      feedbackRef.current = [{ x: WIDTH / 2, y: 205, text: "FOLGE DEM TORLICHT", color: "#ff9a67", life: 2 }];
     }
     if (bossPhaseRef.current === "approach") {
       const approachProgress = Math.min(1, (now - bossPhaseStartedAtRef.current) / BOSS_APPROACH_TIME);
       bossGateYRef.current = -90 + approachProgress * 450;
       if (approachProgress >= 1 && Math.abs(dwarfXRef.current - WIDTH / 2) <= 43) {
         bossPhaseRef.current = "entering"; setBossPhase("entering"); bossPhaseStartedAtRef.current = now;
-        dwarfXRef.current = WIDTH / 2; projectilesRef.current = [];
+        projectilesRef.current = [];
       }
     }
     const inBonus = bonusPhaseRef.current !== "none";
     const levelClock = inBonus ? bonusStartedAtRef.current : now;
     const currentLevel = Math.min(NORMAL_LEVEL.movement.maximumStage, 1 + Math.floor((levelClock - startedAtRef.current) / NORMAL_LEVEL.movement.stageDurationMs));
     const gameplayLevel = difficultyRef.current === "easy" ? 1 : currentLevel;
-    const speed = bonusPhaseRef.current === "exit" || bonusPhaseRef.current === "climbing" || bossPhaseRef.current === "entering"
+    const speed = bonusPhaseRef.current === "exit" || (bonusPhaseRef.current === "climbing" || bonusPhaseRef.current === "falling") || bossPhaseRef.current === "entering"
       ? 0
       : bossPhaseRef.current === "approach"
         ? bossGateYRef.current >= 360 ? 0 : 74
@@ -1983,7 +1998,7 @@ export default function DwarfsGame() {
         dwarfXRef.current = tunnelAt(tunnelRef.current, DWARF_Y).center;
         generatedSegmentsRef.current = 0;
         obstaclesRef.current = []; hatchesRef.current = []; projectilesRef.current = []; collectiblesRef.current = BONUS_LEVEL.treats === "bakery" ? createInitialBonusToys(tunnelRef.current) : createInitialBonusCandies(tunnelRef.current); particlesRef.current = [];
-        feedbackRef.current = [{ x: dwarfXRef.current, y: DWARF_Y - 55, text: BONUS_LEVEL.treats === "bakery" ? "SPIELZEUG-BONUS!" : "SÜSSIGKEITEN-BONUS!", color: "#ff9ddd", life: 1.6 }];
+        feedbackRef.current = [{ x: dwarfXRef.current, y: DWARF_Y - 55, text: BONUS_LEVEL.name.toUpperCase(), color: "#ff9ddd", life: 1.6 }];
         playEffect("gold");
         navigator.vibrate?.([20, 25, 20, 25, 35]);
         renderCurrentScene(now);
@@ -2043,6 +2058,7 @@ export default function DwarfsGame() {
     if (shotCooldownRef.current !== null) window.clearTimeout(shotCooldownRef.current);
     const developer = developerSettingsRef.current;
     const requestedStart = developer.enabled ? developer.startLevel : "normal1";
+    arrivalUntilRef.current = 0;
     const startWorld = requestedStart.endsWith("2") ? 2 : 1;
     worldRef.current = startWorld;
     activateLevelSet(startWorld);
@@ -2094,7 +2110,7 @@ export default function DwarfsGame() {
       bonusChestAtRef.current = startedAtRef.current + BONUS_LEVEL.candy.chestFirstMinMs + gameRandom() * BONUS_LEVEL.candy.chestFirstRangeMs;
       tunnelRef.current = createBonusTunnel();
       dwarfXRef.current = tunnelAt(tunnelRef.current, DWARF_Y).center;
-      obstaclesRef.current = []; hatchesRef.current = []; projectilesRef.current = []; collectiblesRef.current = BONUS_LEVEL.treats === "bakery" ? createInitialBonusToys(tunnelRef.current) : createInitialBonusCandies(tunnelRef.current); particlesRef.current = []; feedbackRef.current = [{ x: dwarfXRef.current, y: DWARF_Y - 55, text: BONUS_LEVEL.treats === "bakery" ? "SPIELZEUG-BONUS!" : "SÜSSIGKEITEN-BONUS!", color: "#ff9ddd", life: 1.6 }];
+      obstaclesRef.current = []; hatchesRef.current = []; projectilesRef.current = []; collectiblesRef.current = BONUS_LEVEL.treats === "bakery" ? createInitialBonusToys(tunnelRef.current) : createInitialBonusCandies(tunnelRef.current); particlesRef.current = []; feedbackRef.current = [{ x: dwarfXRef.current, y: DWARF_Y - 55, text: BONUS_LEVEL.name.toUpperCase(), color: "#ff9ddd", life: 1.6 }];
     } else if (developer.enabled && requestedStart.startsWith("boss")) {
       bossPhaseRef.current = "fight"; setBossPhase("fight"); void restartMusic(); bossPhaseStartedAtRef.current = startedAtRef.current;
       bossXRef.current = WIDTH / 2; bossDirectionRef.current = 1; bossHealthRef.current = BOSS_MAX_HEALTH; setBossHealth(BOSS_MAX_HEALTH);
@@ -2112,12 +2128,12 @@ export default function DwarfsGame() {
   };
 
   const move = useCallback((direction: -1 | 1) => {
-    if (!playingRef.current || bonusPhaseRef.current === "climbing" || bossPhaseRef.current === "entering" || bossPhaseRef.current === "victory" || bossPhaseRef.current === "completed") return;
+    if (!playingRef.current || (bonusPhaseRef.current === "climbing" || bonusPhaseRef.current === "falling") || bossPhaseRef.current === "entering" || bossPhaseRef.current === "victory" || bossPhaseRef.current === "completed") return;
     dwarfXRef.current = Math.max(DWARF_RADIUS, Math.min(WIDTH - DWARF_RADIUS, dwarfXRef.current + direction * MOVE_STEP)); renderCurrentScene();
   }, [renderCurrentScene]);
 
   const throwPickaxe = useCallback(() => {
-    if (!playingRef.current || bonusPhaseRef.current === "exit" || bonusPhaseRef.current === "climbing"
+    if (!playingRef.current || bonusPhaseRef.current === "exit" || bonusPhaseRef.current === "climbing" || bonusPhaseRef.current === "falling"
       || bossPhaseRef.current === "entering" || bossPhaseRef.current === "victory" || bossPhaseRef.current === "completed" || !shotReady) return;
     const now = performance.now();
     const motion = dwarfMotion(now);
@@ -2203,6 +2219,7 @@ export default function DwarfsGame() {
       if (bossWarningUntilRef.current > 0) bossWarningUntilRef.current += pauseDuration;
       if (bossVictoryEndsAtRef.current > 0) bossVictoryEndsAtRef.current += pauseDuration;
     }
+    if (arrivalUntilRef.current > pausedAtRef.current) arrivalUntilRef.current += pauseDuration;
     if (protectedUntilRef.current > pausedAtRef.current) protectedUntilRef.current += pauseDuration;
     if (impactUntilRef.current > pausedAtRef.current) impactUntilRef.current += pauseDuration;
     if (handEmptyUntilRef.current > pausedAtRef.current) handEmptyUntilRef.current += pauseDuration;
@@ -2299,6 +2316,7 @@ export default function DwarfsGame() {
               : bonusPhase === "active" ? <><b>🍬 {bonusSeconds}</b> Bonus</>
                 : bonusPhase === "exit" ? <b>🪜 Ausgang</b>
                   : bonusPhase === "climbing" ? <b>🪜 Hoch!</b>
+                  : bonusPhase === "falling" ? <b>Rückweg</b>
                     : <><b>🏆 {highscores[difficulty]}</b> Rekord</>}
             </span>
           </div>
@@ -2326,9 +2344,9 @@ export default function DwarfsGame() {
         </div>
         </div>
         <div className="dwarf-controls" aria-label="Bewegungssteuerung">
-          <button onPointerDown={() => move(-1)} disabled={!playing || paused || bonusPhase === "climbing" || bossPhase === "entering" || bossPhase === "victory"} aria-label="Nach links bewegen"><b>←</b><span>Links</span></button>
-          <button className="pickaxe-button" onPointerDown={throwPickaxe} disabled={!playing || paused || bonusPhase === "exit" || bonusPhase === "climbing" || bossPhase === "entering" || bossPhase === "victory" || bossPhase === "completed" || !shotReady} aria-label={`Hacke Level ${axeLevel} werfen`}><b>⛏️</b><span>{shotReady ? `Werfen · L${axeLevel}` : "Lädt …"}</span></button>
-          <button onPointerDown={() => move(1)} disabled={!playing || paused || bonusPhase === "climbing" || bossPhase === "entering" || bossPhase === "victory"} aria-label="Nach rechts bewegen"><b>→</b><span>Rechts</span></button>
+          <button onPointerDown={() => move(-1)} disabled={!playing || paused || bonusPhase === "climbing" || bonusPhase === "falling" || bossPhase === "entering" || bossPhase === "victory"} aria-label="Nach links bewegen"><b>←</b><span>Links</span></button>
+          <button className="pickaxe-button" onPointerDown={throwPickaxe} disabled={!playing || paused || bonusPhase === "exit" || bonusPhase === "climbing" || bonusPhase === "falling" || bossPhase === "entering" || bossPhase === "victory" || bossPhase === "completed" || !shotReady} aria-label={`Hacke Level ${axeLevel} werfen`}><b>⛏️</b><span>{shotReady ? `Werfen · L${axeLevel}` : "Lädt …"}</span></button>
+          <button onPointerDown={() => move(1)} disabled={!playing || paused || bonusPhase === "climbing" || bonusPhase === "falling" || bossPhase === "entering" || bossPhase === "victory"} aria-label="Nach rechts bewegen"><b>→</b><span>Rechts</span></button>
         </div>
         {!playing && <div className="dwarf-start-panel" role="dialog" aria-modal="true" aria-labelledby="dwarf-start-title">
           <DwarfViewportPanel>
