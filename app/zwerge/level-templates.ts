@@ -107,6 +107,12 @@ const mineMusic: MusicTemplate = {
 const bonusMusic: MusicTemplate = { notes: [392, 494, 587, 659, 587, 523, 440, 523], intervalMs: 620, leadDuration: 1.1, leadVolume: 0.16, bassDuration: 1.8, bassVolume: 0.07 };
 const bossMusic: MusicTemplate = { notes: [110, 130.81, 146.83, 103.83, 123.47, 98, 116.54, 92.5], intervalMs: 430, leadDuration: 1.5, leadVolume: 0.17, bassDuration: 2.4, bassVolume: 0.12 };
 
+// Türen bleiben selten, auch wenn ein Bonusgang gerade beendet wurde.
+const secretHatch = {
+  firstDelayMinMs: 34_000, firstDelayRangeMs: 18_000,
+  nextDelayMinMs: 54_000, nextDelayRangeMs: 24_000, retryDelayMs: 1800,
+};
+
 export const LEVEL_TEMPLATES = {
   normal: [
     {
@@ -130,7 +136,7 @@ export const LEVEL_TEMPLATES = {
         normalObstacleBaseMs: 2450, normalObstacleMinimumMs: 980, normalObstacleStageStepMs: 215, normalObstacleRangeMs: 700,
         goldBaseMs: 1150, goldRangeMs: 1150, shieldBaseMs: 8500, shieldRangeMs: 5000,
       },
-      hatch: { firstDelayMinMs: 7000, firstDelayRangeMs: 3000, nextDelayMinMs: 20_000, nextDelayRangeMs: 8000, retryDelayMs: 1500 },
+      hatch: secretHatch,
       content: { obstacles: ["Holz", "Stein", "Schatztruhe"], collectibles: ["Gold", "Schild", "Herz", "5er-Gold"] },
     },
     {
@@ -154,7 +160,7 @@ export const LEVEL_TEMPLATES = {
         normalObstacleBaseMs: 2250, normalObstacleMinimumMs: 860, normalObstacleStageStepMs: 225, normalObstacleRangeMs: 620,
         goldBaseMs: 1020, goldRangeMs: 980, shieldBaseMs: 7800, shieldRangeMs: 4600,
       },
-      hatch: { firstDelayMinMs: 6500, firstDelayRangeMs: 2600, nextDelayMinMs: 18_000, nextDelayRangeMs: 7000, retryDelayMs: 1400 },
+      hatch: secretHatch,
       content: { obstacles: ["Kristallholz", "Glühstein", "Kristalltruhe"], collectibles: ["Kristallgold", "Schild", "Herz", "5er-Gold"] },
     },
   ] satisfies NormalLevelTemplate[],
