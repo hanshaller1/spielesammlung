@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { sitePath } from "../site-paths";
 import { ACTIVE_LEVEL_SET, LEVEL_TEMPLATES, createLevelSet, nextWorld, type LevelSet } from "./level-templates";
 import { DwarfViewport, DwarfViewportPanel } from "./viewport";
@@ -717,6 +717,18 @@ function drawDwarf(context: CanvasRenderingContext2D, x: number, y: number, now:
   context.restore();
 }
 
+function drawBursts(context: CanvasRenderingContext2D, particles: Particle[]) {
+  context.save();
+  context.lineCap = "round";
+  for (const p of particles) {
+    context.globalAlpha = Math.min(1, Math.max(0, p.life * 1.4));
+    context.strokeStyle = p.color;
+    context.lineWidth = Math.max(1, p.size * Math.min(1, p.life * 2));
+    context.beginPath(); context.moveTo(p.x - p.vx * .022, p.y - p.vy * .022); context.lineTo(p.x, p.y); context.stroke();
+  }
+  context.restore();
+}
+
 function drawLoosePickaxe(context: CanvasRenderingContext2D, x: number, y: number, rotation: number, level: number, hostile = false) {
   const hue = (level * 67 + 18) % 360;
   const metal = hostile ? "#ff6455" : level === 1 ? "#e6edef" : `hsl(${hue} 88% 68%)`;
@@ -799,7 +811,6 @@ function drawBossArena(
   context.clearRect(0, 0, WIDTH, HEIGHT);
   const shake = now < impactUntil ? Math.sin(now * .1) * 5 : 0;
   context.save(); context.translate(shake, shake / 2);
-  const bossTheme = BOSS_LEVEL.theme;
   if (BOSS_LEVEL.world >= 3) drawForestArena(context, BOSS_LEVEL.world, now);
   else drawMineArena(context);
 
@@ -822,7 +833,7 @@ function drawBossArena(
     else if (attack.kind === "axe") drawLoosePickaxe(context, attack.x, attack.y, attack.rotation, 4, true);
     else { context.save(); context.translate(attack.x, attack.y); context.rotate(attack.rotation); context.fillStyle = "#4d5557"; context.strokeStyle = "#14191a"; context.lineWidth = 3; context.beginPath(); context.moveTo(-17, -10); context.lineTo(-5, -20); context.lineTo(15, -14); context.lineTo(20, 5); context.lineTo(7, 19); context.lineTo(-15, 15); context.lineTo(-21, 0); context.closePath(); context.fill(); context.stroke(); context.restore(); }
   });
-  particles.forEach((particle) => { context.globalAlpha = Math.max(0, particle.life); context.fillStyle = particle.color; context.fillRect(particle.x - particle.size / 2, particle.y - particle.size / 2, particle.size, particle.size); }); context.globalAlpha = 1;
+  drawBursts(context, particles); context.globalAlpha = 1;
   feedback.forEach((item) => { context.globalAlpha = Math.min(1, item.life * 2); context.fillStyle = item.color; context.font = "900 20px Arial"; context.shadowColor = "#000"; context.shadowBlur = 5; context.fillText(item.text, item.x, item.y); }); context.globalAlpha = 1; context.shadowBlur = 0;
   if (bossPhase === "victory") {
     context.shadowColor = "#ffd83d"; context.shadowBlur = 28; context.fillStyle = "#ffd83d"; context.beginPath(); context.moveTo(145, 300); context.lineTo(174, 322); context.lineTo(200, 282); context.lineTo(226, 322); context.lineTo(255, 300); context.lineTo(243, 358); context.lineTo(157, 358); context.closePath(); context.fill(); context.shadowBlur = 0;
@@ -954,6 +965,19 @@ function drawMineGround(context: CanvasRenderingContext2D, segments: TunnelSegme
         context.fillStyle = "#77858a38";
         context.beginPath(); context.moveTo(x - radius * .35, segment.y - radius); context.lineTo(x + radius * .75, segment.y - radius * .55); context.lineTo(x + radius * .12, segment.y); context.lineTo(x - radius * .52, segment.y + radius * .12); context.closePath(); context.fill();
       });
+      if (detail > .72) {
+        const side = detail > .86 ? 1 : -1;
+        const x = side > 0 ? right + 13 : left - 13;
+        context.save(); context.translate(x, segment.y); context.scale(side, 1);
+        context.fillStyle = levelTheme.accent + "b0";
+        context.beginPath(); context.moveTo(0, 6); context.lineTo(3, -12); context.lineTo(8, -6);
+        context.lineTo(14, -11); context.lineTo(10, 3); context.closePath(); context.fill();
+        context.strokeStyle = "#fff8dfad"; context.lineWidth = 1.3;
+        context.beginPath(); context.moveTo(3, -11); context.lineTo(3, 3); context.lineTo(12, -8); context.stroke();
+        context.globalAlpha = .4 + .35 * Math.sin(now / 480 + detail * 47);
+        context.fillStyle = "#fffce4"; context.fillRect(1, -12, 5, 1); context.fillRect(3, -14, 1, 5);
+        context.restore();
+      }
       for (let grain = 0; grain < 2; grain += 1) {
         const grainSeed = (detail * (grain + 3) * 9.17 + openingIndex * .31) % 1;
         const x = grain % 2 === 0 ? left - 20 - grainSeed * 24 : right + 20 + grainSeed * 24;
@@ -980,14 +1004,15 @@ function drawMineGround(context: CanvasRenderingContext2D, segments: TunnelSegme
         const { left, right } = openingEdges(opening);
         [left - 8, right + 8].forEach((x, index) => {
           const side = index === 0 ? -1 : 1;
-          const glow = context.createRadialGradient(x, segment.y - 7, 2, x, segment.y - 7, 54);
+          const flicker = Math.sin(now / 145 + x) * 2 + Math.sin(now / 86 + segment.detailSeed * 13);
+          const glow = context.createRadialGradient(x, segment.y - 7, 2, x, segment.y - 7, 52 + flicker);
           glow.addColorStop(0, `${NORMAL_LEVEL.lighting.torchColor}66`); glow.addColorStop(1, `${NORMAL_LEVEL.lighting.torchColor}00`);
           context.fillStyle = glow; context.beginPath(); context.arc(x, segment.y - 7, 54, 0, Math.PI * 2); context.fill();
           context.strokeStyle = "#5d351e"; context.lineWidth = 5; context.lineCap = "round";
           context.beginPath(); context.moveTo(x, segment.y + 14); context.lineTo(x - side * 3, segment.y - 3); context.stroke();
           context.fillStyle = "#6f4324"; context.fillRect(x - 6, segment.y - 8, 12, 7);
           context.shadowColor = NORMAL_LEVEL.lighting.torchColor; context.shadowBlur = 12;
-          context.fillStyle = NORMAL_LEVEL.lighting.torchColor; context.beginPath(); context.moveTo(x, segment.y - 28); context.quadraticCurveTo(x - 9, segment.y - 16, x, segment.y - 7); context.quadraticCurveTo(x + 9, segment.y - 16, x, segment.y - 28); context.fill();
+          context.fillStyle = NORMAL_LEVEL.lighting.torchColor; context.beginPath(); context.moveTo(x + flicker, segment.y - 28 - flicker); context.quadraticCurveTo(x - 9, segment.y - 16, x, segment.y - 7); context.quadraticCurveTo(x + 9, segment.y - 16, x + flicker, segment.y - 28 - flicker); context.fill();
           context.fillStyle = "#fff3a6"; context.beginPath(); context.moveTo(x, segment.y - 23); context.quadraticCurveTo(x - 4, segment.y - 16, x, segment.y - 11); context.quadraticCurveTo(x + 4, segment.y - 16, x, segment.y - 23); context.fill(); context.shadowBlur = 0;
         });
       }
@@ -1205,7 +1230,7 @@ function drawTunnel(
     hatches.forEach((hatch) => { context.strokeRect(hatch.x - hatch.width / 2, hatch.y - hatch.height / 2, hatch.width, hatch.height); });
     context.restore();
   }
-  particles.forEach((particle) => { context.globalAlpha = Math.max(0, particle.life); context.fillStyle = particle.color; context.fillRect(particle.x - particle.size / 2, particle.y - particle.size / 2, particle.size, particle.size); });
+  drawBursts(context, particles);
   context.globalAlpha = 1;
   feedback.forEach((item) => { context.globalAlpha = Math.min(1, item.life * 2); context.fillStyle = item.color; context.font = "900 20px Arial"; context.textAlign = "center"; context.shadowColor = "#000"; context.shadowBlur = 5; context.fillText(item.text, item.x, item.y); });
   context.globalAlpha = 1; context.shadowBlur = 0;
@@ -2323,7 +2348,7 @@ export default function DwarfsGame() {
 
   return (
     <DwarfViewport>
-      <section className="game-card dwarf-game-card" aria-labelledby="dwarf-title">
+      <section className="game-card dwarf-game-card" aria-labelledby="dwarf-title" style={{ "--adventure-art": `url("${sitePath("/zwergengold/abenteuer.webp")}")` } as CSSProperties}>
         <div className="dwarf-topbar">
           <a className="back-link" href={sitePath("/")}>← Hanna&apos;s Spiele</a>
           <div className="dwarf-top-actions">
@@ -2429,7 +2454,7 @@ export default function DwarfsGame() {
               </div>
               <small>{difficulty === "easy" ? "Weniger Hindernisse · gleiches Tempo" : "Das Tempo steigt mit der Zeit"}</small>
             </div>
-            <p>Weiche Steinen aus, sammle Gold und halte nach geheimen Bodenklappen Ausschau. Tastatur: ← und → bewegen, ↓ wirft die Hacke.</p>
+            <p>Durchquere zwei Minen und zwei Wälder. Zerschlage Hindernisse für die nächste Hackenstufe. Mit ← und → bewegst du dich, mit ↓ wirfst du.</p>
             <div className="dwarf-record">🏆 Highscore {difficulty === "easy" ? "Leicht" : "Normal"}: <b>{highscores[difficulty]} Gold</b></div>
             <div className="start-actions">
               <button className="start-button mine-start-button" onClick={start}>{hasPlayed ? "Nochmal spielen" : "Spiel starten"}</button>

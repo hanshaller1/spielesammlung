@@ -117,3 +117,17 @@ body.dwarf-viewport-active { height:100%; overflow:hidden; overscroll-behavior:n
   .dwarf-game-shell .developer-master-option { margin: 3px 10px; padding: 5px; }
   .dwarf-game-shell .developer-dialog-actions { padding: 4px 10px; }
 }
+
+.dwarf-game-shell .dwarf-start-panel {
+  background: linear-gradient(180deg, #07181512, #10252138 55%, #061315b8), var(--adventure-art) 57% center / cover no-repeat, #17332c;
+}
+.dwarf-game-shell .dwarf-start-content {
+  border-color: #d1b47a82;
+  background: linear-gradient(180deg, #091c1c25, #102622e8 30%, #0a1a19f5 78%), var(--adventure-art) 57% center / cover no-repeat, #102421;
+  box-shadow: 0 22px 70px #030e10ba, inset 0 0 0 3px #0e221e80;
+}
+.dwarf-game-shell .dwarf-start-back {
+  padding: 5px 9px; border-radius: 6px; background: #0b1d1cde; color: #f3e7ca;
+}
+.dwarf-game-shell .dwarf-start-panel h2 { color: #ffeab3; text-shadow: 0 2px 5px #142018; }
+.dwarf-game-shell .dwarf-board { border-color: #46514b; box-shadow: 0 0 0 2px #192823, 0 0 0 5px #957843, 0 12px 36px #071412aa; }
