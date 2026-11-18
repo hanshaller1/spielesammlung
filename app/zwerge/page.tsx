@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { sitePath } from "../site-paths";
 import { ACTIVE_LEVEL_SET, createLevelSet, type LevelSet } from "./level-templates";
 import { DwarfViewport, DwarfViewportPanel } from "./viewport";
+import { createGameMix, type EffectKind } from "./sound";
 import "./viewport.css";
 
 let ACTIVE_RUNTIME_LEVEL_SET: LevelSet = ACTIVE_LEVEL_SET;
@@ -1322,6 +1323,7 @@ export default function DwarfsGame() {
   const developerSettingsRef = useRef<DeveloperSettings>({ ...DEFAULT_DEVELOPER_SETTINGS });
   const secretTapRef = useRef({ count: 0, lastTap: 0 });
   const audioContextRef = useRef<AudioContext | null>(null);
+  const mixRef = useRef<ReturnType<typeof createGameMix> | null>(null);
   const musicTimerRef = useRef<number | null>(null);
   const musicStepRef = useRef(0);
   const soundEnabledRef = useRef(true);
@@ -1356,42 +1358,19 @@ export default function DwarfsGame() {
     });
   };
 
-  const playMysticNote = useCallback((frequency: number, duration: number, volume: number) => {
-    const audio = audioContextRef.current;
-    if (!soundEnabledRef.current || !audio || audio.state !== "running") return;
-    const oscillator = audio.createOscillator();
-    const gain = audio.createGain();
-    const filter = audio.createBiquadFilter();
-    oscillator.type = "sine"; oscillator.frequency.value = frequency; filter.type = "lowpass"; filter.frequency.value = 720;
-    gain.gain.setValueAtTime(0.0001, audio.currentTime); gain.gain.exponentialRampToValueAtTime(volume, audio.currentTime + 0.35); gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + duration);
-    oscillator.connect(filter).connect(gain).connect(audio.destination); oscillator.start(); oscillator.stop(audio.currentTime + duration + 0.05);
+  const getAudio = useCallback(() => {
+    if (!audioContextRef.current || audioContextRef.current.state === "closed") {
+      audioContextRef.current = new AudioContext();
+      mixRef.current = createGameMix(audioContextRef.current);
+    }
+    return audioContextRef.current;
   }, []);
 
-  const playEffect = useCallback((kind: "throw" | "hit" | "break" | "gold" | "shield" | "damage") => {
-    const audio = audioContextRef.current;
-    if (!soundEnabledRef.current || !audio || audio.state !== "running") return;
-    const sounds: Record<typeof kind, Array<[number, number, number, OscillatorType, number]>> = {
-      throw: [[520, 0, 0.11, "triangle", 0.026], [720, 0.06, 0.09, "triangle", 0.02]],
-      hit: [[170, 0, 0.13, "square", 0.035], [110, 0.05, 0.1, "triangle", 0.024]],
-      break: [[190, 0, 0.12, "square", 0.038], [125, 0.08, 0.18, "sawtooth", 0.026]],
-      gold: [[660, 0, 0.13, "sine", 0.034], [880, 0.1, 0.2, "sine", 0.03]],
-      shield: [[440, 0, 0.2, "sine", 0.03], [660, 0.12, 0.25, "sine", 0.03], [990, 0.25, 0.3, "sine", 0.024]],
-      damage: [[145, 0, 0.22, "sawtooth", 0.038], [92, 0.08, 0.3, "square", 0.024]],
-    };
-    sounds[kind].forEach(([frequency, delay, duration, type, volume]) => {
-      const oscillator = audio.createOscillator();
-      const gain = audio.createGain();
-      const startAt = audio.currentTime + delay;
-      oscillator.type = type;
-      oscillator.frequency.setValueAtTime(frequency, startAt);
-      if (kind === "damage" || kind === "break") oscillator.frequency.exponentialRampToValueAtTime(frequency * 0.62, startAt + duration);
-      gain.gain.setValueAtTime(0.0001, startAt);
-      gain.gain.exponentialRampToValueAtTime(volume, startAt + 0.012);
-      gain.gain.exponentialRampToValueAtTime(0.0001, startAt + duration);
-      oscillator.connect(gain).connect(audio.destination);
-      oscillator.start(startAt);
-      oscillator.stop(startAt + duration + 0.02);
-    });
+  const playMysticNote = useCallback((frequency: number, duration: number, volume: number) => {
+    if (soundEnabledRef.current && audioContextRef.current?.state === "running") mixRef.current?.note(frequency, duration, volume);
+  }, []);
+  const playEffect = useCallback((kind: EffectKind) => {
+    if (soundEnabledRef.current && audioContextRef.current?.state === "running") mixRef.current?.effect(kind);
   }, []);
 
   const stopMusic = useCallback(() => {
@@ -1402,13 +1381,13 @@ export default function DwarfsGame() {
 
   const startMusic = useCallback(async () => {
     if (!soundEnabledRef.current) return;
-    if (!audioContextRef.current) audioContextRef.current = new AudioContext();
+    const audio = getAudio();
     try {
-      await audioContextRef.current.resume();
+      await audio.resume();
     } catch {
       return;
     }
-    if (audioContextRef.current.state !== "running" || !soundEnabledRef.current) return;
+    if (audio.state !== "running" || !soundEnabledRef.current) return;
     if (musicTimerRef.current !== null) return;
     const music = bossPhaseRef.current === "completed" ? TRIUMPH_MUSIC : bossPhaseRef.current !== "none" ? BOSS_LEVEL.music : bonusPhaseRef.current !== "none" ? BONUS_LEVEL.music : NORMAL_LEVEL.music;
     const notes = music.notes;
@@ -1421,7 +1400,7 @@ export default function DwarfsGame() {
       if (musicStepRef.current % 4 === 0) playMysticNote(frequency / 2, music.bassDuration, music.bassVolume);
       musicStepRef.current += 1;
     }, music.intervalMs);
-  }, [playMysticNote]);
+  }, [getAudio, playMysticNote]);
 
   const restartMusic = useCallback(async () => {
     await stopMusic();
@@ -2235,11 +2214,11 @@ export default function DwarfsGame() {
     }
   };
 
-  const testAudio = async (kind: "music" | "throw" | "hit" | "break" | "gold" | "shield" | "damage") => {
+  const testAudio = async (kind: "music" | EffectKind) => {
     soundEnabledRef.current = true;
     setMusicOn(true);
-    if (!audioContextRef.current) audioContextRef.current = new AudioContext();
-    try { await audioContextRef.current.resume(); } catch { return; }
+    const audio = getAudio();
+    try { await audio.resume(); } catch { return; }
     if (kind === "music") {
       playMysticNote(220, 1.8, 0.14); playMysticNote(293.66, 1.4, 0.1);
     } else playEffect(kind);
