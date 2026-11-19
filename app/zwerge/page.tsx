@@ -603,7 +603,7 @@ function addBurst(particles: Particle[], x: number, y: number, colors: string[],
   }
 }
 
-function drawDwarfFront(context: CanvasRenderingContext2D, x: number, y: number, hatColor: HatColor, wearHat = true) {
+function drawDwarfFront(context: CanvasRenderingContext2D, x: number, y: number, hatColor: HatColor, pose: "menu" | "coronation" = "menu") {
   const hatPalette = HAT_PALETTES[hatColor];
   context.save();
   context.translate(x, y);
@@ -623,8 +623,12 @@ function drawDwarfFront(context: CanvasRenderingContext2D, x: number, y: number,
 
   // Both arms and the small pickaxe are visible in the portrait.
   context.strokeStyle = "#1d4d77"; context.lineWidth = 9; context.lineCap = "round";
-  context.beginPath(); context.moveTo(-16, -12); context.lineTo(-25, 1); context.moveTo(16, -12); context.lineTo(25, 1); context.stroke();
-  context.fillStyle = "#d99a67"; context.beginPath(); context.arc(-25, 2, 5, 0, Math.PI * 2); context.arc(25, 2, 5, 0, Math.PI * 2); context.fill();
+  context.beginPath();
+  if (pose === "menu") { context.moveTo(-16, -12); context.lineTo(-25, 1); }
+  context.moveTo(16, -12); context.lineTo(25, 1); context.stroke();
+  context.fillStyle = "#d99a67"; context.beginPath();
+  if (pose === "menu") context.arc(-25, 2, 5, 0, Math.PI * 2);
+  context.moveTo(30, 2); context.arc(25, 2, 5, 0, Math.PI * 2); context.fill();
   context.save(); context.translate(25, 2); context.rotate(0.24);
   context.strokeStyle = "#b57a3c"; context.lineWidth = 4; context.beginPath(); context.moveTo(0, 5); context.lineTo(1, -18); context.stroke();
   context.strokeStyle = "#d5dcdd"; context.lineWidth = 4.5; context.beginPath(); context.moveTo(-8, -17); context.quadraticCurveTo(1, -22, 10, -16); context.stroke();
@@ -651,7 +655,7 @@ function drawDwarfFront(context: CanvasRenderingContext2D, x: number, y: number,
   context.beginPath(); context.ellipse(-7, -24, 8, 3.5, -0.22, 0, Math.PI * 2); context.ellipse(7, -24, 8, 3.5, 0.22, 0, Math.PI * 2); context.fill();
   context.strokeStyle = "#c1b8a8"; context.lineWidth = 1.3; context.beginPath(); context.moveTo(-9, -16); context.quadraticCurveTo(-5, -8, -3, -3); context.moveTo(8, -16); context.quadraticCurveTo(5, -8, 2, -4); context.stroke();
 
-  if (!wearHat) { context.restore(); return; }
+  if (pose === "coronation") { context.restore(); return; }
   // The selected pointed cap is shared with the rear-view game character.
   const hat = context.createLinearGradient(-17, -58, 17, -35);
   hat.addColorStop(0, hatPalette.light); hat.addColorStop(0.55, hatPalette.mid); hat.addColorStop(1, hatPalette.dark);
@@ -1461,7 +1465,7 @@ export default function DwarfsGame() {
     if (bossPhaseRef.current === "completed") {
       const art = coronationArtRef.current;
       const hat = selectedHatRef.current;
-      if (art) drawCoronation(context, art, now - bossPhaseStartedAtRef.current, HAT_PALETTES[hat], (ctx) => drawDwarfFront(ctx, 0, 0, hat, false));
+      if (art) drawCoronation(context, art, now - bossPhaseStartedAtRef.current, HAT_PALETTES[hat], (ctx) => drawDwarfFront(ctx, 0, 0, hat, "coronation"));
       return;
     }
     if (bossPhaseRef.current === "fight" || bossPhaseRef.current === "victory") {

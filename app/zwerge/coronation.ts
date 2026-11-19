@@ -1,4 +1,5 @@
 import { sitePath } from "../site-paths";
+import { drawHatGesture } from "./coronation-arm";
 
 export const CORONATION_DURATION = 8400;
 export const ARENA_FADE_TIME = 850;
@@ -115,8 +116,10 @@ export function drawCoronation(
 ) {
   const t = Math.min(CORONATION_DURATION, Math.max(0, elapsed));
   const turn = ease(t, 830, 1230);
-  const lift = ease(t, 1920, 2670);
-  const carry = ease(t, 2440, 3400);
+  const reach = ease(t, 1230, 2140);
+  const grasp = ease(t, 2070, 2310);
+  const lift = ease(t, 2340, 2820);
+  const lower = ease(t, 2690, 3780);
   const appear = ease(t, 3140, 4100);
   const descent = ease(t, 3840, CROWN_LANDING);
   const settle = ease(t, CROWN_LANDING, 5750);
@@ -153,33 +156,19 @@ export function drawCoronation(
 
   const height = 219 + Math.sin(t / 890) * .52 - 9 * bow;
   const width = 176;
+  const forehead = -height + 16;
   // Anchor both painted poses at the boots and turn the shoulder into the light.
   ctx.save();
   ctx.translate((1 - turn) * -5, 0);
   if (drawable(art.profile) && turn < 1) ctx.drawImage(art.profile, -88, -height, width, height);
-  if (drawable(art.hero)) {
-    ctx.globalAlpha = drawable(art.profile) ? turn : 1;
-    ctx.drawImage(art.hero, -88, -height, width, height);
-  } else {
-    ctx.translate(0, -height * .25); ctx.scale(3.05, height / 67); fallbackHero(ctx);
-  }
+  ctx.translate(-width / 2, -height);
+  ctx.scale(width / 480, height / 600);
+  drawHatGesture(ctx, drawable(art.hero) ? art.hero : null, {
+    forehead: 16 * 600 / height, opacity: drawable(art.profile) ? turn : 1, reach, grasp, lift, lower,
+  }, () => drawCap(ctx, art.caps, palette), () => {
+    ctx.save(); ctx.translate(240, 450); ctx.scale(3.05 * 480 / width, 600 / 67); fallbackHero(ctx); ctx.restore();
+  });
   ctx.restore();
-
-  const forehead = -height + 16;
-  const handX = -65;
-  const handY = -height * .294;
-  ctx.save();
-  ctx.translate(handX * carry - 18 * Math.sin(Math.PI * carry) - 5 * (1 - turn),
-    forehead + (handY - forehead) * carry - 20 * lift * (1 - carry));
-  ctx.rotate(-2.77 * carry - .12 * Math.sin(Math.PI * lift));
-  ctx.scale(.96 - .36 * carry, .96 - .36 * carry);
-  drawCap(ctx, art.caps, palette); ctx.restore();
-  if (carry > .91 && drawable(art.hero)) {
-    // The ends of his fingers sit in front of the folded brim in his hand.
-    ctx.save(); ctx.globalAlpha = ease(carry, .91, 1);
-    ctx.beginPath(); ctx.ellipse(handX + 1, handY - 5, 9, 5, .56, 0, TAU); ctx.clip();
-    ctx.drawImage(art.hero, -88, -height, width, height); ctx.restore();
-  }
 
   if (appear > 0) {
     ctx.save();
