@@ -813,10 +813,10 @@ function drawBossArena(
   context: CanvasRenderingContext2D, dwarfX: number, bossX: number, now: number, protectedUntil: number,
   hatColor: HatColor, handEmptyUntil: number, playerProjectiles: Projectile[], bossAttacks: BossAttack[],
   warningXs: number[], warningUntil: number, bossHealth: number, bossPhase: BossPhase,
-  particles: Particle[], feedback: Feedback[], shield: number, impactUntil: number, phaseStartedAt: number,
+  particles: Particle[], feedback: Feedback[], shield: number, playerImpactUntil: number, phaseStartedAt: number,
 ) {
   context.clearRect(0, 0, WIDTH, HEIGHT);
-  const shake = now < impactUntil ? Math.sin(now * .1) * 5 : 0;
+  const shake = now < playerImpactUntil ? Math.sin(now * .1) * 5 : 0;
   context.save(); context.translate(shake, shake / 2);
   if (BOSS_LEVEL.world >= 3) drawForestArena(context, BOSS_LEVEL.world, now);
   else drawMineArena(context);
@@ -877,7 +877,7 @@ function drawBossArena(
     const crownY = DWARF_Y - 67; context.save(); context.translate(dwarfX, crownY); context.scale(now - phaseStartedAt > 5000 ? 1 : 1.18, now - phaseStartedAt > 5000 ? 1 : 1.18); context.fillStyle = "#9ef4ff"; context.strokeStyle = "#efffff"; context.lineWidth = 2; context.shadowColor = "#69eaff"; context.shadowBlur = 18; context.beginPath(); context.moveTo(-25, -10); context.lineTo(-12, 7); context.lineTo(0, -18); context.lineTo(11, 7); context.lineTo(25, -10); context.lineTo(20, 12); context.lineTo(-20, 12); context.closePath(); context.fill(); context.stroke(); context.restore();
   }
   context.restore();
-  if (now < impactUntil) { context.fillStyle = "#ff493522"; context.fillRect(0, 0, WIDTH, HEIGHT); }
+  if (now < playerImpactUntil) { context.fillStyle = "#ff493522"; context.fillRect(0, 0, WIDTH, HEIGHT); }
 }
 
 function drawMineGround(context: CanvasRenderingContext2D, segments: TunnelSegment[], inBonus: boolean, now: number) {
@@ -1035,12 +1035,12 @@ function drawTunnel(
   context: CanvasRenderingContext2D,
   segments: TunnelSegment[], dwarfX: number, now: number, protectedUntil: number,
   obstacles: Obstacle[], hatches: Hatch[], projectiles: Projectile[], collectibles: Collectible[],
-  particles: Particle[], feedback: Feedback[], shield: number, impactUntil: number,
+  particles: Particle[], feedback: Feedback[], shield: number, playerImpactUntil: number,
   hatColor: HatColor, handEmptyUntil: number, bonusPhase: BonusPhase, ladderProgress: number, bonusExitWallY: number,
   showHitboxes = false, showFairness = false, enteringGate = false,
 ) {
   context.clearRect(0, 0, WIDTH, HEIGHT);
-  const shake = now < impactUntil ? Math.sin(now * 0.09) * 5 : 0;
+  const shake = now < playerImpactUntil ? Math.sin(now * 0.09) * 5 : 0;
   const inBonus = bonusPhase !== "none";
   const levelTheme = inBonus ? BONUS_LEVEL.theme : NORMAL_LEVEL.theme;
   context.save();
@@ -1323,7 +1323,7 @@ function drawTunnel(
     if (climb || drop) drawIris(context, x, y - 20, 1 - Math.max(0, (climb - .58) / .42, drop), NORMAL_LEVEL.theme.accent);
   }
   context.restore();
-  if (now < impactUntil) { context.fillStyle = "#ff493522"; context.fillRect(0, 0, WIDTH, HEIGHT); }
+  if (now < playerImpactUntil) { context.fillStyle = "#ff493522"; context.fillRect(0, 0, WIDTH, HEIGHT); }
 }
 
 export default function DwarfsGame() {
@@ -1372,7 +1372,7 @@ export default function DwarfsGame() {
   const startedAtRef = useRef(0);
   const lastFrameRef = useRef(0);
   const protectedUntilRef = useRef(0);
-  const impactUntilRef = useRef(0);
+  const playerImpactUntilRef = useRef(0);
   const pausedAtRef = useRef(0);
   const handEmptyUntilRef = useRef(0);
   const shotCooldownRef = useRef<number | null>(null);
@@ -1476,7 +1476,7 @@ export default function DwarfsGame() {
       drawBossArena(context, dwarfXRef.current, bossXRef.current, now, protectedUntilRef.current, selectedHatRef.current,
         handEmptyUntilRef.current, projectilesRef.current, bossAttacksRef.current, bossWarningXsRef.current,
         bossWarningUntilRef.current, bossHealthRef.current, bossPhaseRef.current, particlesRef.current,
-        feedbackRef.current, shieldRef.current, impactUntilRef.current, bossPhaseStartedAtRef.current);
+        feedbackRef.current, shieldRef.current, playerImpactUntilRef.current, bossPhaseStartedAtRef.current);
       if (now < arrivalUntilRef.current) drawIris(context, WIDTH / 2, 122, 1 - (arrivalUntilRef.current - now) / ARRIVAL_TIME, BOSS_LEVEL.theme.accent);
       return;
     }
@@ -1487,7 +1487,7 @@ export default function DwarfsGame() {
       ? BONUS_EXIT_WALL_Y - Math.max(0, bonusEndsAtRef.current - now) * BONUS_SPEED / 1000
       : BONUS_EXIT_WALL_Y;
     drawTunnel(context, tunnelRef.current, dwarfXRef.current, now, protectedUntilRef.current, obstaclesRef.current, hatchesRef.current,
-      projectilesRef.current, collectiblesRef.current, particlesRef.current, feedbackRef.current, shieldRef.current, impactUntilRef.current,
+      projectilesRef.current, collectiblesRef.current, particlesRef.current, feedbackRef.current, shieldRef.current, playerImpactUntilRef.current,
       selectedHatRef.current, handEmptyUntilRef.current, bonusPhaseRef.current, ladderProgress, bonusExitWallY,
       developerSettingsRef.current.enabled && developerSettingsRef.current.showHitboxes,
       developerSettingsRef.current.enabled && developerSettingsRef.current.showFairness, bossPhaseRef.current === "entering");
@@ -1569,7 +1569,7 @@ export default function DwarfsGame() {
     };
     const hurtPlayerInBoss = (x: number, y: number) => {
       if (now < protectedUntilRef.current || (developer.enabled && developer.invulnerable)) return;
-      impactUntilRef.current = now + 260; protectedUntilRef.current = now + 1050;
+      playerImpactUntilRef.current = now + 260; protectedUntilRef.current = now + 1050;
       if (shieldRef.current > 0) {
         shieldRef.current = 0; setShield(0); playEffect("shield");
         feedbackRef.current.push({ x, y, text: "ABGEBLOCKT!", color: "#8ff5ff", life: 1.1 });
@@ -1608,7 +1608,7 @@ export default function DwarfsGame() {
         const projectile = projectilesRef.current[index]; projectile.x += projectile.vx * delta; projectile.y += projectile.vy * delta; projectile.rotation += delta * 12;
         if (Math.hypot(projectile.x - bossXRef.current, projectile.y - 115) < 47) {
           projectilesRef.current.splice(index, 1); bossHealthRef.current -= 1; setBossHealth(bossHealthRef.current);
-          impactUntilRef.current = now + 140; addBurst(particlesRef.current, bossXRef.current, 118, ["#ff4938", "#ffd15b", "#6c1720"], 18); playEffect("hit");
+          addBurst(particlesRef.current, bossXRef.current, 118, ["#ff4938", "#ffd15b", "#6c1720"], 18); playEffect("hit");
           feedbackRef.current.push({ x: bossXRef.current, y: 195, text: bossHealthRef.current > 0 ? "TREFFER!" : "BESIEGT!", color: "#ffe173", life: 1 });
           if (bossHealthRef.current <= 0) {
             bossPhaseRef.current = "victory"; setBossPhase("victory"); bossVictoryEndsAtRef.current = now + BOSS_VICTORY_TIME; bossDefeatedRef.current = true;
@@ -1832,15 +1832,12 @@ export default function DwarfsGame() {
         const hatch = hatchesRef.current[hatchIndex];
         hatch.hits -= 1;
         hatch.open = hatch.hits <= 0;
-        impactUntilRef.current = now + 140;
         addBurst(particlesRef.current, projectile.x, projectile.y, ["#e4ad65", "#965327", "#4b2915"], hatch.open ? 18 : 10);
         feedbackRef.current.push({ x: hatch.x, y: hatch.y - 25, text: hatch.open ? "KLAPPE OFFEN!" : "NOCH EIN TREFFER!", color: "#ffe0a0", life: 1 });
         playEffect(hatch.open ? "break" : "hit");
-        navigator.vibrate?.(hatch.open ? [24, 18, 34] : 20);
         projectilesRef.current.splice(projectileIndex, 1);
       } else if (rockIndex >= 0) {
         const rock = obstaclesRef.current[rockIndex];
-        impactUntilRef.current = now + 140;
         if (projectile.level >= 2) {
           rock.hits -= 1;
           const destroyedRock = rock.hits <= 0;
@@ -1855,7 +1852,6 @@ export default function DwarfsGame() {
             life: destroyedRock ? 1 : 0.72,
           });
           playEffect(destroyedRock ? "break" : "hit");
-          navigator.vibrate?.(destroyedRock ? [28, 18, 42] : 24);
           if (destroyedRock) {
             obstaclesRef.current.splice(rockIndex, 1);
             countDestroyedObstacle();
@@ -1883,27 +1879,22 @@ export default function DwarfsGame() {
           addBurst(particlesRef.current, projectile.x, projectile.y, ["#eef5f4", "#87969a", "#3e4a4e"], 9);
           feedbackRef.current.push({ x: projectile.x, y: projectile.y - 15, text: "HACKE LEVEL 2 NÖTIG", color: "#d9e6e5", life: 0.8 });
           playEffect("hit");
-          navigator.vibrate?.(16);
         }
         projectilesRef.current.splice(projectileIndex, 1);
       } else if (hitsWall) {
-        impactUntilRef.current = now + 110;
         addBurst(particlesRef.current, projectile.x, projectile.y, ["#eef5f4", "#87969a", "#3e4a4e"], 9);
         feedbackRef.current.push({ x: projectile.x, y: projectile.y - 15, text: "KLIRR!", color: "#d9e6e5", life: 0.55 });
         playEffect("hit");
-        navigator.vibrate?.(16);
         projectilesRef.current.splice(projectileIndex, 1);
       } else if (hitIndex >= 0) {
         const hit = obstaclesRef.current[hitIndex];
         hit.hits -= 1;
         if (hit.kind === "wood" && hit.hits === 1) hit.height = 24;
-        impactUntilRef.current = now + 150;
         addBurst(particlesRef.current, projectile.x, projectile.y, hit.kind === "candyChest"
           ? ["#ff6fca", "#72eaff", "#ffe47b"]
           : hit.kind === "chest" ? ["#ffe17b", "#bd6b2b", "#fff0ad"] : ["#d49351", "#8f4d25", "#f0b46c"]);
         feedbackRef.current.push({ x: hit.x, y: hit.y - 24, text: hit.hits > 0 ? "TREFFER!" : "KRACH!", color: "#fff0aa", life: 0.75 });
         playEffect(hit.hits > 0 ? "hit" : "break");
-        navigator.vibrate?.(hit.hits > 0 ? 22 : [25, 20, 35]);
         if (hit.hits <= 0) {
           obstaclesRef.current.splice(hitIndex, 1);
           countDestroyedObstacle();
@@ -2052,7 +2043,7 @@ export default function DwarfsGame() {
       : bonusPhaseRef.current === "active" ? wallCollision : bonusPhaseRef.current === "none" && (wallCollision || obstacleIndex >= 0);
     if (collisionCausesDamage && now >= protectedUntilRef.current && !(developer.enabled && developer.invulnerable)) {
       if (bonusPhaseRef.current === "none" && obstacleIndex >= 0) obstaclesRef.current.splice(obstacleIndex, 1);
-      dwarfXRef.current = dwarfTunnel.center; impactUntilRef.current = now + 260; protectedUntilRef.current = now + 950;
+      dwarfXRef.current = dwarfTunnel.center; playerImpactUntilRef.current = now + 260; protectedUntilRef.current = now + 950;
       if (shieldRef.current > 0) {
         shieldRef.current = 0; setShield(0); playEffect("shield"); feedbackRef.current.push({ x: dwarfXRef.current, y: DWARF_Y - 45, text: "ABGEBLOCKT!", color: "#8ff5ff", life: 1.1 }); addBurst(particlesRef.current, dwarfXRef.current, DWARF_Y, ["#65eaff", "#d4fcff"], 22); navigator.vibrate?.([20, 25, 20]);
       } else if (developer.enabled && developer.unlimitedLives) {
@@ -2145,7 +2136,7 @@ export default function DwarfsGame() {
       const hits = developer.rockTestState === "whole" ? 3 : developer.rockTestState === "cracked" ? 2 : 1;
       obstaclesRef.current.push({ kind: "rock", x: opening.center, y, width: 36, height: 36, angle: 0, hits });
     }
-    protectedUntilRef.current = 0; impactUntilRef.current = 0; handEmptyUntilRef.current = 0; startedAtRef.current = performance.now(); lastFrameRef.current = startedAtRef.current;
+    protectedUntilRef.current = 0; playerImpactUntilRef.current = 0; handEmptyUntilRef.current = 0; startedAtRef.current = performance.now(); lastFrameRef.current = startedAtRef.current;
     if (requestedStart === "bonus" || requestedStart === "ladder") {
       bonusPhaseRef.current = "active";
       setBonusPhase("active");
@@ -2284,7 +2275,7 @@ export default function DwarfsGame() {
     }
     if (arrivalUntilRef.current > pausedAtRef.current) arrivalUntilRef.current += pauseDuration;
     if (protectedUntilRef.current > pausedAtRef.current) protectedUntilRef.current += pauseDuration;
-    if (impactUntilRef.current > pausedAtRef.current) impactUntilRef.current += pauseDuration;
+    if (playerImpactUntilRef.current > pausedAtRef.current) playerImpactUntilRef.current += pauseDuration;
     if (handEmptyUntilRef.current > pausedAtRef.current) handEmptyUntilRef.current += pauseDuration;
     lastFrameRef.current = now;
     playingRef.current = true;
