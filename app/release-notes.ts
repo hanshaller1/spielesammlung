@@ -9,6 +9,19 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.40",
+    title: "Zwergengold mit ruhigen Waldwegen und Hackentreffern",
+    date: "19. November 2026",
+    changes: [
+      "Am Erlenbach und im Mondscheinforst gleiten beide Wegränder gleichmäßig durchs Bild. Auch in engen Kurven folgen die Brücken derselben Wegkontur.",
+      "Beim Auftreffen der Hacke bleibt das Bild ruhig und das Handy vibriert dafür nicht mehr. Ton, Splitter und Risse zeigen weiterhin, ob der Treffer etwas bewirkt hat.",
+    ],
+    commits: [
+      { id: "f4fcf29", description: "Zwergengold: Waldränder beim Scrollen fest an den Wegstücken zeichnen" },
+      { id: "db7bd27", description: "Zwergengold: Hackentreffer ohne Bildstoß und Handy-Vibration rückmelden" },
+    ],
+  },
+  {
     version: "0.4.39",
     title: "Korrekturen an Vorschau und Oberflächenstilen",
     date: "18. November 2026",
