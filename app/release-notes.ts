@@ -9,6 +9,17 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.43",
+    title: "Zwergengold: Der Zwerg zieht die Mütze",
+    date: "19. November 2026",
+    changes: [
+      "Bei der Krönung hebt der Zwerg den rechten Arm, greift den Mützenrand mit den Fingern und nimmt die Zipfelmütze ab. Er hält sie an seiner Seite, wenn die Kristallkrone auf seinem Kopf landet.",
+    ],
+    commits: [
+      { id: "c0e1489", description: "Zwergengold: Den Zwerg bei der Krönung seine Mütze mit der Hand abnehmen lassen" },
+    ],
+  },
+  {
     version: "0.4.42",
     title: "Zwergengold: Die Krönung in der Mondhalle",
     date: "19. November 2026",
