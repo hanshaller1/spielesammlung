@@ -32,6 +32,13 @@ body.dwarf-viewport-active { height:100%; overflow:hidden; overscroll-behavior:n
 .dwarf-game-shell .dwarf-controls button { min-width:0; min-height:54px; touch-action:none; }
 .dwarf-game-shell .dwarf-controls button b { font-size:1.7rem; }
 .dwarf-game-shell .dwarf-controls button span { font-size:.85rem; }
+.dwarf-finale-actions {
+  display:flex; align-items:center; justify-content:center; gap:12px; min-height:54px;
+}
+.dwarf-finale-actions button { min-height:44px; margin:0; padding:0 15px; font-size:.9rem; }
+.dwarf-sr-only {
+  position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); white-space:nowrap;
+}
 .dwarf-game-shell .dwarf-start-panel,
 .dwarf-game-shell .developer-dialog-backdrop {
   height:100vh; height:100dvh; min-height:0; overflow:hidden; display:block;
@@ -82,6 +89,7 @@ body.dwarf-viewport-active { height:100%; overflow:hidden; overscroll-behavior:n
   .dwarf-game-shell .dwarf-stats { justify-content:center; }
   .dwarf-game-shell .dwarf-board-slot { grid-column:1; grid-row:2 / 4; }
   .dwarf-game-shell .dwarf-controls { grid-column:2; grid-row:3; }
+  .dwarf-finale-actions { grid-column:2; grid-row:3; flex-wrap:wrap; gap:5px; }
   .dwarf-game-shell .dwarf-controls button { min-height:48px; }
   .dwarf-game-shell .dwarf-start-content {
     display:grid; width:min(760px,100%); grid-template-columns:minmax(0,1fr) minmax(0,1fr);

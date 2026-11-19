@@ -7,6 +7,7 @@ import { DwarfViewport, DwarfViewportPanel } from "./viewport";
 import { drawBossGate, drawIris, easeTravel } from "./passage-art";
 import { drawForestGround, drawForestBoss, drawForestArena, drawForestProjectile } from "./forest-art";
 import { createGameMix, type EffectKind } from "./sound";
+import { ARENA_FADE_TIME, CORONATION_DURATION, drawCoronation, loadCoronationArt, playCoronationCues, type HatPalette } from "./coronation";
 import "./viewport.css";
 
 let ACTIVE_RUNTIME_LEVEL_SET: LevelSet = ACTIVE_LEVEL_SET;
@@ -26,8 +27,6 @@ const PICKAXE_SPEED = 310;
 const SHOT_COOLDOWN = 900;
 const ARRIVAL_TIME = 700;
 const MISSED_LADDER_TIME = 650;
-const BOSS_COMPLETION_TIME = 9000;
-const TRIUMPH_MUSIC = { notes: [261.63, 329.63, 392, 523.25, 659.25, 783.99, 1046.5, 783.99], intervalMs: 360, leadDuration: 1.8, leadVolume: 0.2, bassDuration: 2.8, bassVolume: 0.12 };
 let BONUS_DURATION = BONUS_LEVEL.durationMs;
 let BONUS_TUNNEL_WIDTH = BONUS_LEVEL.tunnel.width;
 let BONUS_SPEED = BONUS_LEVEL.tunnel.speed;
@@ -153,7 +152,7 @@ type BossAttack = { kind: "axe" | "rock"; x: number; y: number; vx: number; vy: 
 type Particle = { x: number; y: number; vx: number; vy: number; life: number; color: string; size: number };
 type Feedback = { x: number; y: number; text: string; color: string; life: number };
 
-const HAT_PALETTES: Record<HatColor, { light: string; mid: string; dark: string; band: string; stitch: string }> = {
+const HAT_PALETTES: Record<HatColor, HatPalette> = {
   blue: { light: "#68bdff", mid: "#247dcc", dark: "#123f77", band: "#3c96df", stitch: "#a4d9ff" },
   yellow: { light: "#ffe56d", mid: "#e4a91e", dark: "#89580a", band: "#f7c83e", stitch: "#fff2a7" },
   red: { light: "#ff6a55", mid: "#c93237", dark: "#7e1f2a", band: "#eb4b48", stitch: "#ff9c7b" },
@@ -603,7 +602,7 @@ function addBurst(particles: Particle[], x: number, y: number, colors: string[],
   }
 }
 
-function drawDwarfFront(context: CanvasRenderingContext2D, x: number, y: number, hatColor: HatColor) {
+function drawDwarfFront(context: CanvasRenderingContext2D, x: number, y: number, hatColor: HatColor, wearHat = true) {
   const hatPalette = HAT_PALETTES[hatColor];
   context.save();
   context.translate(x, y);
@@ -651,6 +650,7 @@ function drawDwarfFront(context: CanvasRenderingContext2D, x: number, y: number,
   context.beginPath(); context.ellipse(-7, -24, 8, 3.5, -0.22, 0, Math.PI * 2); context.ellipse(7, -24, 8, 3.5, 0.22, 0, Math.PI * 2); context.fill();
   context.strokeStyle = "#c1b8a8"; context.lineWidth = 1.3; context.beginPath(); context.moveTo(-9, -16); context.quadraticCurveTo(-5, -8, -3, -3); context.moveTo(8, -16); context.quadraticCurveTo(5, -8, 2, -4); context.stroke();
 
+  if (!wearHat) { context.restore(); return; }
   // The selected pointed cap is shared with the rear-view game character.
   const hat = context.createLinearGradient(-17, -58, 17, -35);
   hat.addColorStop(0, hatPalette.light); hat.addColorStop(0.55, hatPalette.mid); hat.addColorStop(1, hatPalette.dark);
@@ -814,7 +814,7 @@ function drawBossArena(
   context: CanvasRenderingContext2D, dwarfX: number, bossX: number, now: number, protectedUntil: number,
   hatColor: HatColor, handEmptyUntil: number, playerProjectiles: Projectile[], bossAttacks: BossAttack[],
   warningXs: number[], warningUntil: number, bossHealth: number, bossPhase: BossPhase,
-  particles: Particle[], feedback: Feedback[], shield: number, playerImpactUntil: number, phaseStartedAt: number,
+  particles: Particle[], feedback: Feedback[], shield: number, playerImpactUntil: number,
 ) {
   context.clearRect(0, 0, WIDTH, HEIGHT);
   const shake = now < playerImpactUntil ? Math.sin(now * .1) * 5 : 0;
@@ -827,11 +827,9 @@ function drawBossArena(
   context.font = "900 13px Arial"; context.textAlign = "center";
   context.strokeStyle = "#1d2220"; context.lineWidth = 3; context.strokeText(healthLabel, WIDTH / 2, 17);
   context.fillStyle = "#fff1dc"; context.fillText(healthLabel, WIDTH / 2, 17);
-  if (bossPhase !== "completed") {
-    if (BOSS_LEVEL.world >= 3) drawForestBoss(context, bossX, 115, BOSS_LEVEL.world, now, bossHealth <= BOSS_LEVEL.enemy.enrageAtHealth);
-    else if (BOSS_LEVEL.world === 2) drawEvilBoss(context, bossX, 128, now, bossHealth);
-    else drawCrystalBoss(context, bossX, 128, now, bossHealth);
-  }
+  if (BOSS_LEVEL.world >= 3) drawForestBoss(context, bossX, 115, BOSS_LEVEL.world, now, bossHealth <= BOSS_LEVEL.enemy.enrageAtHealth);
+  else if (BOSS_LEVEL.world === 2) drawEvilBoss(context, bossX, 128, now, bossHealth);
+  else drawCrystalBoss(context, bossX, 128, now, bossHealth);
 
   if (warningUntil > now) {
     const blink = Math.floor(now / 110) % 2 === 0;
@@ -846,37 +844,12 @@ function drawBossArena(
   });
   drawBursts(context, particles); context.globalAlpha = 1;
   feedback.forEach((item) => { context.globalAlpha = Math.min(1, item.life * 2); context.fillStyle = item.color; context.font = "900 20px Arial"; context.shadowColor = "#000"; context.shadowBlur = 5; context.fillText(item.text, item.x, item.y); }); context.globalAlpha = 1; context.shadowBlur = 0;
-  if (bossPhase === "victory") {
+  if (bossPhase === "victory" && nextWorld(BOSS_LEVEL.world)) {
     context.shadowColor = "#ffd83d"; context.shadowBlur = 28; context.fillStyle = "#ffd83d"; context.beginPath(); context.moveTo(145, 300); context.lineTo(174, 322); context.lineTo(200, 282); context.lineTo(226, 322); context.lineTo(255, 300); context.lineTo(243, 358); context.lineTo(157, 358); context.closePath(); context.fill(); context.shadowBlur = 0;
     context.fillStyle = "#fff4a5"; context.font = "900 26px Arial"; context.fillText("BOSS BESIEGT!", WIDTH / 2, 258); context.font = "900 18px Arial"; context.fillText(`${BOSS_LEVEL.victory.rewardName.toUpperCase()} · +${BOSS_LEVEL.victory.gold} GOLD`, WIDTH / 2, 386);
   }
-  if (bossPhase === "completed") {
-    const elapsed = Math.max(0, now - phaseStartedAt);
-    const bright = Math.min(1, Math.max(0, (elapsed - 4200) / 1200));
-    context.fillStyle = `rgba(12, 8, 35, ${0.72 - bright * .28})`; context.fillRect(0, 0, WIDTH, HEIGHT);
-    const shardProgress = Math.min(1, elapsed / 2600);
-    for (let index = 0; index < 12; index += 1) {
-      const angle = index * Math.PI / 6; const startX = WIDTH / 2 + Math.cos(angle) * (45 + index % 3 * 18); const startY = 185 + Math.sin(angle) * 42;
-      const targetX = WIDTH / 2 + Math.cos(index * 2.4) * 38; const targetY = 260 + Math.sin(index * 2.4) * 20;
-      const x = startX + (targetX - startX) * shardProgress; const y = startY + (targetY - startY) * shardProgress;
-      context.save(); context.translate(x, y); context.rotate(now / 220 + index); context.globalAlpha = elapsed < 1200 ? 1 : Math.max(0, 1 - (elapsed - 2500) / 900); context.fillStyle = index % 3 === 0 ? "#fff2a1" : index % 3 === 1 ? "#73eaff" : "#d99aff"; context.shadowColor = context.fillStyle; context.shadowBlur = 14; context.beginPath(); context.moveTo(0, -12); context.lineTo(7, 2); context.lineTo(0, 14); context.lineTo(-7, 2); context.closePath(); context.fill(); context.restore();
-    }
-    const crownForm = Math.min(1, Math.max(0, (elapsed - 1900) / 1600));
-    const crownLanding = Math.min(1, Math.max(0, (elapsed - 3500) / 1500));
-    const crownY = crownLanding > 0 ? 278 - crownLanding * 190 : 278;
-    if (crownForm > 0) {
-      context.save(); context.translate(WIDTH / 2, crownY); context.scale(0.45 + crownForm * 0.55, 0.45 + crownForm * 0.55); context.rotate(crownLanding > .72 ? Math.sin(elapsed / 120) * .08 : 0);
-      context.shadowColor = "#8de8ff"; context.shadowBlur = 24; context.fillStyle = "#a7f5ff"; context.beginPath(); context.moveTo(-72, -20); context.lineTo(-42, 14); context.lineTo(-18, -45); context.lineTo(8, 14); context.lineTo(39, -35); context.lineTo(68, 14); context.lineTo(55, 34); context.lineTo(-55, 34); context.closePath(); context.fill(); context.restore();
-    }
-    if (bright > 0) { context.fillStyle = `rgba(125, 239, 255, ${bright * .12})`; context.fillRect(0, 0, WIDTH, HEIGHT); }
-    context.fillStyle = "#f9fdff"; context.font = "900 30px Arial"; context.fillText(elapsed > 5200 ? "KRONE EROBERT!" : "BOSS BESIEGT!", WIDTH / 2, 155);
-    context.font = "900 17px Arial"; context.fillStyle = "#a9efff"; context.fillText(elapsed > 5200 ? "DAS ZWERGENREICH IST GERETTET" : "DAS MONDLICHT KEHRT ZURÜCK", WIDTH / 2, 188);
-  }
   if (shield > 0) { context.strokeStyle = "#78efff"; context.lineWidth = 4; context.shadowColor = "#69efff"; context.shadowBlur = 16; context.beginPath(); context.arc(dwarfX, DWARF_Y - 5, 28, 0, Math.PI * 2); context.stroke(); context.shadowBlur = 0; }
   drawDwarf(context, dwarfX, DWARF_Y, now, now < protectedUntil, hatColor, now >= handEmptyUntil);
-  if (bossPhase === "completed" && now - phaseStartedAt > 3500) {
-    const crownY = DWARF_Y - 67; context.save(); context.translate(dwarfX, crownY); context.scale(now - phaseStartedAt > 5000 ? 1 : 1.18, now - phaseStartedAt > 5000 ? 1 : 1.18); context.fillStyle = "#9ef4ff"; context.strokeStyle = "#efffff"; context.lineWidth = 2; context.shadowColor = "#69eaff"; context.shadowBlur = 18; context.beginPath(); context.moveTo(-25, -10); context.lineTo(-12, 7); context.lineTo(0, -18); context.lineTo(11, 7); context.lineTo(25, -10); context.lineTo(20, 12); context.lineTo(-20, 12); context.closePath(); context.fill(); context.stroke(); context.restore();
-  }
   context.restore();
   if (now < playerImpactUntil) { context.fillStyle = "#ff493522"; context.fillRect(0, 0, WIDTH, HEIGHT); }
 }
@@ -1360,6 +1333,7 @@ export default function DwarfsGame() {
   const bossWarningXsRef = useRef<number[]>([]);
   const bossAttacksRef = useRef<BossAttack[]>([]);
   const bossVictoryEndsAtRef = useRef(0);
+  const coronationArtRef = useRef<ReturnType<typeof loadCoronationArt> | null>(null);
   const bossDefeatedRef = useRef(false);
   const worldRef = useRef(1);
   const generatedSegmentsRef = useRef(0);
@@ -1454,7 +1428,8 @@ export default function DwarfsGame() {
     }
     if (audio.state !== "running" || !soundEnabledRef.current) return;
     if (musicTimerRef.current !== null) return;
-    const music = bossPhaseRef.current === "completed" ? TRIUMPH_MUSIC : bossPhaseRef.current !== "none" ? BOSS_LEVEL.music : bonusPhaseRef.current !== "none" ? BONUS_LEVEL.music : NORMAL_LEVEL.music;
+    if (bossPhaseRef.current === "completed") return;
+    const music = bossPhaseRef.current !== "none" ? BOSS_LEVEL.music : bonusPhaseRef.current !== "none" ? BONUS_LEVEL.music : NORMAL_LEVEL.music;
     const notes = music.notes;
     musicStepRef.current = 0;
     playMysticNote(110, 4.8, 0.1);
@@ -1472,14 +1447,31 @@ export default function DwarfsGame() {
     await startMusic();
   }, [startMusic, stopMusic]);
 
+  const beginCoronation = useCallback((now: number) => {
+    bossPhaseRef.current = "completed";
+    setBossPhase("completed");
+    bossPhaseStartedAtRef.current = now;
+    bossVictoryEndsAtRef.current = 0;
+  }, []);
+
   const renderCurrentScene = useCallback((now = performance.now()) => {
     const context = canvasRef.current?.getContext("2d");
     if (!context) return;
-    if (bossPhaseRef.current === "fight" || bossPhaseRef.current === "victory" || bossPhaseRef.current === "completed") {
+    if (bossPhaseRef.current === "completed") {
+      const art = coronationArtRef.current;
+      const hat = selectedHatRef.current;
+      if (art) drawCoronation(context, art, now - bossPhaseStartedAtRef.current, HAT_PALETTES[hat], (ctx) => drawDwarfFront(ctx, 0, 0, hat, false));
+      return;
+    }
+    if (bossPhaseRef.current === "fight" || bossPhaseRef.current === "victory") {
       drawBossArena(context, dwarfXRef.current, bossXRef.current, now, protectedUntilRef.current, selectedHatRef.current,
         handEmptyUntilRef.current, projectilesRef.current, bossAttacksRef.current, bossWarningXsRef.current,
         bossWarningUntilRef.current, bossHealthRef.current, bossPhaseRef.current, particlesRef.current,
-        feedbackRef.current, shieldRef.current, playerImpactUntilRef.current, bossPhaseStartedAtRef.current);
+        feedbackRef.current, shieldRef.current, playerImpactUntilRef.current);
+      if (bossPhaseRef.current === "victory" && !nextWorld(worldRef.current)) {
+        const fade = easeTravel(1 - (bossVictoryEndsAtRef.current - now) / ARENA_FADE_TIME);
+        context.fillStyle = `rgba(7,21,37,${fade})`; context.fillRect(0, 0, WIDTH, HEIGHT);
+      }
       if (now < arrivalUntilRef.current) drawIris(context, WIDTH / 2, 122, 1 - (arrivalUntilRef.current - now) / ARRIVAL_TIME, BOSS_LEVEL.theme.accent);
       return;
     }
@@ -1542,8 +1534,23 @@ export default function DwarfsGame() {
 
   const animate = useCallback(function animateFrame(now: number) {
     if (!playingRef.current) return;
-    const delta = Math.min(0.05, (now - lastFrameRef.current) / 1000);
+    const previousFrame = lastFrameRef.current;
+    const delta = Math.min(0.05, (now - previousFrame) / 1000);
     lastFrameRef.current = now;
+    if (bossPhaseRef.current === "completed") {
+      const art = coronationArtRef.current;
+      if (art && Object.values(art).some((image) => !image.complete)) bossPhaseStartedAtRef.current = now;
+      const elapsed = now - bossPhaseStartedAtRef.current;
+      playCoronationCues(previousFrame - bossPhaseStartedAtRef.current, elapsed, playMysticNote);
+      renderCurrentScene(now);
+      if (elapsed >= CORONATION_DURATION) {
+        playingRef.current = false;
+        setFinaleFinished(true);
+      } else {
+        animationRef.current = window.requestAnimationFrame(animateFrame);
+      }
+      return;
+    }
     const developer = developerSettingsRef.current;
     const beginBossFight = () => {
       arrivalUntilRef.current = now + ARRIVAL_TIME;
@@ -1587,19 +1594,14 @@ export default function DwarfsGame() {
       addBurst(particlesRef.current, dwarfXRef.current, DWARF_Y, ["#ff604c", "#ffc0a8"], 18); navigator.vibrate?.([50, 35, 70]);
     };
 
-    if (bossPhaseRef.current === "fight" || bossPhaseRef.current === "victory" || bossPhaseRef.current === "completed") {
+    if (bossPhaseRef.current === "fight" || bossPhaseRef.current === "victory") {
       particlesRef.current.forEach((particle) => { particle.x += particle.vx * delta; particle.y += particle.vy * delta; particle.vy += 115 * delta; particle.life -= delta * 1.15; });
       particlesRef.current = particlesRef.current.filter((particle) => particle.life > 0);
       feedbackRef.current.forEach((item) => { item.y -= 25 * delta; item.life -= delta; }); feedbackRef.current = feedbackRef.current.filter((item) => item.life > 0);
-      if (bossPhaseRef.current === "completed") {
-        if (gameRandom() < delta * 8) addBurst(particlesRef.current, 55 + gameRandom() * (WIDTH - 110), 80 + gameRandom() * 350, ["#8de8ff", "#fff2a1", "#ff9ee8"], 3);
-        if (now >= bossVictoryEndsAtRef.current) { setFinaleFinished(true); bossVictoryEndsAtRef.current = Number.POSITIVE_INFINITY; }
-        renderCurrentScene(now); if (playingRef.current) animationRef.current = window.requestAnimationFrame(animateFrame); return;
-      }
       if (bossPhaseRef.current === "victory") {
         if (now >= bossVictoryEndsAtRef.current) {
           const followingWorld = nextWorld(worldRef.current);
-          if (!followingWorld) { bossPhaseRef.current = "completed"; setBossPhase("completed"); void restartMusic(); bossPhaseStartedAtRef.current = now; bossVictoryEndsAtRef.current = now + BOSS_COMPLETION_TIME; feedbackRef.current = []; }
+          if (!followingWorld) { beginCoronation(now); void restartMusic(); }
           else advanceWorld(followingWorld);
         }
         renderCurrentScene(now); if (playingRef.current) animationRef.current = window.requestAnimationFrame(animateFrame); return;
@@ -1615,7 +1617,7 @@ export default function DwarfsGame() {
           addBurst(particlesRef.current, bossXRef.current, 118, ["#ff4938", "#ffd15b", "#6c1720"], 18); playEffect("hit");
           feedbackRef.current.push({ x: bossXRef.current, y: 195, text: bossHealthRef.current > 0 ? "TREFFER!" : "BESIEGT!", color: "#ffe173", life: 1 });
           if (bossHealthRef.current <= 0) {
-            bossPhaseRef.current = "victory"; setBossPhase("victory"); bossVictoryEndsAtRef.current = now + BOSS_VICTORY_TIME; bossDefeatedRef.current = true;
+            bossPhaseRef.current = "victory"; setBossPhase("victory"); bossVictoryEndsAtRef.current = now + (nextWorld(worldRef.current) ? BOSS_VICTORY_TIME : ARENA_FADE_TIME); bossDefeatedRef.current = true;
             bossAttacksRef.current = []; bossWarningXsRef.current = []; bossWarningUntilRef.current = 0; addGold(BOSS_LEVEL.victory.gold); playEffect("gold");
             for (let burst = 0; burst < 5; burst += 1) addBurst(particlesRef.current, 90 + burst * 55, 250 + (burst % 2) * 55, ["#ffd83d", "#fff5a6", "#ff7bbb"], 18);
             projectilesRef.current = [];
@@ -2060,9 +2062,10 @@ export default function DwarfsGame() {
     }
     renderCurrentScene(now);
     if (playingRef.current) animationRef.current = window.requestAnimationFrame(animateFrame);
-  }, [addGold, addGem, onObstacleDestroyed, playEffect, renderCurrentScene, restartMusic, stopMusic]);
+  }, [addGold, addGem, beginCoronation, onObstacleDestroyed, playEffect, playMysticNote, renderCurrentScene, restartMusic, stopMusic]);
 
   useEffect(() => {
+    coronationArtRef.current = loadCoronationArt();
     activateLevelSet(1); gameRandom = Math.random; tunnelRef.current = createTunnel(); dwarfXRef.current = tunnelAt(tunnelRef.current, DWARF_Y).center; renderCurrentScene();
     return () => {
       playingRef.current = false;
@@ -2360,7 +2363,7 @@ export default function DwarfsGame() {
         <div className="dwarf-topbar">
           <a className="back-link" href={sitePath("/")}>← Hanna&apos;s Spiele</a>
           <div className="dwarf-top-actions">
-            <button className="music-button" type="button" onClick={paused ? resumeGame : pauseGame} disabled={!playing}>
+            <button className="music-button" type="button" onClick={paused ? resumeGame : pauseGame} disabled={!playing || finaleFinished}>
               {paused ? "▶ Weiter" : "Ⅱ Pause"}
             </button>
             <button className="music-button" type="button" onClick={() => {
@@ -2371,13 +2374,13 @@ export default function DwarfsGame() {
           </div>
         </div>
         <header>
-          <div><p className="eyebrow">{playing ? `Welt ${worldRef.current} · ${NORMAL_LEVEL.name}` : "Tief in der Mine"}</p><h1 id="dwarf-title">Zwergengold</h1></div>
+          <div><p className="eyebrow">{bossPhase === "completed" ? "Die Mondhalle" : playing ? `Welt ${worldRef.current} · ${NORMAL_LEVEL.name}` : "Tief in der Mine"}</p><h1 id="dwarf-title">Zwergengold</h1></div>
           <div className="stats dwarf-stats" aria-live="polite">
             <span><b aria-label="Goldnuggets">🪙 {gold}</b></span><span><b aria-label="Edelsteine" className="gem-stat-icon">◆</b> {gems}</span><span><b>{"❤️".repeat(lives)}{"♡".repeat(3 - lives)}</b></span>
             <span className={bonusPhase === "none" && bossPhase === "none" ? "dwarf-status-slot" : "dwarf-status-slot bonus-status"}>
               {bossPhase === "fight" ? <><b>👹 {bossHealth}</b> Boss</>
                 : bossPhase === "approach" || bossPhase === "entering" ? <b>⚔ Boss</b>
-                  : bossPhase === "victory" ? <b>👑 Sieg!</b>
+                  : bossPhase === "victory" || bossPhase === "completed" ? <b>👑 Sieg!</b>
               : bonusPhase === "active" ? <><b>🍬 {bonusSeconds}</b> Bonus</>
                 : bonusPhase === "exit" ? <b>🪜 Ausgang</b>
                   : bonusPhase === "climbing" ? <b>🪜 Hoch!</b>
@@ -2388,7 +2391,7 @@ export default function DwarfsGame() {
         </header>
         <div className="dwarf-board-slot">
         <div className="dwarf-board">
-          <canvas ref={canvasRef} width={WIDTH} height={HEIGHT} aria-label={`Zwergengold · ${playing ? NORMAL_LEVEL.name : "Die tiefe Mine"}`} />
+          <canvas ref={canvasRef} width={WIDTH} height={HEIGHT} aria-label={bossPhase === "completed" ? "Die Krönung in der Mondhalle. Der Zwerg erhält die Kristallkrone." : `Zwergengold · ${playing ? NORMAL_LEVEL.name : "Die tiefe Mine"}`} />
           {paused && <div className="dwarf-pause-panel" role="dialog" aria-modal="true" aria-labelledby="pause-title">
             <DwarfViewportPanel>
             <div className="pause-mark" aria-hidden="true">Ⅱ</div>
@@ -2398,21 +2401,19 @@ export default function DwarfsGame() {
             <button className="pause-menu-button" type="button" onClick={returnToDwarfMenu}>← Zum Zwergenspielmenü</button>
             </DwarfViewportPanel>
           </div>}
-          {finaleFinished && bossPhase === "completed" && <div className="dwarf-pause-panel" role="dialog" aria-modal="true" aria-labelledby="finale-title">
-            <DwarfViewportPanel>
-            <h2 id="finale-title">Krone erobert!</h2>
-            <p>Du hast das Abenteuer geschafft!</p>
-            <button className="start-button mine-start-button" onClick={start}>Nochmal spielen</button>
-            <button className="pause-menu-button" type="button" onClick={returnToDwarfMenu}>← Zum Zwergenspielmenü</button>
-            </DwarfViewportPanel>
-          </div>}
         </div>
         </div>
-        <div className="dwarf-controls" aria-label="Bewegungssteuerung">
+        {bossPhase === "completed" ? <div className="dwarf-finale-actions" aria-live="polite">
+          {finaleFinished && <>
+            <span className="dwarf-sr-only">Die Kristallkrone ist erobert. Das Zwergenreich ist gerettet.</span>
+            <button type="button" className="pause-menu-button" onClick={returnToDwarfMenu}>Zum Spielmenü</button>
+            <button type="button" className="start-button mine-start-button" onClick={start}>Nochmal spielen</button>
+          </>}
+        </div> : <div className="dwarf-controls" aria-label="Bewegungssteuerung">
           <button onPointerDown={() => move(-1)} disabled={!playing || paused || bonusPhase === "climbing" || bonusPhase === "falling" || bossPhase === "entering" || bossPhase === "victory"} aria-label="Nach links bewegen"><b>←</b><span>Links</span></button>
-          <button className="pickaxe-button" onPointerDown={throwPickaxe} disabled={!playing || paused || bonusPhase === "exit" || bonusPhase === "climbing" || bonusPhase === "falling" || bossPhase === "entering" || bossPhase === "victory" || bossPhase === "completed" || !shotReady} aria-label={`Hacke Level ${axeLevel} werfen`}><b>⛏️</b><span>{shotReady ? `Werfen · L${axeLevel}` : "Lädt …"}</span><small className="axe-progress" aria-label={`${destroyed} von ${nextAxeUpgradeAt} Hindernissen bis zum nächsten Hackenlevel`}>{destroyed} / {nextAxeUpgradeAt}</small></button>
+          <button className="pickaxe-button" onPointerDown={throwPickaxe} disabled={!playing || paused || bonusPhase === "exit" || bonusPhase === "climbing" || bonusPhase === "falling" || bossPhase === "entering" || bossPhase === "victory" || !shotReady} aria-label={`Hacke Level ${axeLevel} werfen`}><b>⛏️</b><span>{shotReady ? `Werfen · L${axeLevel}` : "Lädt …"}</span><small className="axe-progress" aria-label={`${destroyed} von ${nextAxeUpgradeAt} Hindernissen bis zum nächsten Hackenlevel`}>{destroyed} / {nextAxeUpgradeAt}</small></button>
           <button onPointerDown={() => move(1)} disabled={!playing || paused || bonusPhase === "climbing" || bonusPhase === "falling" || bossPhase === "entering" || bossPhase === "victory"} aria-label="Nach rechts bewegen"><b>→</b><span>Rechts</span></button>
-        </div>
+        </div>}
         {!playing && <div className="dwarf-start-panel" role="dialog" aria-modal="true" aria-labelledby="dwarf-start-title">
           <DwarfViewportPanel>
           <div className="dwarf-start-content">
