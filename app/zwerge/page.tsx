@@ -7,7 +7,7 @@ import { DwarfViewport, DwarfViewportPanel } from "./viewport";
 import { drawBossGate, drawIris, easeTravel } from "./passage-art";
 import { drawForestGround, drawForestBoss, drawForestArena, drawForestProjectile } from "./forest-art";
 import { createGameMix, type EffectKind } from "./sound";
-import { ARENA_FADE_TIME, CORONATION_DURATION, drawCoronation, loadCoronationArt, playCoronationCues, type HatPalette } from "./coronation";
+import { ARENA_FADE_TIME, CORONATION_DURATION, drawCoronation, loadCoronationArt, playCoronationCues, type HatStyle } from "./coronation";
 import "./viewport.css";
 
 let ACTIVE_RUNTIME_LEVEL_SET: LevelSet = ACTIVE_LEVEL_SET;
@@ -153,10 +153,10 @@ type BossAttack = { kind: "axe" | "rock"; x: number; y: number; vx: number; vy: 
 type Particle = { x: number; y: number; vx: number; vy: number; life: number; color: string; size: number };
 type Feedback = { x: number; y: number; text: string; color: string; life: number };
 
-const HAT_PALETTES: Record<HatColor, HatPalette> = {
-  blue: { light: "#68bdff", mid: "#247dcc", dark: "#123f77", band: "#3c96df", stitch: "#a4d9ff" },
-  yellow: { light: "#ffe56d", mid: "#e4a91e", dark: "#89580a", band: "#f7c83e", stitch: "#fff2a7" },
-  red: { light: "#ff6a55", mid: "#c93237", dark: "#7e1f2a", band: "#eb4b48", stitch: "#ff9c7b" },
+const HAT_PALETTES: Record<HatColor, HatStyle> = {
+  blue: { light: "#68bdff", mid: "#247dcc", dark: "#123f77", band: "#3c96df", stitch: "#a4d9ff", coronationColumn: 0 },
+  yellow: { light: "#ffe56d", mid: "#e4a91e", dark: "#89580a", band: "#f7c83e", stitch: "#fff2a7", coronationColumn: 1 },
+  red: { light: "#ff6a55", mid: "#c93237", dark: "#7e1f2a", band: "#eb4b48", stitch: "#ff9c7b", coronationColumn: 2 },
 };
 
 const DEFAULT_DEVELOPER_SETTINGS: DeveloperSettings = {

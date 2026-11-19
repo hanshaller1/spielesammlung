@@ -5,7 +5,7 @@ export const ARENA_FADE_TIME = 850;
 const CROWN_LANDING = 5320;
 const TAU = Math.PI * 2;
 
-export type HatPalette = { light: string; mid: string; dark: string; band: string; stitch: string };
+export type HatStyle = { light: string; mid: string; dark: string; band: string; stitch: string; coronationColumn: 0 | 1 | 2 };
 
 function loadPlate(name: string) {
   const image = new Image();
@@ -18,6 +18,7 @@ export function loadCoronationArt() {
     hall: loadPlate("mondhalle"),
     profile: loadPlate("kroenung-drehung"),
     hero: loadPlate("kroenung-zwerg"),
+    caps: loadPlate("kroenung-muetzen"),
     crown: loadPlate("kristallkrone"),
   };
 }
@@ -55,7 +56,13 @@ function glint(ctx: CanvasRenderingContext2D, x: number, y: number, radius: numb
   ctx.fill();
 }
 
-function drawCap(ctx: CanvasRenderingContext2D, palette: HatPalette) {
+function drawCap(ctx: CanvasRenderingContext2D, caps: HTMLImageElement, palette: HatStyle) {
+  if (drawable(caps)) {
+    const columnWidth = caps.naturalWidth / 3;
+    // The brim sits 90% down each square. Keep it at the local origin as the cap turns into the hand.
+    ctx.drawImage(caps, palette.coronationColumn * columnWidth, 0, columnWidth, caps.naturalHeight, -39, -70, 78, 78);
+    return;
+  }
   const cloth = ctx.createLinearGradient(-25, -35, 26, 0);
   cloth.addColorStop(0, palette.dark);
   cloth.addColorStop(.39, palette.light);
@@ -103,7 +110,7 @@ function drawCrown(ctx: CanvasRenderingContext2D, image: HTMLImageElement) {
 }
 
 export function drawCoronation(
-  ctx: CanvasRenderingContext2D, art: Art, elapsed: number, palette: HatPalette,
+  ctx: CanvasRenderingContext2D, art: Art, elapsed: number, palette: HatStyle,
   fallbackHero: (ctx: CanvasRenderingContext2D) => void,
 ) {
   const t = Math.min(CORONATION_DURATION, Math.max(0, elapsed));
@@ -166,7 +173,7 @@ export function drawCoronation(
     forehead + (handY - forehead) * carry - 20 * lift * (1 - carry));
   ctx.rotate(-2.77 * carry - .12 * Math.sin(Math.PI * lift));
   ctx.scale(.96 - .36 * carry, .96 - .36 * carry);
-  drawCap(ctx, palette); ctx.restore();
+  drawCap(ctx, art.caps, palette); ctx.restore();
   if (carry > .91 && drawable(art.hero)) {
     // The ends of his fingers sit in front of the folded brim in his hand.
     ctx.save(); ctx.globalAlpha = ease(carry, .91, 1);
