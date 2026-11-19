@@ -1035,12 +1035,12 @@ function drawTunnel(
   context: CanvasRenderingContext2D,
   segments: TunnelSegment[], dwarfX: number, now: number, protectedUntil: number,
   obstacles: Obstacle[], hatches: Hatch[], projectiles: Projectile[], collectibles: Collectible[],
-  particles: Particle[], feedback: Feedback[], shield: number, playerImpactUntil: number,
+  particles: Particle[], feedback: Feedback[], shield: number, playerImpactUntil: number, breakShakeUntil: number,
   hatColor: HatColor, handEmptyUntil: number, bonusPhase: BonusPhase, ladderProgress: number, bonusExitWallY: number,
   showHitboxes = false, showFairness = false, enteringGate = false,
 ) {
   context.clearRect(0, 0, WIDTH, HEIGHT);
-  const shake = now < playerImpactUntil ? Math.sin(now * 0.09) * 5 : 0;
+  const shake = now < Math.max(playerImpactUntil, breakShakeUntil) ? Math.sin(now * 0.09) * 5 : 0;
   const inBonus = bonusPhase !== "none";
   const levelTheme = inBonus ? BONUS_LEVEL.theme : NORMAL_LEVEL.theme;
   context.save();
@@ -1373,6 +1373,7 @@ export default function DwarfsGame() {
   const lastFrameRef = useRef(0);
   const protectedUntilRef = useRef(0);
   const playerImpactUntilRef = useRef(0);
+  const breakShakeUntilRef = useRef(0);
   const pausedAtRef = useRef(0);
   const handEmptyUntilRef = useRef(0);
   const shotCooldownRef = useRef<number | null>(null);
@@ -1488,7 +1489,7 @@ export default function DwarfsGame() {
       : BONUS_EXIT_WALL_Y;
     drawTunnel(context, tunnelRef.current, dwarfXRef.current, now, protectedUntilRef.current, obstaclesRef.current, hatchesRef.current,
       projectilesRef.current, collectiblesRef.current, particlesRef.current, feedbackRef.current, shieldRef.current, playerImpactUntilRef.current,
-      selectedHatRef.current, handEmptyUntilRef.current, bonusPhaseRef.current, ladderProgress, bonusExitWallY,
+      breakShakeUntilRef.current, selectedHatRef.current, handEmptyUntilRef.current, bonusPhaseRef.current, ladderProgress, bonusExitWallY,
       developerSettingsRef.current.enabled && developerSettingsRef.current.showHitboxes,
       developerSettingsRef.current.enabled && developerSettingsRef.current.showFairness, bossPhaseRef.current === "entering");
     if (bossPhaseRef.current === "approach" || bossPhaseRef.current === "entering") {
@@ -1525,7 +1526,8 @@ export default function DwarfsGame() {
   }, []);
   const addGem = useCallback(() => { gemsRef.current += 1; setGems(gemsRef.current); playEffect("gold"); }, [playEffect]);
 
-  const countDestroyedObstacle = useCallback(() => {
+  const onObstacleDestroyed = useCallback((now: number) => {
+    breakShakeUntilRef.current = now + 150;
     const count = ++destroyedRef.current;
     setDestroyed(count);
     const perLevel = difficultyRef.current === "easy" ? 4 : 15;
@@ -1854,7 +1856,7 @@ export default function DwarfsGame() {
           playEffect(destroyedRock ? "break" : "hit");
           if (destroyedRock) {
             obstaclesRef.current.splice(rockIndex, 1);
-            countDestroyedObstacle();
+            onObstacleDestroyed(now);
             const heartChance = Math.max(0, Math.min(100, developer.enabled ? developer.rockHeartChance : 15)) / 100;
             const goldChance = Math.max(0, Math.min(100, developer.enabled ? developer.rockGoldChance : 25)) / 100;
             const canDropHeart = livesRef.current < 3;
@@ -1897,7 +1899,7 @@ export default function DwarfsGame() {
         playEffect(hit.hits > 0 ? "hit" : "break");
         if (hit.hits <= 0) {
           obstaclesRef.current.splice(hitIndex, 1);
-          countDestroyedObstacle();
+          onObstacleDestroyed(now);
           if (hit.kind === "candyChest") {
             const originalCandyCount = 5 + Math.floor(gameRandom() * 4);
             const candyCount = Math.round(originalCandyCount * BONUS_LEVEL.candy.chestMultiplier);
@@ -2056,7 +2058,7 @@ export default function DwarfsGame() {
     }
     renderCurrentScene(now);
     if (playingRef.current) animationRef.current = window.requestAnimationFrame(animateFrame);
-  }, [addGold, addGem, countDestroyedObstacle, playEffect, renderCurrentScene, restartMusic, stopMusic]);
+  }, [addGold, addGem, onObstacleDestroyed, playEffect, renderCurrentScene, restartMusic, stopMusic]);
 
   useEffect(() => {
     activateLevelSet(1); gameRandom = Math.random; tunnelRef.current = createTunnel(); dwarfXRef.current = tunnelAt(tunnelRef.current, DWARF_Y).center; renderCurrentScene();
@@ -2136,6 +2138,7 @@ export default function DwarfsGame() {
       const hits = developer.rockTestState === "whole" ? 3 : developer.rockTestState === "cracked" ? 2 : 1;
       obstaclesRef.current.push({ kind: "rock", x: opening.center, y, width: 36, height: 36, angle: 0, hits });
     }
+    breakShakeUntilRef.current = 0;
     protectedUntilRef.current = 0; playerImpactUntilRef.current = 0; handEmptyUntilRef.current = 0; startedAtRef.current = performance.now(); lastFrameRef.current = startedAtRef.current;
     if (requestedStart === "bonus" || requestedStart === "ladder") {
       bonusPhaseRef.current = "active";
@@ -2276,6 +2279,7 @@ export default function DwarfsGame() {
     if (arrivalUntilRef.current > pausedAtRef.current) arrivalUntilRef.current += pauseDuration;
     if (protectedUntilRef.current > pausedAtRef.current) protectedUntilRef.current += pauseDuration;
     if (playerImpactUntilRef.current > pausedAtRef.current) playerImpactUntilRef.current += pauseDuration;
+    if (breakShakeUntilRef.current > pausedAtRef.current) breakShakeUntilRef.current += pauseDuration;
     if (handEmptyUntilRef.current > pausedAtRef.current) handEmptyUntilRef.current += pauseDuration;
     lastFrameRef.current = now;
     playingRef.current = true;
