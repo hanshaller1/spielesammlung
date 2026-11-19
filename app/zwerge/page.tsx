@@ -84,6 +84,7 @@ const LEGACY_HIGHSCORE_KEY = "hannas-spiele-zwergengold-highscore";
 
 type HatColor = "blue" | "yellow" | "red";
 type Difficulty = "easy" | "normal";
+const OBSTACLES_PER_AXE_LEVEL: Record<Difficulty, number> = { easy: 4, normal: 30 };
 type Highscores = Record<Difficulty, number>;
 const HIGHSCORE_KEYS: Record<Difficulty, string> = {
   easy: "hannas-spiele-zwergengold-highscore-easy",
@@ -1403,6 +1404,7 @@ export default function DwarfsGame() {
   const [highscores, setHighscores] = useState<Highscores>({ easy: 0, normal: 0 });
   const [selectedHat, setSelectedHat] = useState<HatColor>("blue");
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
+  const nextAxeUpgradeAt = axeLevel * OBSTACLES_PER_AXE_LEVEL[difficulty];
   const [shotReady, setShotReady] = useState(true);
   const [musicOn, setMusicOn] = useState(true);
   const [bonusPhase, setBonusPhase] = useState<BonusPhase>("none");
@@ -1530,7 +1532,7 @@ export default function DwarfsGame() {
     breakShakeUntilRef.current = now + 150;
     const count = ++destroyedRef.current;
     setDestroyed(count);
-    const perLevel = difficultyRef.current === "easy" ? 4 : 15;
+    const perLevel = OBSTACLES_PER_AXE_LEVEL[difficultyRef.current];
     const nextLevel = 1 + Math.floor(count / perLevel);
     if (nextLevel <= axeLevelRef.current) return;
     axeLevelRef.current = nextLevel;
@@ -2112,7 +2114,7 @@ export default function DwarfsGame() {
     obstaclesRef.current = []; hatchesRef.current = []; projectilesRef.current = []; collectiblesRef.current = []; particlesRef.current = []; feedbackRef.current = [];
     const initialGold = developer.enabled ? Math.max(0, Math.floor(developer.startGold)) : 0;
     const initialDestroyed = developer.enabled ? Math.max(0, Math.floor(developer.destroyedObstacles)) : 0;
-    const initialAxeLevel = Math.max(developer.enabled ? Math.floor(developer.axeLevel) : 1, 1 + Math.floor(initialDestroyed / (difficultyRef.current === "easy" ? 4 : 15)));
+    const initialAxeLevel = Math.max(developer.enabled ? Math.floor(developer.axeLevel) : 1, 1 + Math.floor(initialDestroyed / OBSTACLES_PER_AXE_LEVEL[difficultyRef.current]));
     livesRef.current = 3; shieldRef.current = 0; goldRef.current = initialGold; gemsRef.current = 0; setGems(0); generatedSegmentsRef.current = 0;
     nextCornerAtRef.current = developer.enabled && developer.instantCorner ? 2 : 15 + Math.floor(gameRandom() * 5);
     destroyedRef.current = initialDestroyed;
@@ -2408,7 +2410,7 @@ export default function DwarfsGame() {
         </div>
         <div className="dwarf-controls" aria-label="Bewegungssteuerung">
           <button onPointerDown={() => move(-1)} disabled={!playing || paused || bonusPhase === "climbing" || bonusPhase === "falling" || bossPhase === "entering" || bossPhase === "victory"} aria-label="Nach links bewegen"><b>←</b><span>Links</span></button>
-          <button className="pickaxe-button" onPointerDown={throwPickaxe} disabled={!playing || paused || bonusPhase === "exit" || bonusPhase === "climbing" || bonusPhase === "falling" || bossPhase === "entering" || bossPhase === "victory" || bossPhase === "completed" || !shotReady} aria-label={`Hacke Level ${axeLevel} werfen`}><b>⛏️</b><span>{shotReady ? `Werfen · L${axeLevel}` : "Lädt …"}</span><small className="axe-progress" aria-label={`${destroyed} von ${axeLevel * (difficulty === "easy" ? 4 : 15)} Hindernissen bis zum nächsten Hackenlevel`}>{destroyed} / {axeLevel * (difficulty === "easy" ? 4 : 15)}</small></button>
+          <button className="pickaxe-button" onPointerDown={throwPickaxe} disabled={!playing || paused || bonusPhase === "exit" || bonusPhase === "climbing" || bonusPhase === "falling" || bossPhase === "entering" || bossPhase === "victory" || bossPhase === "completed" || !shotReady} aria-label={`Hacke Level ${axeLevel} werfen`}><b>⛏️</b><span>{shotReady ? `Werfen · L${axeLevel}` : "Lädt …"}</span><small className="axe-progress" aria-label={`${destroyed} von ${nextAxeUpgradeAt} Hindernissen bis zum nächsten Hackenlevel`}>{destroyed} / {nextAxeUpgradeAt}</small></button>
           <button onPointerDown={() => move(1)} disabled={!playing || paused || bonusPhase === "climbing" || bonusPhase === "falling" || bossPhase === "entering" || bossPhase === "victory"} aria-label="Nach rechts bewegen"><b>→</b><span>Rechts</span></button>
         </div>
         {!playing && <div className="dwarf-start-panel" role="dialog" aria-modal="true" aria-labelledby="dwarf-start-title">
@@ -2538,7 +2540,7 @@ export default function DwarfsGame() {
                     <label><input type="checkbox" checked={developerSettings.showFairness} onChange={(event) => updateDeveloperSetting("showFairness", event.target.checked)} /> Fairness-Prüfung anzeigen</label>
                   </div>
                   <div className="developer-values" aria-label="Aktuelle Spielwerte">
-                    <span>Gold <b>{gold}</b></span><span>Edelsteine <b>{gems}</b></span><span>Leben <b>{lives}</b></span><span>Schild <b>{shield}</b></span><span>Hackenlevel <b>{axeLevel}</b></span><span>Zerstört <b>{destroyed}</b></span><span>Nächster Aufstieg <b>{axeLevel * (difficulty === "easy" ? 4 : 15)}</b></span><span>Spielstufe <b>{level}</b></span><span>Hindernisse <b>{obstaclesRef.current.length}</b></span><span>Hacken unterwegs <b>{projectilesRef.current.length}</b></span>
+                    <span>Gold <b>{gold}</b></span><span>Edelsteine <b>{gems}</b></span><span>Leben <b>{lives}</b></span><span>Schild <b>{shield}</b></span><span>Hackenlevel <b>{axeLevel}</b></span><span>Zerstört <b>{destroyed}</b></span><span>Nächster Aufstieg <b>{nextAxeUpgradeAt}</b></span><span>Spielstufe <b>{level}</b></span><span>Hindernisse <b>{obstaclesRef.current.length}</b></span><span>Hacken unterwegs <b>{projectilesRef.current.length}</b></span>
                   </div>
                 </section>
 
