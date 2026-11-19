@@ -91,7 +91,8 @@ const HIGHSCORE_KEYS: Record<Difficulty, string> = {
 };
 type ForcedObstacle = "random" | "wood" | "rock" | "chest";
 type RockTestState = "none" | "whole" | "cracked" | "fractured";
-type DeveloperStartLevel = "normal" | "hatch" | "bonus" | "ladder" | "gate" | "boss";
+const FINAL_WORLD = LEVEL_TEMPLATES.normal[LEVEL_TEMPLATES.normal.length - 1].world;
+type DeveloperStartLevel = "normal" | "hatch" | "bonus" | "ladder" | "gate" | "boss" | "coronation";
 type DeveloperSettings = {
   enabled: boolean;
   startLevel: DeveloperStartLevel;
@@ -2099,7 +2100,7 @@ export default function DwarfsGame() {
     const developer = developerSettingsRef.current;
     const requestedStart = developer.enabled ? developer.startLevel : "normal";
     arrivalUntilRef.current = 0;
-    const startWorld = developer.enabled ? developer.world : 1;
+    const startWorld = requestedStart === "coronation" ? FINAL_WORLD : developer.enabled ? developer.world : 1;
     worldRef.current = startWorld;
     activateLevelSet(startWorld);
     highscoreEligibleRef.current = !developer.enabled;
@@ -2173,6 +2174,8 @@ export default function DwarfsGame() {
       const y = DWARF_Y - 98;
       dwarfXRef.current = tunnelAt(tunnelRef.current, y).center;
       hatchesRef.current = [{ x: dwarfXRef.current, y, width: 72, height: 34, hits: 0, open: true }];
+    } else if (requestedStart === "coronation") {
+      beginCoronation(startedAtRef.current);
     } else if (requestedStart === "boss") {
       bossPhaseRef.current = "fight"; setBossPhase("fight"); bossPhaseStartedAtRef.current = startedAtRef.current;
       bossXRef.current = WIDTH / 2; bossDirectionRef.current = 1; bossHealthRef.current = BOSS_MAX_HEALTH; setBossHealth(BOSS_MAX_HEALTH);
@@ -2339,6 +2342,7 @@ export default function DwarfsGame() {
       const settings = developerSettingsRef.current;
       const selected = createLevelSet(settings.world);
       const scene = settings.startLevel;
+      if (scene === "coronation") { playCoronationCues(0, 200, playMysticNote); return; }
       const music = (scene === "gate" || scene === "boss" ? selected.boss : scene === "bonus" || scene === "ladder" ? selected.bonus : selected.normal).music;
       playMysticNote(music.notes[0], music.leadDuration, music.leadVolume);
       playMysticNote(music.notes[0] / 2, music.bassDuration, music.bassVolume);
@@ -2487,13 +2491,14 @@ export default function DwarfsGame() {
                 <section className="developer-section">
                   <h3>Spielstart</h3>
                   <div className="developer-grid">
-                    <label>Startwelt<select value={developerSettings.world} onChange={(event) => updateDeveloperSetting("world", Number(event.target.value))}>
+                    <label>Startwelt<select disabled={developerSettings.startLevel === "coronation"} value={developerSettings.startLevel === "coronation" ? FINAL_WORLD : developerSettings.world} onChange={(event) => updateDeveloperSetting("world", Number(event.target.value))}>
                       {LEVEL_TEMPLATES.normal.map(({ world, name }) => <option key={world} value={world}>{world} · {name}</option>)}
                     </select></label>
                     <label>Startszene<select value={developerSettings.startLevel} onChange={(event) => updateDeveloperSetting("startLevel", event.target.value as DeveloperStartLevel)}>
                       <option value="normal">Normaler Spielstart</option><option value="hatch">Offene Bonusklappe</option>
                       <option value="bonus">Bonus · {createLevelSet(developerSettings.world).bonus.name}</option><option value="ladder">Kurz vor der Bonusleiter</option>
                       <option value="gate">Ankunft am Bosstor</option><option value="boss">Kampf · {createLevelSet(developerSettings.world).boss.enemy.name}</option>
+                      <option value="coronation">Finale · Krönung in der Mondhalle</option>
                     </select></label>
                     <label>Hackenlevel <input type="number" min="1" max="10" value={developerSettings.axeLevel} onChange={(event) => updateDeveloperSetting("axeLevel", Number(event.target.value))} /></label>
                     <label>Zerstörte Hindernisse <input type="number" min="0" max="999" value={developerSettings.destroyedObstacles} onChange={(event) => updateDeveloperSetting("destroyedObstacles", Number(event.target.value))} /></label>
