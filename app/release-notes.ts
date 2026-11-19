@@ -9,6 +9,21 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.42",
+    title: "Zwergengold: Die Krönung in der Mondhalle",
+    date: "19. November 2026",
+    changes: [
+      "Nach dem Sieg über den Mondhirsch dreht sich der Zwerg in der Mondhalle zu dir. Er nimmt seine Zipfelmütze ab und eine Kristallkrone senkt sich auf seinen Kopf.",
+      "Die Mütze ist in deiner gewählten Farbe gemalt. Der Zwerg hält sie bis zum Schlussbild in der Hand.",
+      "In den Entwickleroptionen kannst du die Krönung als Startszene auswählen.",
+    ],
+    commits: [
+      { id: "001ae2b", description: "Zwergengold: Den Mondhirsch-Sieg mit einer eigenen Kristallkrönung abschließen" },
+      { id: "83256ae", description: "Zwergengold: Die Krönung als Startszene in den Entwickleroptionen anbieten" },
+      { id: "fbd613e", description: "Zwergengold: Die gewählte Zipfelmütze bei der Krönung als Illustration zeigen" },
+    ],
+  },
+  {
     version: "0.4.41",
     title: "Zwergengold: Hackenaufstieg und Bildstoß beim Zerstören",
     date: "19. November 2026",
