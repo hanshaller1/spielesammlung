@@ -233,8 +233,8 @@ function openingsAt(segments: TunnelSegment[], y: number): TunnelOpening[] {
     const next = segments[index + 1];
     if (y >= current.y && y <= next.y) {
       const linearProgress = (y - current.y) / (next.y - current.y);
-      // Tight corners still turn quickly, but no longer jump in one perfectly
-      // straight line. Both edges receive their own stable rocky contour.
+      // Forest banks and bridge rails follow this curve exactly. Only the
+      // underground passages add a granular rock contour to it.
       const progress = current.corner
         ? linearProgress * linearProgress * (3 - 2 * linearProgress)
         : linearProgress;
@@ -242,6 +242,7 @@ function openingsAt(segments: TunnelSegment[], y: number): TunnelOpening[] {
         const nextOpening = next.openings[openingIndex] ?? next.openings[0];
         const center = opening.center + (nextOpening.center - opening.center) * progress;
         const width = opening.width + (nextOpening.width - opening.width) * progress;
+        if (NORMAL_LEVEL.world >= 3 && !current.symmetric) return { center, width };
         const symmetricDetail = current.symmetric ? irregularEdge(current.detailSeed, linearProgress, 1) : 0;
         const left = center - width / 2 + (current.symmetric ? symmetricDetail : irregularEdge(current.detailSeed, linearProgress, -1));
         const right = center + width / 2 + (current.symmetric ? symmetricDetail : irregularEdge(current.detailSeed, linearProgress, 1));
@@ -317,10 +318,16 @@ function earlierSegment(previous: TunnelSegment, y: number, level: number, corne
   return candidate;
 }
 
+// Forest canopies extend above the segment that carries them. Keep those
+// segments and the closing edge of the path below the visible playfield.
+function normalPathBottom() {
+  return HEIGHT + (NORMAL_LEVEL.world >= 3 ? 3 * GAP : GAP);
+}
+
 function createTunnel(fixedWidth?: number): TunnelSegment[] {
   const width = fixedWidth === undefined ? NORMAL_LEVEL.tunnel.width : Math.max(110, Math.min(280, fixedWidth));
   const lightZone = gameRandom() < 0.5 ? "bright" : "dim";
-  const segments: TunnelSegment[] = [{ y: HEIGHT + GAP, center: WIDTH / 2, width, turn: 0, widthChange: -5, corner: false, detailSeed: gameRandom(), lightZone, torch: lightZone === "bright", openings: [{ center: WIDTH / 2, width }] }];
+  const segments: TunnelSegment[] = [{ y: normalPathBottom(), center: WIDTH / 2, width, turn: 0, widthChange: -5, corner: false, detailSeed: gameRandom(), lightZone, torch: lightZone === "bright", openings: [{ center: WIDTH / 2, width }] }];
   while (segments[0].y > -GAP) segments.unshift(earlierSegment(segments[0], segments[0].y - GAP, 1, false, fixedWidth));
   return segments;
 }
@@ -1743,7 +1750,8 @@ export default function DwarfsGame() {
     setLevel((current) => current === currentLevel ? current : currentLevel);
     const segments = tunnelRef.current;
     segments.forEach((segment) => { segment.y += speed * delta; });
-    while (segments.at(-1)!.y > HEIGHT + GAP) segments.pop();
+    const pathBottom = inBonus ? HEIGHT + GAP : normalPathBottom();
+    while (segments.at(-1)!.y > pathBottom) segments.pop();
     while (segments[0].y > -GAP) {
       generatedSegmentsRef.current += 1;
       const makeCorner = !inBonus && bossPhaseRef.current === "none" && generatedSegmentsRef.current >= nextCornerAtRef.current;

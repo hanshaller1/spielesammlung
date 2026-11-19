@@ -1,7 +1,7 @@
 // The scenery uses the same 400 × 560 world coordinates as the route and its actors.
 type Brush = CanvasRenderingContext2D;
 type Opening = { center: number; width: number };
-type TrailSegment = Opening & { y: number; detailSeed: number; trailIndex?: number };
+type TrailSegment = Opening & { y: number; detailSeed: number; corner: boolean; trailIndex?: number };
 type OpeningAt = (y: number) => Opening;
 
 const TAU = 2 * Math.PI;
@@ -131,6 +131,29 @@ function drawCrossing(c: Brush, y: number, seed: number, now: number, p: Palette
   }
 }
 
+function traceTrailBank(c: Brush, segments: readonly TrailSegment[], side: -1 | 1) {
+  const left = side === -1;
+  const start = left ? 0 : segments.length - 1;
+  let from = segments[start];
+  if (!from) return;
+  let x = from.center + side * from.width / 2;
+  if (left) c.moveTo(x, from.y);
+  else c.lineTo(x, from.y);
+  for (let step = 1; step < segments.length; step++) {
+    const to = segments[left ? step : start - step];
+    const endX = to.center + side * to.width / 2;
+    if ((left ? from : to).corner) {
+      // With linear y, these controls reproduce the collision curve t²(3 − 2t).
+      const third = (to.y - from.y) / 3;
+      c.bezierCurveTo(x, from.y + third, endX, to.y - third, endX, to.y);
+    } else {
+      c.lineTo(endX, to.y);
+    }
+    from = to;
+    x = endX;
+  }
+}
+
 export function drawForestGround(c: Brush, segments: readonly TrailSegment[], world: number, now: number, openingAt: OpeningAt) {
   const night = world === 4;
   const p = night ? moonlight : daylight;
@@ -138,15 +161,8 @@ export function drawForestGround(c: Brush, segments: readonly TrailSegment[], wo
   c.fillStyle = p.moss; c.fillRect(-8, -8, 416, 576);
   // Draw the route outline once and reuse it for the raised bank and path.
   c.beginPath();
-  for (let y = -8; y <= 568; y += 6) {
-    const { center, width } = openingAt(y);
-    if (y === -8) c.moveTo(center - width / 2, y);
-    else c.lineTo(center - width / 2, y);
-  }
-  for (let y = 568; y >= -8; y -= 6) {
-    const { center, width } = openingAt(y);
-    c.lineTo(center + width / 2, y);
-  }
+  traceTrailBank(c, segments, -1);
+  traceTrailBank(c, segments, 1);
   c.closePath();
   c.lineJoin = "round";
   c.strokeStyle = p.bank; c.lineWidth = 13; c.stroke();
