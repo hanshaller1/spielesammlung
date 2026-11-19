@@ -9,6 +9,19 @@ export type ReleaseNote = {
 // Neue Einträge immer oben ergänzen, damit der aktuelle Patch zuerst erscheint.
 export const releaseNotes: ReleaseNote[] = [
   {
+    version: "0.4.41",
+    title: "Zwergengold: Hackenaufstieg und Bildstoß beim Zerstören",
+    date: "19. November 2026",
+    changes: [
+      "Wenn die Hacke einen Stein, ein Brett oder eine Truhe vollständig zerstört, wackelt das Bild kurz. Bei einem Riss oder Abpraller bleibt die Kamera ruhig.",
+      "Auf Normal steigt die Hacke nach jeweils 30 zerstörten Hindernissen eine Stufe auf. Auf Leicht reichen weiterhin vier.",
+    ],
+    commits: [
+      { id: "5664332", description: "Zwergengold: Beim Zerstören eines Hindernisses das Bild kurz wackeln lassen" },
+      { id: "93b52d1", description: "Zwergengold: Auf Normal 30 zerstörte Hindernisse pro Hackenstufe verlangen" },
+    ],
+  },
+  {
     version: "0.4.40",
     title: "Zwergengold mit ruhigen Waldwegen und Hackentreffern",
     date: "19. November 2026",
